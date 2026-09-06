@@ -72,10 +72,9 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 /* ── 目標單字 ── */
 .word{font-weight:700;border-bottom:2px dotted var(--muted);cursor:pointer;padding:0 1px;border-radius:4px}
 .word:hover{background:var(--hl)}
-.word.blank,.word.zh{display:inline-block;min-width:3.2em;text-align:center;background:var(--soft);border-radius:6px;border-bottom:0;padding:0 6px}
-.word.blank ruby,.word.zh ruby{display:none}
+.word.blank{display:inline-block;min-width:3.2em;text-align:center;background:var(--soft);border-radius:6px;border-bottom:0;padding:0 6px}
+.word.blank ruby{display:none}
 .word.blank::after{content:"＿＿";color:var(--muted)}
-.word.zh::after{content:"【" attr(data-zh) "】";font-size:.92em}
 
 .play{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;min-height:0;padding:0;border-radius:50%;font-size:11px;vertical-align:middle;margin-right:6px;flex:none}
 .legend{font-size:13px;color:var(--muted);margin-bottom:10px}
@@ -105,6 +104,18 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 .small{font-size:13px;color:var(--muted)}
 .reset{margin-top:14px}
 .filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+/* ── 文法克漏字 ── */
+.gq-sentence{font-size:1.15rem;font-weight:600;line-height:1.9;margin:6px 0 16px}
+.gq-blank{display:inline-block;min-width:3em;border-bottom:2px solid var(--muted);text-align:center}
+.gq-opts{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.gq-opts button{text-align:left;font-size:15px;line-height:1.5;white-space:normal}
+.gq-opts button.correct{background:var(--good);border-color:#3aa564}
+.gq-opts button.wrong{background:var(--bad);border-color:#d06666}
+.gq-opts button:disabled{opacity:1}
+.gq-explain{display:none;margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--soft);font-size:14px}
+.gq-explain.show{display:block}
+.gq-explain b{font-size:15px}
 .setrow{display:flex;align-items:center;gap:8px;margin:14px 0;flex-wrap:wrap}
 .setrow .lab{flex:0 0 100%;font-weight:600;margin-bottom:2px}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
@@ -136,21 +147,20 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
   <div class="ctl-row" role="group" aria-label="目標單字顯示">
     <span class="ctl-label">單字</span>
     <span class="grp">
-      <button class="active" data-wm="normal">假名</button>
-      <button data-wm="blank">遮字</button>
-      <button data-wm="zh">中文</button>
+      <button class="active" data-wm="normal">顯示假名</button>
+      <button data-wm="blank">遮住單字</button>
     </span>
   </div>
 </header>
 
 <div class="hud">
   <div class="progressbar" aria-label="學習進度"><div id="progressFill"></div></div>
-  <div class="progresstext" id="progressText">已熟悉 0 / 70</div>
+  <div class="progresstext" id="progressText">熟練 0 / 70</div>
   <div class="stats">
-    <div class="stat"><b id="statGood">0</b><span>記得</span></div>
-    <div class="stat"><b id="statMid">0</b><span>模糊</span></div>
-    <div class="stat"><b id="statBad">0</b><span>不記得</span></div>
-    <div class="stat"><b id="statNew">70</b><span>未標記</span></div>
+    <div class="stat"><b id="statMaster">0</b><span>熟練</span></div>
+    <div class="stat"><b id="statLearning">0</b><span>學習中</span></div>
+    <div class="stat"><b id="statDue">0</b><span>今日到期</span></div>
+    <div class="stat"><b id="statNew">70</b><span>未學</span></div>
   </div>
 </div>
 
@@ -162,7 +172,7 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 
 <section id="stories" class="section active">
   <div class="legend">點粗體目標單字看詳解；每段開頭的 ▶ 可聽整段。注音「重點字」＝只藏 70 個目標字的假名。</div>
-  <div class="tip">建議順序：先「注音·全部」聽讀 → 切「注音·重點字」練 70 個目標字的讀音 → 再用「單字·中文」主動回想 → 不熟的進單字測驗。</div>
+  <div class="tip">建議順序：先「注音·全部」聽讀 → 切「注音·重點字」練讀音 → 「單字·遮住單字」練回想 → 不熟的進單字測驗 → 文法分頁做克漏字。</div>
   <article class="story-card">
     <h2 lang="ja">篇一：父が倒れた日</h2>
     <div class="story-text" id="story1" lang="ja"></div>
@@ -182,8 +192,8 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
     </div>
     <div class="filter-row" aria-label="測驗篩選">
       <button class="active" data-qfilter="all">全部 70 字</button>
-      <button data-qfilter="weak">只複習模糊／不記得</button>
-      <button data-qfilter="new">只看未標記</button>
+      <button data-qfilter="due">今日複習</button>
+      <button data-qfilter="new">未學過</button>
     </div>
     <div class="small" id="filterInfo" style="margin-top:8px">目前題庫：70 字</div>
   </div>
@@ -207,14 +217,44 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 </section>
 
 <section id="grammar" class="section grammar">
-  <div class="story-card">
-    <h2>篇一文法</h2>
-    <table><thead><tr><th>文法</th><th>例句</th><th>意思</th></tr></thead><tbody id="grammar1"></tbody></table>
+  <div class="panel">
+    <div class="toolbar">
+      <button class="active" data-gview="table">對照表</button>
+      <button data-gview="quiz">克漏字練習</button>
+    </div>
   </div>
-  <div class="story-card">
-    <h2>篇二文法</h2>
-    <table><thead><tr><th>文法</th><th>例句</th><th>意思</th></tr></thead><tbody id="grammar2"></tbody></table>
+
+  <div id="grammarTable">
+    <div class="story-card">
+      <h2>篇一文法</h2>
+      <table><thead><tr><th>文法</th><th>例句</th><th>意思</th></tr></thead><tbody id="grammar1"></tbody></table>
+    </div>
+    <div class="story-card">
+      <h2>篇二文法</h2>
+      <table><thead><tr><th>文法</th><th>例句</th><th>意思</th></tr></thead><tbody id="grammar2"></tbody></table>
+    </div>
   </div>
+
+  <div id="grammarQuizWrap" hidden>
+    <div class="panel">
+      <div class="filter-row" aria-label="克漏字篩選">
+        <button class="active" data-gqfilter="all">全部</button>
+        <button data-gqfilter="ng">只練答錯的</button>
+      </div>
+      <div class="small" id="gqInfo" style="margin-top:8px"></div>
+    </div>
+    <div class="quiz-card">
+      <div class="small" id="gqCount">1 / 40</div>
+      <div class="gq-sentence" id="gqSentence" lang="ja"></div>
+      <div class="gq-opts" id="gqOpts"></div>
+      <div class="gq-explain" id="gqExplain"></div>
+      <div class="quiz-controls">
+        <button id="gqNext">下一題</button>
+        <button id="gqShuffle">重新洗牌</button>
+      </div>
+    </div>
+  </div>
+
   <button class="reset" id="resetProgress">重設學習紀錄</button>
 </section>
 </div>
@@ -352,6 +392,51 @@ const grammar2 = [
 ["～でしょう","続くでしょう","應該會～吧"],
 ["すると","すると～","於是、接著、結果"]
 ];
+const ALLGRAMMAR = [...grammar1, ...grammar2];   // 0-9 篇一、10-19 篇二
+
+/* 文法克漏字：g=文法索引, s=題目（（　）為空格）, o=四選項, a=正解索引 */
+const grammarQuiz = [
+{g:0,s:"「宿題は？」「すみません、家に忘れて（　）。」",o:["しまいました","おきました","みました","いきました"],a:0},
+{g:0,s:"電車の中でお金を落として（　）、とても困った。",o:["しまって","おいて","あって","みて"],a:0},
+{g:1,s:"外国へ行くとき、パスポートを取ら（　）。",o:["なければならない","なくてもいい","てはいけない","ないでください"],a:0},
+{g:1,s:"図書館の本は、来週までに返さ（　）。",o:["なければなりません","てもいいです","ないつもりです","せます"],a:0},
+{g:2,s:"会社の都合で、来月から北海道に住む（　）。",o:["ことになった","ことにした","ようにした","つもりだ"],a:0},
+{g:2,s:"話し合いの結果、来年もこのマンションに住み続ける（　）。",o:["ことになった","ところだった","ばかりだ","そうにない"],a:0},
+{g:3,s:"子どもでも読める（　）、漢字に振り仮名をつけた。",o:["ように","ために","ながら","けれど"],a:0},
+{g:3,s:"医者に、毎日薬を飲む（　）言われた。",o:["ように","そうに","ような","らしく"],a:0},
+{g:4,s:"道が分からなかったので、駅員さんに教えて（　）。",o:["もらった","あげた","おいた","みた"],a:0},
+{g:4,s:"弟が宿題を手伝って（　）から、早く終わった。",o:["くれた","もらった","あげた","いた"],a:0},
+{g:5,s:"パーティーの前に、飲み物を買っ（　）。",o:["ておきます","てみます","てしまいます","てあります"],a:0},
+{g:5,s:"この資料は後で使うので、捨てないで（　）ください。",o:["おいて","いって","しまって","みて"],a:0},
+{g:6,s:"風邪のときは、お風呂に入らない（　）いいですよ。",o:["ほうが","ことが","ときが","ながらが"],a:0},
+{g:6,s:"大事な話だから、電話より直接会って話し（　）いい。",o:["たほうが","るほうが","たがって","ることに"],a:0},
+{g:7,s:"天気予報によると、台風が近づいている（　）。",o:["そうだ","ようだった","らしくない","みたいで"],a:0},
+{g:7,s:"田中さんの話では、あの映画はとても面白い（　）。",o:["そうだ","そうに見える","がっている","ところだ"],a:0},
+{g:8,s:"昨日の夜、この辺で事故があった（　）。パトカーが来ていた。",o:["らしい","ような","そうに","つもり"],a:0},
+{g:8,s:"彼はまだ来ない。どうも道に迷っている（　）。",o:["らしい","ばかりだ","ことだ","ためだ"],a:0},
+{g:9,s:"このホールでは、千人がコンサートを楽しむ（　）。",o:["ことができる","ようになる","ことにする","ところだ"],a:0},
+{g:9,s:"昔はここから富士山を見る（　）が、今はビルが多くて見えない。",o:["ことができた","ことにした","ようにした","ばかりだった"],a:0},
+{g:10,s:"新しくできたラーメン屋に、今度行っ（　）。",o:["てみよう","ておこう","てしまおう","ていこう"],a:0},
+{g:10,s:"サイズが合うかどうか、その服を着（　）もいいですか。",o:["てみて","ておいて","てあって","てしまって"],a:0},
+{g:11,s:"音楽を聞き（　）勉強すると、あまり集中できない。",o:["ながら","ために","ように","のに"],a:0},
+{g:11,s:"弟はテレビを見（　）ご飯を食べている。",o:["ながら","ないで","ため","だけ"],a:0},
+{g:12,s:"体に良くないので、たばこをやめる（　）。",o:["ことにした","ことになった","ようになった","ところだった"],a:0},
+{g:12,s:"今年の夏休みは、国へ帰らないで日本で勉強する（　）。",o:["ことにした","ことになった","ものにした","ばかりにした"],a:0},
+{g:13,s:"電車の中で、隣の人に足を（　）。",o:["踏まれた","踏んだ","踏ませた","踏んでいた"],a:0},
+{g:13,s:"この歌は、世界中の人に（　）いる。",o:["歌われて","歌って","歌わせて","歌えて"],a:0},
+{g:14,s:"子どもが「遊びたい」と言ったので、公園で遊ばせて（　）。",o:["あげた","もらった","くれた","おいた"],a:0},
+{g:14,s:"娘がピアノを習いたがっているので、習わせて（　）つもりだ。",o:["あげる","もらう","くれる","いる"],a:0},
+{g:15,s:"毎日練習して、自転車に乗れる（　）。",o:["ようになった","ことにした","ようにした","ところだ"],a:0},
+{g:15,s:"日本に来てから、納豆が食べられる（　）。",o:["ようになった","ようにした","ことになった","つもりだ"],a:0},
+{g:16,s:"ゆうべはお酒を飲み（　）、今日は頭が痛い。",o:["すぎて","ながら","つづけ","おわって"],a:0},
+{g:16,s:"このズボンは、私には大き（　）。",o:["すぎる","そうだ","がる","らしい"],a:0},
+{g:17,s:"明日、天気がよけれ（　）、山に登ります。",o:["ば","ても","のに","から"],a:0},
+{g:17,s:"このボタンを押せ（　）、切符が出てきます。",o:["ば","ても","のに","ながら"],a:0},
+{g:18,s:"空が暗くなってきた。もうすぐ雨が降る（　）。",o:["でしょう","ましょう","ください","つもり"],a:0},
+{g:18,s:"この問題は難しいから、彼にも解けない（　）。",o:["でしょう","ください","ましょう","ところだ"],a:0},
+{g:19,s:"ボタンを押した。（　）、機械が急に動き出した。",o:["すると","ところが","それでも","または"],a:0},
+{g:19,s:"窓を開けた。（　）、冷たい風が入ってきた。",o:["すると","しかし","つまり","たとえば"],a:0}
+];
 
 /* ============================================================
    注音 / 段落渲染
@@ -370,7 +455,7 @@ function wordSpan(w){
   const inner = w.reading
     ? `<ruby>${esc(w.label)}<rt class="rt-t">${esc(w.reading)}</rt></ruby>`
     : esc(w.label);
-  return `<span class="word" tabindex="0" role="button" data-key="${esc(w.key)}" data-zh="${esc((vocab[w.key].zh||"").split("、")[0])}">${inner}</span>`;
+  return `<span class="word" tabindex="0" role="button" data-key="${esc(w.key)}">${inner}</span>`;
 }
 
 // 一段的乾淨純文字（去注音、佔位符換回本文形）— 用來對照語音檔 key
@@ -442,31 +527,30 @@ const LS={
   set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}}
 };
 let fgMode=LS.get("jp70-fg","all");     // all | target | none
-let wordMode="normal";                  // normal | blank | zh（不持久化，每次重來）
+let wordMode="normal";                  // normal | blank（不持久化）
 
 function applyFg(){
   document.body.classList.remove("fg-all","fg-target","fg-none");
   document.body.classList.add("fg-"+fgMode);
   // 切換注音時，把之前「點開」的字收回去，狀態才一致
-  document.querySelectorAll(".word.revealed").forEach(w=>{ if(!w.classList.contains("blank")&&!w.classList.contains("zh")) w.classList.remove("revealed"); });
+  document.querySelectorAll(".word.revealed").forEach(w=>{ if(!w.classList.contains("blank")) w.classList.remove("revealed"); });
   document.querySelectorAll('[data-fg]').forEach(b=>b.classList.toggle("active",b.dataset.fg===fgMode));
 }
 function applyWordMode(){
   document.querySelectorAll(".word").forEach(w=>{
-    w.classList.remove("blank","zh","revealed");
+    w.classList.remove("blank","revealed");
     if(wordMode==="blank") w.classList.add("blank");
-    else if(wordMode==="zh") w.classList.add("zh");
   });
   document.querySelectorAll('[data-wm]').forEach(b=>b.classList.toggle("active",b.dataset.wm===wordMode));
 }
 document.querySelectorAll('[data-fg]').forEach(b=>b.onclick=()=>{ fgMode=b.dataset.fg; LS.set("jp70-fg",fgMode); applyFg(); });
 document.querySelectorAll('[data-wm]').forEach(b=>b.onclick=()=>{ wordMode=b.dataset.wm; applyWordMode(); });
 
-/* 點單字：先揭露（遮字/中文/注音被藏時），再點才開詳解 */
+/* 點單字：先揭露（遮字／注音被藏時），再點才開詳解 */
 function activateWord(w){
   const hiddenReading = (fgMode!=="all") && w.querySelector("rt.rt-t") && !w.classList.contains("revealed");
-  if(wordMode==="blank" || wordMode==="zh"){
-    if(!w.classList.contains("revealed")){ w.classList.remove("blank","zh"); w.classList.add("revealed"); return; }
+  if(wordMode==="blank"){
+    if(!w.classList.contains("revealed")){ w.classList.remove("blank"); w.classList.add("revealed"); return; }
   } else if(hiddenReading){
     w.classList.add("revealed"); return;
   }
@@ -494,12 +578,16 @@ sheet.addEventListener("click",e=>{
   if(act==="close") modal.classList.remove("show");
   else if(act==="play-dict") play(currentCardKey && vocab[currentCardKey].dict);
   else if(act==="play-ex") play(currentCardKey && vocab[currentCardKey].ex);
-  else if(act==="status"){ setStatus(currentCardKey,b.dataset.val); }
+  else if(act==="rate"){ rateSrs(currentCardKey,b.dataset.val); }
 });
 let currentCardKey=null;
 function openCard(key){
   currentCardKey=key;
-  const v=vocab[key], st=(progressData()[key])||"";
+  const v=vocab[key], rec=srsData()[key];
+  const boxTxt = !rec ? "尚未練習"
+    : rec.box>=4 ? `熟練 · 下次 ${fmtDate(rec.due)}`
+    : rec.box>=1 ? `學習中（box ${rec.box}）· 下次 ${fmtDate(rec.due)}`
+    : "要加強 · 今日到期";
   sheet.innerHTML=`
     <button class="sheet-close" data-act="close">關閉</button>
     <h3 lang="ja">${esc(v.dict)}</h3>
@@ -511,34 +599,76 @@ function openCard(key){
       <button data-act="play-dict">▶ 播放單字</button>
       <button data-act="play-ex">▶ 播放例句</button>
     </div>
-    <div class="kv"><strong>熟悉度</strong>
+    <div class="kv"><strong>複習</strong>
+      <div class="small" style="margin-top:4px">${boxTxt}</div>
       <div class="actions">
-        <button class="status-btn good ${st==="good"?"active":""}" data-act="status" data-val="good">記得</button>
-        <button class="status-btn mid ${st==="mid"?"active":""}" data-act="status" data-val="mid">有點模糊</button>
-        <button class="status-btn bad ${st==="bad"?"active":""}" data-act="status" data-val="bad">不記得</button>
+        <button class="status-btn good" data-act="rate" data-val="good">記得</button>
+        <button class="status-btn mid" data-act="rate" data-val="mid">有點模糊</button>
+        <button class="status-btn bad" data-act="rate" data-val="bad">不記得</button>
       </div>
     </div>`;
   modal.classList.add("show");
 }
 
 /* ============================================================
-   進度
+   間隔複習（Leitner 精簡版）
+   jp70-srs = { key: {box:0-4, due:"YYYY-MM-DD", seen:"YYYY-MM-DD"} }
    ============================================================ */
-function progressData(){ try{return JSON.parse(localStorage.getItem("jp70-progress")||"{}")}catch{return{}} }
-function saveProgress(d){ try{localStorage.setItem("jp70-progress",JSON.stringify(d));}catch{} updateProgress(); }
-function setStatus(key,status){ const d=progressData(); d[key]=status; saveProgress(d); if(modal.classList.contains("show"))openCard(key); if(document.getElementById("quiz").classList.contains("active"))renderQuiz(); }
+const SRS_INTERVAL=[0,1,3,7,16];   // box -> 幾天後再出現
+function ymd(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function today(){ return ymd(new Date()); }                 // 用本地日期，避開 UTC 時區誤差
+function addDays(n){ const d=new Date(); d.setDate(d.getDate()+n); return ymd(d); }
+function fmtDate(s){ return s ? s.slice(5).replace("-","/") : "-"; }
+
+function srsData(){ try{return JSON.parse(localStorage.getItem("jp70-srs")||"{}")}catch{return{}} }
+function saveSrs(d){ try{localStorage.setItem("jp70-srs",JSON.stringify(d));}catch{} updateProgress(); }
+
+// 從舊的 jp70-progress 一次性搬過來
+function migrateProgress(){
+  if(localStorage.getItem("jp70-srs")) return;
+  let old={}; try{old=JSON.parse(localStorage.getItem("jp70-progress")||"{}")}catch{}
+  const seed={}, t=today();
+  for(const k in old){
+    if(!vocab[k]) continue;
+    const box = old[k]==="good"?3 : old[k]==="mid"?1 : 0;
+    seed[k]={box, due: addDays(SRS_INTERVAL[box]), seen:t};
+  }
+  if(Object.keys(seed).length) saveSrs(seed);
+}
+
+function rateSrs(key,rating){
+  const d=srsData(), cur=d[key]||{box:0}, t=today();
+  let box=cur.box|0;
+  if(rating==="good") box=Math.min(4,box+1);
+  else if(rating==="mid") box=Math.max(1,box);
+  else box=0;                       // bad
+  const days = rating==="bad" ? 0 : SRS_INTERVAL[box];
+  d[key]={box, due:addDays(days), seen:t};
+  saveSrs(d);
+  if(modal.classList.contains("show")) openCard(key);
+  if(document.getElementById("quiz").classList.contains("active")) afterQuizRate();
+}
+
+function dueKeys(){ const d=srsData(), t=today(); return Object.keys(vocab).filter(k=>d[k] && d[k].due<=t); }
+function newKeys(){ const d=srsData(); return Object.keys(vocab).filter(k=>!d[k]); }
 
 function updateProgress(){
-  const d=progressData(), keys=Object.keys(vocab);
-  const good=keys.filter(k=>d[k]==="good").length;
-  const mid=keys.filter(k=>d[k]==="mid").length;
-  const bad=keys.filter(k=>d[k]==="bad").length;
-  document.getElementById("progressText").textContent=`已熟悉 ${good} / ${keys.length}`;
-  document.getElementById("progressFill").style.width=`${good/keys.length*100}%`;
-  document.getElementById("statGood").textContent=good;
-  document.getElementById("statMid").textContent=mid;
-  document.getElementById("statBad").textContent=bad;
-  document.getElementById("statNew").textContent=keys.length-good-mid-bad;
+  const d=srsData(), keys=Object.keys(vocab), t=today();
+  let master=0, learning=0, weak=0, fresh=0, due=0;
+  for(const k of keys){
+    const r=d[k];
+    if(!r){ fresh++; continue; }
+    if(r.box>=4) master++;
+    else if(r.box>=1) learning++;
+    else weak++;
+    if(r.due<=t) due++;
+  }
+  document.getElementById("progressText").textContent=`熟練 ${master} / ${keys.length}${due?` · 今日複習 ${due}`:""}`;
+  document.getElementById("progressFill").style.width=`${master/keys.length*100}%`;
+  document.getElementById("statMaster").textContent=master;
+  document.getElementById("statLearning").textContent=learning;
+  document.getElementById("statDue").textContent=due;
+  document.getElementById("statNew").textContent=fresh;
 }
 
 /* ============================================================
@@ -555,10 +685,9 @@ document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
    ============================================================ */
 let quizKeys=Object.keys(vocab), qi=0, quizDir="jpzh", quizFilter="all";
 function getFilteredKeys(){
-  const d=progressData(), all=Object.keys(vocab);
-  if(quizFilter==="weak") return all.filter(k=>d[k]==="mid"||d[k]==="bad");
-  if(quizFilter==="new") return all.filter(k=>!d[k]);
-  return all;
+  if(quizFilter==="due") return dueKeys();
+  if(quizFilter==="new") return newKeys();
+  return Object.keys(vocab);
 }
 function shuffle(){ quizKeys=[...getFilteredKeys()].sort(()=>Math.random()-.5); qi=0; renderQuiz(); }
 function renderQuiz(){
@@ -567,8 +696,11 @@ function renderQuiz(){
   if(!quizKeys.length){
     document.getElementById("quizCount").textContent="0 / 0";
     const q0=document.getElementById("quizQuestion"); q0.lang=""; q0.textContent="目前沒有符合條件的單字";
-    document.getElementById("quizHint").textContent=quizFilter==="weak" ? "先把幾個單字標成「模糊」或「不記得」。" : "目前所有單字都已經標記過。";
-    ans.classList.remove("show"); ans.innerHTML=""; return;
+    document.getElementById("quizHint").textContent=
+      quizFilter==="due" ? "今天沒有到期的字，或還沒開始練。" : "所有單字都練過了。";
+    ans.classList.remove("show"); ans.innerHTML="";
+    document.querySelectorAll(".quiz-controls .status-btn").forEach(b=>b.classList.remove("active"));
+    return;
   }
   if(qi>=quizKeys.length) qi=0;
   const k=quizKeys[qi], v=vocab[k];
@@ -584,8 +716,21 @@ function renderQuiz(){
     ans.innerHTML=`<strong lang="ja">${esc(v.dict)}</strong><span lang="ja">（${esc(v.reading)}）</span><div class="example" lang="ja">${esc(v.ex)}</div>`;
   }
   ans.classList.remove("show");
-  const st=(progressData()[k])||"";
-  document.querySelectorAll(".quiz-controls .status-btn").forEach(b=>b.classList.toggle("active",b.dataset.status===st));
+  document.querySelectorAll(".quiz-controls .status-btn").forEach(b=>b.classList.remove("active"));
+}
+// 在測驗分頁按了記得／模糊／不記得之後
+function afterQuizRate(){
+  if(!quizKeys.length) return;
+  if(quizFilter==="all"){
+    qi=(qi+1)%quizKeys.length;
+  }else{
+    const k=quizKeys[qi];
+    quizKeys.splice(qi,1);                       // 已評分 → 離開本回合題庫
+    const rec=srsData()[k];
+    if(quizFilter==="due" && rec && rec.box===0) quizKeys.push(k);  // 不記得 → 稍後再出一次
+    if(qi>=quizKeys.length) qi=0;
+  }
+  renderQuiz();
 }
 document.getElementById("showAnswer").onclick=()=>document.getElementById("quizAnswer").classList.add("show");
 document.getElementById("nextQuiz").onclick=()=>{if(!quizKeys.length)return;qi=(qi+1)%quizKeys.length;renderQuiz()};
@@ -601,12 +746,14 @@ document.querySelectorAll("[data-qfilter]").forEach(b=>b.onclick=()=>{
 });
 document.querySelectorAll(".quiz-controls .status-btn").forEach(b=>b.onclick=()=>{
   if(!quizKeys.length)return;
-  const d=progressData(); d[quizKeys[qi]]=b.dataset.status; saveProgress(d);
-  if(quizFilter!=="all"){ quizKeys=getFilteredKeys(); if(qi>=quizKeys.length)qi=Math.max(0,quizKeys.length-1); }
-  renderQuiz();
+  document.getElementById("quizAnswer").classList.add("show");
+  rateSrs(quizKeys[qi], b.dataset.status);
 });
 document.getElementById("resetProgress").onclick=()=>{
-  if(confirm("確定要清除全部 70 個單字的學習紀錄嗎？")){ try{localStorage.removeItem("jp70-progress");}catch{} updateProgress(); renderQuiz(); }
+  if(confirm("確定要清除全部單字與文法的練習紀錄嗎？")){
+    ["jp70-progress","jp70-srs","jp70-gquiz"].forEach(k=>{try{localStorage.removeItem(k)}catch{}});
+    updateProgress(); shuffle(); if(typeof gqShuffle==="function") gqShuffle();
+  }
 };
 
 /* ============================================================
@@ -653,12 +800,82 @@ sheet.addEventListener("click",e=>{
 });
 
 /* ============================================================
+   文法：對照表 / 克漏字練習 切換
+   ============================================================ */
+document.querySelectorAll("[data-gview]").forEach(b=>b.onclick=()=>{
+  const v=b.dataset.gview;
+  document.querySelectorAll("[data-gview]").forEach(x=>x.classList.toggle("active",x===b));
+  document.getElementById("grammarTable").hidden = v!=="table";
+  document.getElementById("grammarQuizWrap").hidden = v!=="quiz";
+});
+
+/* ============================================================
+   文法克漏字
+   jp70-gquiz = { itemIndex: "ok" | "ng" }
+   ============================================================ */
+function gqData(){ try{return JSON.parse(localStorage.getItem("jp70-gquiz")||"{}")}catch{return{}} }
+function gqSave(d){ try{localStorage.setItem("jp70-gquiz",JSON.stringify(d));}catch{} }
+let gqOrder=[], gqi=0, gqFilter="all", gqAnswered=false;
+
+function gqPool(){
+  const idx=grammarQuiz.map((_,i)=>i);
+  if(gqFilter==="ng"){ const d=gqData(); return idx.filter(i=>d[i]==="ng"); }
+  return idx;
+}
+function gqShuffle(){ gqOrder=[...gqPool()].sort(()=>Math.random()-.5); gqi=0; gqRender(); }
+function gqRender(){
+  const info=document.getElementById("gqInfo");
+  const wrongCount=Object.values(gqData()).filter(x=>x==="ng").length;
+  info.textContent=`共 ${grammarQuiz.length} 題 · 答錯待複習 ${wrongCount} 題`;
+  const opts=document.getElementById("gqOpts"), expl=document.getElementById("gqExplain");
+  if(!gqOrder.length){
+    document.getElementById("gqCount").textContent="0 / 0";
+    document.getElementById("gqSentence").textContent = gqFilter==="ng" ? "目前沒有答錯的題目 🎉" : "沒有題目";
+    opts.innerHTML=""; expl.classList.remove("show"); return;
+  }
+  if(gqi>=gqOrder.length) gqi=0;
+  gqAnswered=false;
+  const item=grammarQuiz[gqOrder[gqi]];
+  document.getElementById("gqCount").textContent=`${gqi+1} / ${gqOrder.length}`;
+  document.getElementById("gqSentence").innerHTML=esc(item.s).replace("（　）",'<span class="gq-blank"></span>');
+  expl.classList.remove("show"); expl.innerHTML="";
+  opts.innerHTML=item.o.map((o,i)=>`<button data-oi="${i}" lang="ja">${esc(o)}</button>`).join("");
+}
+document.getElementById("gqOpts").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-oi]"); if(!b || gqAnswered) return;
+  gqAnswered=true;
+  const item=grammarQuiz[gqOrder[gqi]], pick=+b.dataset.oi, ok=pick===item.a;
+  const btns=document.getElementById("gqOpts").querySelectorAll("button");
+  btns.forEach((x,i)=>{ x.disabled=true; if(i===item.a) x.classList.add("correct"); else if(i===pick) x.classList.add("wrong"); });
+  document.getElementById("gqSentence").innerHTML=esc(item.s).replace("（　）",`<span class="gq-blank" style="border:0">${esc(item.o[item.a])}</span>`);
+  const g=ALLGRAMMAR[item.g];
+  const expl=document.getElementById("gqExplain");
+  expl.innerHTML=`<b lang="ja">${esc(g[0])}</b>　${esc(g[2])}<div class="small" style="margin-top:6px" lang="ja">本文：${esc(g[1])}</div>`;
+  expl.classList.add("show");
+  const d=gqData(); d[gqOrder[gqi]]=ok?"ok":"ng"; gqSave(d);
+  gqRenderInfoOnly();
+});
+function gqRenderInfoOnly(){
+  const wrongCount=Object.values(gqData()).filter(x=>x==="ng").length;
+  document.getElementById("gqInfo").textContent=`共 ${grammarQuiz.length} 題 · 答錯待複習 ${wrongCount} 題`;
+}
+document.getElementById("gqNext").onclick=()=>{ if(!gqOrder.length)return; gqi=(gqi+1)%gqOrder.length; gqRender(); };
+document.getElementById("gqShuffle").onclick=gqShuffle;
+document.querySelectorAll("[data-gqfilter]").forEach(b=>b.onclick=()=>{
+  gqFilter=b.dataset.gqfilter;
+  document.querySelectorAll("[data-gqfilter]").forEach(x=>x.classList.toggle("active",x===b));
+  gqShuffle();
+});
+
+/* ============================================================
    啟動
    ============================================================ */
+migrateProgress();
 applyFg();
 applyWordMode();
 updateProgress();
 shuffle();
+gqShuffle();
 </script>
 </body>
 </html>
