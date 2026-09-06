@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light dark" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%E3%81%82%3C/text%3E%3C/svg%3E" />
 <title>日文 70 單字學習器</title>
-<!-- 內部版本 v3：ruby 注音、MP3 語音、深色模式、RWD 精簡 -->
+<!-- 內部版本 v4：ruby 注音／MP3 語音／深色模式・RWD／SRS 間隔複習／文法克漏字／讀解・聽解 -->
 <style>
 :root{
   --bg:#f7f7f8; --card:#fff; --text:#1f2328; --muted:#6b7280; --line:#e5e7eb;
@@ -223,8 +223,8 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
     <div class="toolbar">
       <button class="active" id="quizJpZh">日→中</button>
       <button id="quizZhJp">中→日</button>
-      <button id="quizListen">🔊 聽力</button>
-      <button id="quizShuffle">重新洗牌</button>
+      <button id="quizListen">🔊聽力</button>
+      <button id="quizShuffle">洗牌</button>
     </div>
     <div class="filter-row" aria-label="測驗篩選">
       <button class="active" data-qfilter="all">全部 70 字</button>
@@ -407,26 +407,26 @@ const story2 = [
 const grammar1 = [
 ["～てしまう","倒れてしまいました","完成／帶有遺憾或意外語氣"],
 ["～なければならない","注射をしなければならない","必須～"],
-["～ことになる","入院することになりました","事情演變成～、被決定為～"],
-["～ように","良くなっているように見えました","像～一樣／傳話／祈願等"],
+["～ことになる","入院することになりました","事情演變成～、被決定為～（非自己決定）"],
+["～ように","「お酒は止めるように」と言われた","為了能～／請～（轉達指示）／但願～"],
 ["～てもらう・～てくれる","検査をしてくれました","請對方為自己做～／對方為我做～"],
 ["～ておく","本を棚に戻しておきました","事先做好、先保持某狀態"],
-["～た方がいい","休んだ方がいい","最好～"],
-["～そうだ","我慢していたそうです","聽說～"],
-["～らしい","おばあちゃんらしい","很有～的樣子"],
+["～た方がいい","休んだ方がいい","（勸告）最好～"],
+["～そうだ","我慢していたそうです","聽說～（傳聞。動詞普通形＋そうだ）"],
+["～らしい","外は雨が降っているらしい","好像～（憑見聞、傳聞推測）"],
 ["～ことができる","家に戻ることができました","能夠～"]
 ];
 const grammar2 = [
 ["～てみる","散歩してみました","試著做～看看"],
 ["～ながら","片付けながら","一邊～一邊～"],
-["～ことにする","渡すことにしました","自己決定～"],
+["～ことにする","送ることにしました","自己決定～"],
 ["受身形","忘れられた指輪","被～"],
-["使役＋てあげる","食べさせてあげました","讓對方做～"],
-["～ようになる","話すようになって","變得會～"],
+["使役＋てあげる／てもらう","子どもを遊ばせてあげた","（幫忙）讓某人做～"],
+["～ようになる","日本語が話せるようになった","（能力／習慣）變得～"],
 ["～すぎる","柔らかすぎる","太～了"],
-["～ば","天気がよければ","如果～"],
-["～でしょう","続くでしょう","應該會～吧"],
-["すると","すると～","於是、接著、結果"]
+["～ば","天気がよければ、山に登ります","如果～就～（條件）"],
+["～でしょう","明日は晴れるでしょう","應該會～吧（推測）"],
+["すると","すると、風が入ってきた","於是、接著（出現非預期的結果）"]
 ];
 const ALLGRAMMAR = [...grammar1, ...grammar2];   // 0-9 篇一、10-19 篇二
 
@@ -442,7 +442,7 @@ const grammarQuiz = [
 {g:3,s:"医者に、毎日薬を飲む（　）言われた。",o:["ように","そうに","ような","らしく"],a:0},
 {g:4,s:"道が分からなかったので、駅員さんに教えて（　）。",o:["もらった","あげた","おいた","みた"],a:0},
 {g:4,s:"弟が宿題を手伝って（　）から、早く終わった。",o:["くれた","もらった","あげた","いた"],a:0},
-{g:5,s:"パーティーの前に、飲み物を買っ（　）。",o:["ておきます","てみます","てしまいます","てあります"],a:0},
+{g:5,s:"パーティーの前に、飲み物を買っ（　）。",o:["ておきます","てみます","てしまいます","てきます"],a:0},
 {g:5,s:"この資料は後で使うので、捨てないで（　）ください。",o:["おいて","いって","しまって","みて"],a:0},
 {g:6,s:"風邪のときは、お風呂に入らない（　）いいですよ。",o:["ほうが","ことが","ときが","ながらが"],a:0},
 {g:6,s:"大事な話だから、電話より直接会って話し（　）いい。",o:["たほうが","るほうが","たがって","ることに"],a:0},
@@ -464,7 +464,7 @@ const grammarQuiz = [
 {g:14,s:"娘がピアノを習いたがっているので、習わせて（　）つもりだ。",o:["あげる","もらう","くれる","いる"],a:0},
 {g:15,s:"毎日練習して、自転車に乗れる（　）。",o:["ようになった","ことにした","ようにした","ところだ"],a:0},
 {g:15,s:"日本に来てから、納豆が食べられる（　）。",o:["ようになった","ようにした","ことになった","つもりだ"],a:0},
-{g:16,s:"ゆうべはお酒を飲み（　）、今日は頭が痛い。",o:["すぎて","ながら","つづけ","おわって"],a:0},
+{g:16,s:"ゆうべはお酒を飲み（　）、今日は頭が痛い。",o:["すぎて","ながら","たくて","だして"],a:0},
 {g:16,s:"このズボンは、私には大き（　）。",o:["すぎる","そうだ","がる","らしい"],a:0},
 {g:17,s:"明日、天気がよけれ（　）、山に登ります。",o:["ば","ても","のに","から"],a:0},
 {g:17,s:"このボタンを押せ（　）、切符が出てきます。",o:["ば","ても","のに","ながら"],a:0},
@@ -737,14 +737,13 @@ function newKeys(){ const d=srsData(); return Object.keys(vocab).filter(k=>!d[k]
 
 function updateProgress(){
   const d=srsData(), keys=Object.keys(vocab), t=today();
-  let master=0, learning=0, weak=0, fresh=0, due=0;
+  let master=0, learning=0, fresh=0, due=0;
   for(const k of keys){
     const r=d[k];
-    if(!r){ fresh++; continue; }
-    if(r.box>=4) master++;
-    else if(r.box>=1) learning++;
-    else weak++;
-    if(r.due<=t) due++;
+    if(!r){ fresh++; continue; }        // 沒練過
+    if(r.box>=4) master++;              // box 4 = 熟練
+    else learning++;                    // box 0-3（含答錯歸零）都算學習中
+    if(r.due<=t) due++;                 // 到期需複習（與上面重疊計算）
   }
   document.getElementById("progressText").textContent=`熟練 ${master} / ${keys.length}${due?` · 今日複習 ${due}`:""}`;
   document.getElementById("progressFill").style.width=`${master/keys.length*100}%`;
@@ -752,6 +751,7 @@ function updateProgress(){
   document.getElementById("statLearning").textContent=learning;
   document.getElementById("statDue").textContent=due;
   document.getElementById("statNew").textContent=fresh;
+  // master + learning + fresh 恆等於總數
 }
 
 /* ============================================================
@@ -799,9 +799,9 @@ function renderQuiz(){
     ans.innerHTML=`<strong lang="ja">${esc(v.dict)}</strong><span lang="ja">（${esc(v.reading)}）</span><div class="example" lang="ja">${esc(v.ex)}</div>`;
   }else{ // listen
     q.lang=""; q.innerHTML=`<button class="bigplay" id="listenPlay">▶ 播放</button>`;
-    document.getElementById("quizHint").textContent="聽日文發音，回想中文意思";
+    document.getElementById("quizHint").textContent="聽日文發音，回想中文意思（點下方按鈕可重播）";
     ans.innerHTML=`<strong lang="ja">${esc(v.dict)}</strong><span lang="ja">（${esc(v.reading)}）</span><div>${esc(v.zh)}</div><div class="example" lang="ja">${esc(v.ex)}</div>`;
-    setTimeout(()=>play(v.dict),150);   // 進題自動播一次
+    play(v.dict);   // 同步呼叫（一律經由點擊觸發），iOS 才不會擋自動播放
   }
   ans.classList.remove("show");
   document.querySelectorAll(".quiz-controls .status-btn").forEach(b=>b.classList.remove("active"));
