@@ -113,9 +113,13 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 .gq-opts button.correct{background:var(--good);border-color:#3aa564}
 .gq-opts button.wrong{background:var(--bad);border-color:#d06666}
 .gq-opts button:disabled{opacity:1}
-.gq-explain{display:none;margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--soft);font-size:14px}
+.gq-explain{display:none;margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--soft);font-size:14px;text-align:left}
 .gq-explain.show{display:block}
 .gq-explain b{font-size:15px}
+
+.playall{font-size:12px;font-weight:500;padding:5px 10px;min-height:0;border-radius:999px;vertical-align:middle}
+.playall.playing{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.bigplay{font-size:1.1rem;padding:14px 22px;border-radius:14px}
 .setrow{display:flex;align-items:center;gap:8px;margin:14px 0;flex-wrap:wrap}
 .setrow .lab{flex:0 0 100%;font-weight:600;margin-bottom:2px}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
@@ -171,23 +175,55 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 </div>
 
 <section id="stories" class="section active">
-  <div class="legend">點粗體目標單字看詳解；每段開頭的 ▶ 可聽整段。注音「重點字」＝只藏 70 個目標字的假名。</div>
-  <div class="tip">建議順序：先「注音·全部」聽讀 → 切「注音·重點字」練讀音 → 「單字·遮住單字」練回想 → 不熟的進單字測驗 → 文法分頁做克漏字。</div>
-  <article class="story-card">
-    <h2 lang="ja">篇一：父が倒れた日</h2>
-    <div class="story-text" id="story1" lang="ja"></div>
-  </article>
-  <article class="story-card">
-    <h2 lang="ja">篇二：引っ越しの一週間</h2>
-    <div class="story-text" id="story2" lang="ja"></div>
-  </article>
+  <div class="panel">
+    <div class="toolbar">
+      <button class="active" data-sview="read">閱讀</button>
+      <button data-sview="quiz">讀解測驗</button>
+    </div>
+  </div>
+
+  <div id="storyRead">
+    <div class="legend">點粗體目標單字看詳解；每段開頭的 ▶ 可聽整段。注音「重點字」＝只藏 70 個目標字的假名。</div>
+    <div class="tip">建議順序：先「注音·全部」聽讀 → 切「注音·重點字」練讀音 → 「單字·遮住單字」練回想 → 不熟的進單字測驗 → 文法克漏字 → 讀解測驗。</div>
+    <article class="story-card">
+      <h2 lang="ja">篇一：父が倒れた日 <button class="playall" data-story="1">▶ 全篇</button></h2>
+      <div class="story-text" id="story1" lang="ja"></div>
+    </article>
+    <article class="story-card">
+      <h2 lang="ja">篇二：引っ越しの一週間 <button class="playall" data-story="2">▶ 全篇</button></h2>
+      <div class="story-text" id="story2" lang="ja"></div>
+    </article>
+  </div>
+
+  <div id="storyQuizWrap" hidden>
+    <div class="panel">
+      <div class="filter-row" aria-label="讀解篩選">
+        <button class="active" data-rqfilter="all">全部</button>
+        <button data-rqfilter="s1">篇一</button>
+        <button data-rqfilter="s2">篇二</button>
+        <button data-rqfilter="ng">只練答錯的</button>
+      </div>
+      <div class="small" id="rqInfo" style="margin-top:8px"></div>
+    </div>
+    <div class="quiz-card">
+      <div class="small" id="rqCount">1 / 14</div>
+      <div class="gq-sentence" id="rqQuestion" lang="ja"></div>
+      <div class="gq-opts" id="rqOpts"></div>
+      <div class="gq-explain" id="rqExplain"></div>
+      <div class="quiz-controls">
+        <button id="rqNext">下一題</button>
+        <button id="rqShuffle">重新洗牌</button>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section id="quiz" class="section">
   <div class="panel">
     <div class="toolbar">
-      <button class="active" id="quizJpZh">日文 → 中文</button>
-      <button id="quizZhJp">中文 → 日文</button>
+      <button class="active" id="quizJpZh">日→中</button>
+      <button id="quizZhJp">中→日</button>
+      <button id="quizListen">🔊 聽力</button>
       <button id="quizShuffle">重新洗牌</button>
     </div>
     <div class="filter-row" aria-label="測驗篩選">
@@ -438,6 +474,24 @@ const grammarQuiz = [
 {g:19,s:"窓を開けた。（　）、冷たい風が入ってきた。",o:["すると","しかし","つまり","たとえば"],a:0}
 ];
 
+/* 讀解理解題：st=篇(1/2), q=問題, o=四選項, a=正解索引, ref=文章依據 */
+const reading = [
+{st:1,q:"父が倒れていたのはどこですか。",o:["自分の部屋の隅","病院のベッド","台所","庭"],a:0,ref:"父は自分の部屋の隅で倒れていました。"},
+{st:1,q:"父はなぜすぐに医者に行かなかったのですか。",o:["痛いのを我慢していたから","医者がきらいだから","時間がなかったから","薬を持っていたから"],a:0,ref:"「少し前から頭が痛かったんですね」…父は我慢していたそうです。"},
+{st:1,q:"父が「特別な部屋」に入れなかったのはなぜですか。",o:["空いていなかったから","料金が高すぎたから","父が普通の部屋を選んだから","予約していなかったから"],a:0,ref:"特別な部屋は空いていなかったので、父は普通の部屋に入ることになりました。"},
+{st:1,q:"「これはちょっとぬるいね」と言ったのは誰ですか。",o:["父","看護師","私","医者"],a:0,ref:"「これはちょっとぬるいね」と父は笑いました。"},
+{st:1,q:"「私」がお見舞いに持っていったものはどれですか。",o:["花と人形","本とお菓子","お粥と薬","枕と布団"],a:0,ref:"花屋で花を買って…小さい人形も一つ持っていくと"},
+{st:1,q:"医者は父にどんなことを言いましたか。",o:["お酒は当分やめるように","毎日運動するように","もう退院してよい","注射はもう要らない"],a:0,ref:"「お酒は当分止めるように」と言われ、なるべく休んだ方がいいとも言われました。"},
+{st:1,q:"一週間後の父の様子として正しいものはどれですか。",o:["大分元気になったが少し痩せた","まだ歩けなかった","前より悪くなった","すぐ仕事に戻った"],a:0,ref:"父は大分元気になりました。少し痩せてしまいましたが…"},
+{st:2,q:"引っ越しの日の天気はどうでしたか。",o:["晴れた","雨が降った","雪だった","一日中くもりだった"],a:0,ref:"天気予報では雨と言っていましたが、幸い晴れていました。"},
+{st:2,q:"新しい部屋の引き出しの奥に何がありましたか。",o:["前の人が忘れた指輪","お金","古い手紙","かぎ"],a:0,ref:"奥に前の人に忘れられた指輪が入っていました。"},
+{st:2,q:"隣の人について、正しいものはどれですか。",o:["学生時代に同じ学校にいた","「私」の高校の先生だった","「私」の親戚だった","この町で初めて会った人だ"],a:0,ref:"すると、聞いてみたら本当に学生時代に同じ学校にいたことが分かりました。"},
+{st:2,q:"カフェで「私」は何をしましたか。",o:["ケーキを注文して半分に切ってもらった","パンを全部買った","コーヒーだけ飲んだ","何も買わずに出た"],a:0,ref:"私はケーキを一つ注文して、店員さんに半分に切ってもらいました。"},
+{st:2,q:"水着を買うとき、店員は何をしてくれましたか。",o:["似合う色を選んでくれた","値段を安くしてくれた","別の店を紹介した","サイズを直してくれた"],a:0,ref:"店員さんは私に向いている色を選んでくれました。"},
+{st:2,q:"会計のとき、店員は何に気づきましたか。",o:["値段が普通の倍になっていた","「私」がお金を忘れた","水着が汚れていた","客を間違えた"],a:0,ref:"値段が普通の倍になっていることに店員さんが気づきました。"},
+{st:2,q:"家の床が汚れていたのは、なぜだと考えられますか。",o:["引っ越しの時に汚したから","猫が汚したから","雨が入ったから","一度も掃除しなかったから"],a:0,ref:"引っ越しの時に汚してしまったようです。"}
+];
+
 /* ============================================================
    注音 / 段落渲染
    ============================================================ */
@@ -494,29 +548,50 @@ if("speechSynthesis" in window){
 }
 fetch("../audio/manifest.json").then(r=>r.ok?r.json():{}).then(m=>{AUDIO=m||{}}).catch(()=>{});
 
-let curAudio=null;
-function speak(text){
-  if(!("speechSynthesis" in window)) return;
+let curAudio=null, seqStop=false;
+function stopAudio(){
+  seqStop=true;
+  try{ if(curAudio){ curAudio.pause(); curAudio=null; } }catch{}
+  try{ if("speechSynthesis" in window) speechSynthesis.cancel(); }catch{}
+  document.querySelectorAll(".playall.playing").forEach(b=>{ b.classList.remove("playing"); b.textContent="▶ 全篇"; });
+}
+function speak(text,onDone){
+  if(!("speechSynthesis" in window)){ onDone&&onDone(); return; }
   speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text);
   u.lang="ja-JP"; u.rate=.85;
   const ja=voicesCache.find(v=>/^ja(-|_)/i.test(v.lang));
   if(ja) u.voice=ja;
+  if(onDone) u.onend=u.onerror=()=>onDone();
   speechSynthesis.speak(u);
 }
-function play(text){
-  if(!text) return;
+// 播單段：有 onDone 時，播完會回呼（給「播放全篇」串接用）
+function play(text,onDone){
+  if(!text){ onDone&&onDone(); return; }
   const file=AUDIO[text];
   if(file && /^[0-9a-f]{8,40}\.mp3$/.test(file)){   // 只信任 hash 檔名
     try{
       if(curAudio){ curAudio.pause(); curAudio=null; }
       if("speechSynthesis" in window) speechSynthesis.cancel();
       curAudio=new Audio("../audio/"+file);
-      curAudio.play().catch(()=>speak(text));
+      if(onDone) curAudio.onended=()=>onDone();
+      curAudio.play().catch(()=>speak(text,onDone));
       return;
     }catch{}
   }
-  speak(text);
+  speak(text,onDone);
+}
+// 播放全篇：依序播完每一段
+function playStory(storyEl,btn){
+  const texts=[...storyEl.querySelectorAll(".play")].map(p=>p.dataset.audio);
+  seqStop=false;
+  btn.classList.add("playing"); btn.textContent="■ 停止";
+  let i=0;
+  const step=()=>{
+    if(seqStop || i>=texts.length){ btn.classList.remove("playing"); btn.textContent="▶ 全篇"; return; }
+    play(texts[i++], step);
+  };
+  step();
 }
 
 /* ============================================================
@@ -557,9 +632,17 @@ function activateWord(w){
   openCard(w.dataset.key);
 }
 document.addEventListener("click",e=>{
-  const p=e.target.closest(".play"); if(p){ play(p.dataset.audio); return; }
+  const pa=e.target.closest(".playall");
+  if(pa){
+    if(pa.classList.contains("playing")) stopAudio();
+    else { stopAudio(); playStory(document.getElementById("story"+pa.dataset.story), pa); }
+    return;
+  }
+  const p=e.target.closest(".play"); if(p){ stopAudio(); seqStop=false; play(p.dataset.audio); return; }
   const w=e.target.closest(".word"); if(w){ activateWord(w); }
 });
+// 切分頁時停掉正在播的全篇
+document.querySelectorAll(".tabs button, [data-sview]").forEach(b=>b.addEventListener("click",stopAudio));
 document.addEventListener("keydown",e=>{
   if((e.key==="Enter"||e.key===" ") && e.target.classList && e.target.classList.contains("word")){
     e.preventDefault(); activateWord(e.target);
@@ -710,10 +793,15 @@ function renderQuiz(){
     q.lang="ja"; q.textContent=v.dict;
     document.getElementById("quizHint").textContent=`讀音：${v.reading}`;
     ans.innerHTML=`<strong>${esc(v.zh)}</strong><div class="example" lang="ja">${esc(v.ex)}</div>`;
-  }else{
+  }else if(quizDir==="zhjp"){
     q.lang=""; q.textContent=v.zh.split("、")[0];
     document.getElementById("quizHint").textContent="請先回想日文，再顯示答案";
     ans.innerHTML=`<strong lang="ja">${esc(v.dict)}</strong><span lang="ja">（${esc(v.reading)}）</span><div class="example" lang="ja">${esc(v.ex)}</div>`;
+  }else{ // listen
+    q.lang=""; q.innerHTML=`<button class="bigplay" id="listenPlay">▶ 播放</button>`;
+    document.getElementById("quizHint").textContent="聽日文發音，回想中文意思";
+    ans.innerHTML=`<strong lang="ja">${esc(v.dict)}</strong><span lang="ja">（${esc(v.reading)}）</span><div>${esc(v.zh)}</div><div class="example" lang="ja">${esc(v.ex)}</div>`;
+    setTimeout(()=>play(v.dict),150);   // 進題自動播一次
   }
   ans.classList.remove("show");
   document.querySelectorAll(".quiz-controls .status-btn").forEach(b=>b.classList.remove("active"));
@@ -736,8 +824,18 @@ document.getElementById("showAnswer").onclick=()=>document.getElementById("quizA
 document.getElementById("nextQuiz").onclick=()=>{if(!quizKeys.length)return;qi=(qi+1)%quizKeys.length;renderQuiz()};
 document.getElementById("prevQuiz").onclick=()=>{if(!quizKeys.length)return;qi=(qi-1+quizKeys.length)%quizKeys.length;renderQuiz()};
 document.getElementById("quizShuffle").onclick=shuffle;
-document.getElementById("quizJpZh").onclick=()=>{quizDir="jpzh";document.getElementById("quizJpZh").classList.add("active");document.getElementById("quizZhJp").classList.remove("active");renderQuiz();};
-document.getElementById("quizZhJp").onclick=()=>{quizDir="zhjp";document.getElementById("quizZhJp").classList.add("active");document.getElementById("quizJpZh").classList.remove("active");renderQuiz();};
+function setQuizDir(dir){
+  quizDir=dir;
+  document.querySelectorAll("#quizJpZh,#quizZhJp,#quizListen").forEach(b=>b.classList.remove("active"));
+  document.getElementById(dir==="jpzh"?"quizJpZh":dir==="zhjp"?"quizZhJp":"quizListen").classList.add("active");
+  renderQuiz();
+}
+document.getElementById("quizJpZh").onclick=()=>setQuizDir("jpzh");
+document.getElementById("quizZhJp").onclick=()=>setQuizDir("zhjp");
+document.getElementById("quizListen").onclick=()=>setQuizDir("listen");
+document.getElementById("quizQuestion").addEventListener("click",e=>{
+  if(e.target.closest("#listenPlay") && quizKeys.length) play(vocab[quizKeys[qi]].dict);
+});
 document.getElementById("speakQuiz").onclick=()=>{ if(!quizKeys.length)return; play(vocab[quizKeys[qi]].dict); };
 document.querySelectorAll("[data-qfilter]").forEach(b=>b.onclick=()=>{
   quizFilter=b.dataset.qfilter;
@@ -750,9 +848,9 @@ document.querySelectorAll(".quiz-controls .status-btn").forEach(b=>b.onclick=()=
   rateSrs(quizKeys[qi], b.dataset.status);
 });
 document.getElementById("resetProgress").onclick=()=>{
-  if(confirm("確定要清除全部單字與文法的練習紀錄嗎？")){
-    ["jp70-progress","jp70-srs","jp70-gquiz"].forEach(k=>{try{localStorage.removeItem(k)}catch{}});
-    updateProgress(); shuffle(); if(typeof gqShuffle==="function") gqShuffle();
+  if(confirm("確定要清除全部單字、文法、讀解的練習紀錄嗎？")){
+    ["jp70-progress","jp70-srs","jp70-gquiz","jp70-rquiz"].forEach(k=>{try{localStorage.removeItem(k)}catch{}});
+    updateProgress(); shuffle(); gqShuffle(); rqShuffle();
   }
 };
 
@@ -868,6 +966,73 @@ document.querySelectorAll("[data-gqfilter]").forEach(b=>b.onclick=()=>{
 });
 
 /* ============================================================
+   故事：閱讀 / 讀解測驗 切換
+   ============================================================ */
+document.querySelectorAll("[data-sview]").forEach(b=>b.onclick=()=>{
+  const v=b.dataset.sview;
+  document.querySelectorAll("[data-sview]").forEach(x=>x.classList.toggle("active",x===b));
+  document.getElementById("storyRead").hidden = v!=="read";
+  document.getElementById("storyQuizWrap").hidden = v!=="quiz";
+});
+
+/* ============================================================
+   讀解理解題
+   jp70-rquiz = { itemIndex: "ok" | "ng" }
+   ============================================================ */
+function rqData(){ try{return JSON.parse(localStorage.getItem("jp70-rquiz")||"{}")}catch{return{}} }
+function rqSave(d){ try{localStorage.setItem("jp70-rquiz",JSON.stringify(d));}catch{} }
+let rqOrder=[], rqi=0, rqFilter="all", rqAnswered=false;
+
+function rqPool(){
+  const idx=reading.map((_,i)=>i), d=rqData();
+  if(rqFilter==="s1") return idx.filter(i=>reading[i].st===1);
+  if(rqFilter==="s2") return idx.filter(i=>reading[i].st===2);
+  if(rqFilter==="ng") return idx.filter(i=>d[i]==="ng");
+  return idx;
+}
+function rqShuffle(){ rqOrder=[...rqPool()].sort(()=>Math.random()-.5); rqi=0; rqRender(); }
+function rqInfo(){
+  const wrong=Object.values(rqData()).filter(x=>x==="ng").length;
+  document.getElementById("rqInfo").textContent=`共 ${reading.length} 題 · 答錯待複習 ${wrong} 題`;
+}
+function rqRender(){
+  rqInfo();
+  const opts=document.getElementById("rqOpts"), expl=document.getElementById("rqExplain");
+  if(!rqOrder.length){
+    document.getElementById("rqCount").textContent="0 / 0";
+    document.getElementById("rqQuestion").textContent = rqFilter==="ng" ? "目前沒有答錯的題目 🎉" : "沒有題目";
+    opts.innerHTML=""; expl.classList.remove("show"); return;
+  }
+  if(rqi>=rqOrder.length) rqi=0;
+  rqAnswered=false;
+  const item=reading[rqOrder[rqi]];
+  document.getElementById("rqCount").textContent=`${rqi+1} / ${rqOrder.length}　（篇${item.st==1?"一":"二"}）`;
+  document.getElementById("rqQuestion").textContent=item.q;
+  expl.classList.remove("show"); expl.innerHTML="";
+  opts.innerHTML=item.o.map((o,i)=>`<button data-oi="${i}" lang="ja">${esc(o)}</button>`).join("");
+}
+document.getElementById("rqOpts").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-oi]"); if(!b || rqAnswered) return;
+  rqAnswered=true;
+  const item=reading[rqOrder[rqi]], pick=+b.dataset.oi, ok=pick===item.a;
+  document.getElementById("rqOpts").querySelectorAll("button").forEach((x,i)=>{
+    x.disabled=true; if(i===item.a) x.classList.add("correct"); else if(i===pick) x.classList.add("wrong");
+  });
+  const expl=document.getElementById("rqExplain");
+  expl.innerHTML=`${ok?"✅ 正確":"❌ 正解："+esc(item.o[item.a])}<div class="small" style="margin-top:6px" lang="ja">文章：「${esc(item.ref)}」</div>`;
+  expl.classList.add("show");
+  const d=rqData(); d[rqOrder[rqi]]=ok?"ok":"ng"; rqSave(d);
+  rqInfo();
+});
+document.getElementById("rqNext").onclick=()=>{ if(!rqOrder.length)return; rqi=(rqi+1)%rqOrder.length; rqRender(); };
+document.getElementById("rqShuffle").onclick=rqShuffle;
+document.querySelectorAll("[data-rqfilter]").forEach(b=>b.onclick=()=>{
+  rqFilter=b.dataset.rqfilter;
+  document.querySelectorAll("[data-rqfilter]").forEach(x=>x.classList.toggle("active",x===b));
+  rqShuffle();
+});
+
+/* ============================================================
    啟動
    ============================================================ */
 migrateProgress();
@@ -876,6 +1041,7 @@ applyWordMode();
 updateProgress();
 shuffle();
 gqShuffle();
+rqShuffle();
 </script>
 </body>
 </html>
