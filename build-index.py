@@ -10,6 +10,7 @@
 import re
 import html
 import datetime
+import urllib.parse
 from pathlib import Path
 
 ROOT = Path(__file__).parent
@@ -44,7 +45,7 @@ def collect():
     items = []
     for f in files:
         items.append({
-            "href": f"lessons/{f.name}",
+            "href": "lessons/" + urllib.parse.quote(f.name),
             "title": read_title(f),
             "date": lesson_date(f),
         })

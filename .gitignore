@@ -1,6 +1,15 @@
 # macOS
 .DS_Store
 
-# 編輯器
+# 編輯器 / 工具
 .vscode/
 *.swp
+__pycache__/
+.claude/settings.local.json
+
+# Google Cloud TTS 金鑰（絕對不要進 git）
+tts-key.txt
+.env
+
+# 語音試聽暫存
+audio/_samples/
