@@ -1,0 +1,6 @@
+# macOS
+.DS_Store
+
+# 編輯器
+.vscode/
+*.swp

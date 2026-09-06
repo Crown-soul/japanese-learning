@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>日文 70 單字學習器 v2</title>
+<style>
+:root{
+  --bg:#f7f7f8; --card:#fff; --text:#1f2328; --muted:#6b7280; --line:#e5e7eb;
+  --accent:#111827; --soft:#eef2f7; --good:#eaf7ef; --warn:#fff7e6; --bad:#fff0f0;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Noto Sans JP",sans-serif;background:var(--bg);color:var(--text);line-height:1.75}
+.app{max-width:880px;margin:0 auto;padding:14px 14px 100px}
+header{position:sticky;top:0;z-index:10;background:rgba(247,247,248,.94);backdrop-filter:blur(10px);padding:12px 0 10px}
+h1{font-size:1.25rem;margin:0 0 10px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+button,.btn{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:11px 13px;min-height:44px;font-size:15px;cursor:pointer;touch-action:manipulation}
+button:focus-visible,.word:focus-visible{outline:3px solid #9ca3af;outline-offset:2px}
+button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+button:disabled{opacity:.45}
+.progress-wrap{margin-top:10px}
+.progressbar{height:8px;background:#e8eaed;border-radius:999px;overflow:hidden}
+.progressbar>div{height:100%;background:#3f4754;width:0}
+.progresstext{font-size:13px;color:var(--muted);margin-top:4px}
+.tabs{display:flex;gap:8px;margin:16px 0;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.section{display:none}.section.active{display:block}
+.story-card,.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+.story-card h2{margin-top:0;font-size:1.18rem}
+.story-text{font-size:18px}
+.story-text p{margin:0 0 1.15em}
+.word{font-weight:700;border-bottom:2px dotted #8b95a1;cursor:pointer;padding:1px 2px;border-radius:4px}.word:hover{background:#f2f4f7}
+.word.hidden-word,.word.zh-mode{display:inline-block;min-width:4em;text-align:center;background:var(--soft);border-radius:6px;border-bottom:0;padding:0 5px}
+.word.hidden-reading .reading{background:var(--soft);color:transparent;border-radius:4px;user-select:none}
+.reading{font-weight:500}
+.legend{font-size:13px;color:var(--muted);margin-bottom:14px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-end;z-index:30}
+.modal.show{display:flex}
+.sheet{width:100%;max-width:880px;margin:0 auto;background:#fff;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:78vh;overflow:auto}
+.sheet h3{margin:0 0 6px;font-size:1.4rem}
+.meta{color:var(--muted);font-size:14px}
+.kv{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.example{background:#f8fafc;border-radius:10px;padding:10px 12px;margin-top:8px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.status-btn.good.active{background:var(--good)}
+.status-btn.mid.active{background:var(--warn)}
+.status-btn.bad.active{background:var(--bad)}
+.quiz-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;text-align:center}
+.quiz-q{font-size:1.5rem;font-weight:700;margin:8px 0 16px}
+.quiz-hint{color:var(--muted);min-height:28px}
+.quiz-answer{display:none;margin-top:14px;padding:14px;border-radius:12px;background:#f8fafc}
+.quiz-answer.show{display:block}
+.quiz-controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.grammar table{width:100%;border-collapse:collapse;font-size:14px}
+.grammar th,.grammar td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;vertical-align:top}
+.small{font-size:13px;color:var(--muted)}
+.reset{margin-top:14px}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
+.stat b{display:block;font-size:16px}.stat span{font-size:12px;color:var(--muted)}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.tip{background:#f8fafc;border-left:4px solid #9ca3af;padding:10px 12px;border-radius:8px;margin:12px 0;font-size:14px}
+@media (max-width:520px){.stats{grid-template-columns:repeat(2,1fr)}}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+@media (min-width:700px){
+  .app{padding-top:20px}
+  .story-text{font-size:19px}
+  .sheet{border-radius:20px;margin-bottom:20px}
+  .modal{align-items:center}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <h1>日文 70 單字學習器</h1>
+  <div class="toolbar" id="modeButtons">
+    <button class="active" data-mode="read">閱讀</button>
+    <button data-mode="reading">遮假名</button>
+    <button data-mode="hide">遮單字</button>
+    <button data-mode="zh">中文提示</button>
+  </div>
+  <div class="progress-wrap">
+    <div class="progressbar" aria-label="學習進度"><div id="progressFill"></div></div>
+    <div class="progresstext" id="progressText">已熟悉 0 / 70</div>
+    <div class="stats">
+      <div class="stat"><b id="statGood">0</b><span>記得</span></div>
+      <div class="stat"><b id="statMid">0</b><span>模糊</span></div>
+      <div class="stat"><b id="statBad">0</b><span>不記得</span></div>
+      <div class="stat"><b id="statNew">70</b><span>未標記</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="active" data-tab="stories">故事</button>
+  <button data-tab="quiz">單字測驗</button>
+  <button data-tab="grammar">文法</button>
+</div>
+
+<section id="stories" class="section active">
+  <div class="legend">點擊粗體目標單字，可查看中文、讀音、詞性、辭書形、本文變化與例句。</div><div class="tip">建議順序：先用「遮假名」練讀音，再用「中文提示」做主動回想；真正不熟的字再進「單字測驗」集中複習。</div>
+  <article class="story-card">
+    <h2>篇一：父が倒れた日</h2>
+    <div class="story-text" id="story1"></div>
+  </article>
+  <article class="story-card">
+    <h2>篇二：引っ越しの一週間</h2>
+    <div class="story-text" id="story2"></div>
+  </article>
+</section>
+
+<section id="quiz" class="section">
+  <div class="panel">
+    <div class="toolbar">
+      <button class="active" id="quizJpZh">日文 → 中文</button>
+      <button id="quizZhJp">中文 → 日文</button>
+      <button id="quizShuffle">重新洗牌</button>
+    </div>
+    <div class="filter-row" aria-label="測驗篩選">
+      <button class="active" data-qfilter="all">全部 70 字</button>
+      <button data-qfilter="weak">只複習模糊／不記得</button>
+      <button data-qfilter="new">只看未標記</button>
+    </div>
+    <div class="small" id="filterInfo" style="margin-top:8px">目前題庫：70 字</div>
+  </div>
+  <div class="quiz-card">
+    <div class="small" id="quizCount">1 / 70</div>
+    <div class="quiz-q" id="quizQuestion"></div>
+    <div class="quiz-hint" id="quizHint"></div>
+    <button id="showAnswer">顯示答案</button>
+    <div class="quiz-answer" id="quizAnswer"></div>
+    <div class="quiz-controls">
+      <button class="status-btn good" data-status="good">記得</button>
+      <button class="status-btn mid" data-status="mid">有點模糊</button>
+      <button class="status-btn bad" data-status="bad">不記得</button>
+    </div>
+    <div class="quiz-controls">
+      <button id="prevQuiz">上一題</button>
+      <button id="speakQuiz">播放</button>
+      <button id="nextQuiz">下一題</button>
+    </div>
+  </div>
+</section>
+
+<section id="grammar" class="section grammar">
+  <div class="story-card">
+    <h2>篇一文法</h2>
+    <table><thead><tr><th>文法</th><th>例句</th><th>意思</th></tr></thead><tbody id="grammar1"></tbody></table>
+  </div>
+  <div class="story-card">
+    <h2>篇二文法</h2>
+    <table><thead><tr><th>文法</th><th>例句</th><th>意思</th></tr></thead><tbody id="grammar2"></tbody></table>
+  </div>
+  <button class="reset" id="resetProgress">重設學習紀錄</button>
+</section>
+</div>
+
+<div class="modal" id="modal">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<script>
+const vocab = {
+"倒れる":{reading:"たおれる",zh:"倒下、倒臥",pos:"自動詞",dict:"倒れる",form:"本文：倒れて（て形）",ex:"父が急に倒れてしまいました。"},
+"様子":{reading:"ようす",zh:"樣子、情況、狀態",pos:"名詞",dict:"様子",form:"様子",ex:"父の様子がおかしかったので、救急車を呼びました。"},
+"隅":{reading:"すみ",zh:"角落",pos:"名詞",dict:"隅",form:"隅",ex:"部屋の隅で倒れていました。"},
+"医者":{reading:"いしゃ",zh:"醫生",pos:"名詞",dict:"医者",form:"医者",ex:"医者さんがすぐに検査をしてくれました。"},
+"頭":{reading:"あたま",zh:"頭",pos:"名詞",dict:"頭",form:"頭",ex:"頭が痛かったんですね。"},
+"注射する":{reading:"ちゅうしゃする",zh:"打針、注射",pos:"サ變動詞",dict:"注射する",form:"本文：注射をする",ex:"注射をしなければならないと言われました。"},
+"特別":{reading:"とくべつ",zh:"特別",pos:"な形容詞／名詞",dict:"特別",form:"特別な部屋",ex:"特別な部屋は空いていませんでした。"},
+"支度":{reading:"したく",zh:"準備、整裝",pos:"名詞／サ變",dict:"支度する",form:"本文：支度をしました",ex:"入院の支度をしました。"},
+"用意する":{reading:"よういする",zh:"準備",pos:"サ變動詞",dict:"用意する",form:"本文：用意して（て形）",ex:"着替えや歯ブラシを用意しました。"},
+"炊く":{reading:"たく",zh:"煮、炊（飯）",pos:"他動詞",dict:"炊く",form:"本文：炊いて（て形）",ex:"お粥を炊いて持っていきました。"},
+"電灯":{reading:"でんとう",zh:"電燈",pos:"名詞",dict:"電灯",form:"電灯",ex:"病室の電灯がつきました。"},
+"つく":{reading:"つく",zh:"亮起、點著",pos:"自動詞",dict:"つく",form:"本文：つく",ex:"電灯がつく。"},
+"召し上がる":{reading:"めしあがる",zh:"吃、喝（尊敬語）",pos:"動詞",dict:"召し上がる",form:"本文：召し上がりますか",ex:"何を召し上がりますか。"},
+"温い":{reading:"ぬるい",zh:"微溫、不夠熱",pos:"い形容詞",dict:"温い",form:"温いスープ",ex:"これはちょっとぬるいね。"},
+"取り替える":{reading:"とりかえる",zh:"更換、替換",pos:"他動詞",dict:"取り替える",form:"本文：取り替えて（て形）",ex:"シーツを取り替えてくれました。"},
+"お見舞い":{reading:"おみまい",zh:"探病、慰問",pos:"名詞",dict:"お見舞い",form:"お見舞い",ex:"翌日、お見舞いに行きました。"},
+"花":{reading:"はな",zh:"花",pos:"名詞",dict:"花",form:"花",ex:"花屋で花を買いました。"},
+"瓶":{reading:"びん",zh:"瓶子",pos:"名詞",dict:"瓶",form:"瓶",ex:"病院の瓶に入れてあげました。"},
+"人形":{reading:"にんぎょう",zh:"人偶、娃娃",pos:"名詞",dict:"人形",form:"人形",ex:"小さい人形も持っていきました。"},
+"掃く":{reading:"はく",zh:"掃、清掃",pos:"他動詞",dict:"掃く",form:"本文：掃いて（て形）",ex:"看護師さんが床を掃いていました。"},
+"戻す":{reading:"もどす",zh:"放回、恢復原狀",pos:"他動詞",dict:"戻す",form:"本文：戻して（て形）",ex:"本を棚に戻しておきました。"},
+"苦い":{reading:"にがい",zh:"苦的",pos:"い形容詞",dict:"苦い",form:"本文：苦くて（て形）",ex:"薬はとても苦かったです。"},
+"塗る":{reading:"ぬる",zh:"塗、擦",pos:"他動詞",dict:"塗る",form:"本文：塗って（て形）",ex:"傷に薬を塗ってもらいました。"},
+"なくなる":{reading:"なくなる",zh:"消失、沒有了",pos:"自動詞",dict:"なくなる",form:"本文：なくなって",ex:"痛みは少しずつなくなっていきました。"},
+"残る":{reading:"のこる",zh:"剩下、殘留",pos:"自動詞",dict:"残る",form:"本文：残って（て形）",ex:"疲れは少し残っているようです。"},
+"止める":{reading:"やめる",zh:"停止、戒掉",pos:"他動詞",dict:"止める",form:"本文：止める",ex:"お酒は当分止めるように言われました。"},
+"なるべく":{reading:"なるべく",zh:"盡量、儘可能",pos:"副詞",dict:"なるべく",form:"なるべく",ex:"なるべく休んだ方がいいです。"},
+"なるほど":{reading:"なるほど",zh:"原來如此、的確",pos:"副詞",dict:"なるほど",form:"なるほど",ex:"なるほど、少し前から痛かったんですね。"},
+"電報":{reading:"でんぽう",zh:"電報",pos:"名詞",dict:"電報",form:"電報",ex:"おばあちゃんから電報が届きました。"},
+"大分":{reading:"だいぶ",zh:"相當、很大程度",pos:"副詞",dict:"大分",form:"大分",ex:"父は大分元気になりました。"},
+"痩せる":{reading:"やせる",zh:"變瘦",pos:"自動詞",dict:"痩せる",form:"本文：痩せて（て形）",ex:"少し痩せてしまいました。"},
+"予定":{reading:"よてい",zh:"預定、計畫",pos:"名詞",dict:"予定",form:"予定",ex:"来週、退院する予定です。"},
+"予約する":{reading:"よやくする",zh:"預約",pos:"サ變動詞",dict:"予約する",form:"本文：予約して（て形）",ex:"次の診察も予約しました。"},
+"戻る":{reading:"もどる",zh:"返回、回去",pos:"自動詞",dict:"戻る",form:"本文：戻る",ex:"家に戻ることができました。"},
+"息子":{reading:"むすこ",zh:"兒子",pos:"名詞",dict:"息子",form:"息子",ex:"息子の私は、本当に安心しました。"},
+
+"引っ越す":{reading:"ひっこす",zh:"搬家",pos:"自動詞",dict:"引っ越す",form:"本文：引っ越しました",ex:"新しい町に引っ越しました。"},
+"時代":{reading:"じだい",zh:"時代、時期",pos:"名詞",dict:"時代",form:"学生時代",ex:"学生時代に同じ学校にいたことが分かりました。"},
+"天気予報":{reading:"てんきよほう",zh:"天氣預報",pos:"名詞",dict:"天気予報",form:"天気予報",ex:"天気予報では雨と言っていました。"},
+"引き出し":{reading:"ひきだし",zh:"抽屜",pos:"名詞",dict:"引き出し",form:"引き出し",ex:"新しい部屋の引き出しを開くと…。"},
+"開く":{reading:"ひらく",zh:"打開、開啟",pos:"他動詞",dict:"開く",form:"本文：開く",ex:"引き出しを開くと、指輪が入っていました。"},
+"深い":{reading:"ふかい",zh:"深的",pos:"い形容詞",dict:"深い",form:"本文：深くて",ex:"引き出しはとても深かったです。"},
+"指輪":{reading:"ゆびわ",zh:"戒指",pos:"名詞",dict:"指輪",form:"指輪",ex:"奥に指輪が入っていました。"},
+"知り合う":{reading:"しりあう",zh:"認識、結識",pos:"自動詞",dict:"知り合う",form:"本文：知り合いました",ex:"隣の人と知り合いました。"},
+"似る":{reading:"にる",zh:"相似、像",pos:"自動詞",dict:"似る",form:"本文：似ている",ex:"高校の先生に似ている気がしました。"},
+"すると":{reading:"すると",zh:"於是、接著、結果",pos:"接續詞",dict:"すると",form:"すると",ex:"すると、聞いてみたら本当に同じ学校でした。"},
+"売店":{reading:"ばいてん",zh:"販賣部、小賣店",pos:"名詞",dict:"売店",form:"売店",ex:"近くの売店で食料品を買いました。"},
+"食料品":{reading:"しょくりょうひん",zh:"食品、食材",pos:"名詞",dict:"食料品",form:"食料品",ex:"売店で食料品を買いました。"},
+"店員":{reading:"てんいん",zh:"店員",pos:"名詞",dict:"店員",form:"店員",ex:"店員さんはとても親切でした。"},
+"布団":{reading:"ふとん",zh:"日式棉被、寢具",pos:"名詞",dict:"布団",form:"布団",ex:"新しい布団で早く寝ました。"},
+"まくら":{reading:"まくら",zh:"枕頭",pos:"名詞",dict:"まくら",form:"まくら",ex:"新しいまくらで寝ました。"},
+"散歩":{reading:"さんぽ",zh:"散步",pos:"名詞／サ變",dict:"散歩する",form:"本文：散歩して",ex:"近所を散歩してみました。"},
+"珍しい":{reading:"めずらしい",zh:"少見的、稀奇的",pos:"い形容詞",dict:"珍しい",form:"珍しいカフェ",ex:"珍しいカフェを見つけました。"},
+"回る":{reading:"まわる",zh:"轉、繞、逛",pos:"自動詞",dict:"回る",form:"本文：回って（て形）",ex:"店の中を回ってみました。"},
+"柔らかい":{reading:"やわらかい",zh:"柔軟的",pos:"い形容詞",dict:"柔らかい",form:"本文：柔らかすぎる",ex:"柔らかすぎるパンを売っていました。"},
+"注文する":{reading:"ちゅうもんする",zh:"點餐、訂購",pos:"サ變動詞",dict:"注文する",form:"本文：注文して",ex:"ケーキを一つ注文しました。"},
+"半分":{reading:"はんぶん",zh:"一半",pos:"名詞",dict:"半分",form:"半分",ex:"半分に切ってもらいました。"},
+"太い":{reading:"ふとい",zh:"粗的",pos:"い形容詞",dict:"太い",form:"太い木",ex:"道の太い木の下にコインがありました。"},
+"拾う":{reading:"ひろう",zh:"撿起",pos:"他動詞",dict:"拾う",form:"本文：拾いました",ex:"小さいコインを拾いました。"},
+"太る":{reading:"ふとる",zh:"變胖",pos:"自動詞",dict:"太る",form:"本文：太って",ex:"猫は少し太ってしまったみたいです。"},
+"水着":{reading:"みずぎ",zh:"泳衣",pos:"名詞",dict:"水着",form:"水着",ex:"水着を買いに行くことにしました。"},
+"向く":{reading:"むく",zh:"適合、朝向",pos:"自動詞",dict:"向く",form:"本文：向いている",ex:"私に向いている色を選んでくれました。"},
+"倍":{reading:"ばい",zh:"倍、倍數",pos:"名詞",dict:"倍",form:"倍",ex:"値段が普通の倍になっていました。"},
+"普通":{reading:"ふつう",zh:"普通、一般",pos:"名詞／な形容詞",dict:"普通",form:"普通",ex:"普通の道を歩いていました。"},
+"汚れる":{reading:"よごれる",zh:"變髒",pos:"自動詞",dict:"汚れる",form:"本文：汚れて",ex:"床が少し汚れていました。"},
+"汚す":{reading:"よごす",zh:"弄髒",pos:"他動詞",dict:"汚す",form:"本文：汚して",ex:"引っ越しの時に床を汚してしまいました。"},
+"剥く":{reading:"むく",zh:"剝皮",pos:"他動詞",dict:"剥く",form:"本文：剥いて（て形）",ex:"りんごの皮を剥いて食べました。"},
+"包む":{reading:"つつむ",zh:"包、包裹",pos:"他動詞",dict:"包む",form:"本文：包んで（て形）",ex:"プレゼントを丁寧に包みました。"},
+"別":{reading:"べつ",zh:"另外、不同",pos:"名詞／な形容詞",dict:"別",form:"別の箱",ex:"別の箱に入れました。"},
+"指":{reading:"ゆび",zh:"手指",pos:"名詞",dict:"指",form:"指",ex:"指でリボンを結びました。"},
+"日":{reading:"ひ",zh:"日子、天",pos:"名詞",dict:"日",form:"日",ex:"引っ越す日は朝から忙しかったです。"}
+};
+
+const S = (key,label,reading=null)=>`<span class="word" tabindex="0" role="button" data-key="${key}" data-label="${label}" data-reading="${reading||""}">${label}${reading?`<span class="reading">（${reading}）</span>`:""}</span>`;
+
+const story1 = [
+`先週（せんしゅう）の日曜日（にちようび）、家（いえ）で父（ちち）が急（きゅう）に${S("倒れる","倒れて","たおれて")}しまいました。父（ちち）の${S("様子","様子","ようす")}がおかしかったので、私（わたし）はすぐに救急車（きゅうきゅうしゃ）を呼（よ）びました。父（ちち）は自分（じぶん）の部屋（へや）の${S("隅","隅","すみ")}で倒（たお）れていました。`,
+`病院（びょういん）に着（つ）くと、${S("医者","医者","いしゃ")}さんがすぐに検査（けんさ）をしてくれました。「${S("なるほど","なるほど")}、少（すこ）し前（まえ）から${S("頭","頭","あたま")}が痛（いた）かったんですね」と医者（いしゃ）さんは言（い）いました。父（ちち）は我慢（がまん）していたそうです。今日（きょう）は${S("注射する","注射","ちゅうしゃ")}をしなければならないと言（い）われて、そのまましばらく入院（にゅういん）することになりました。`,
+`${S("特別","特別","とくべつ")}な部屋（へや）は空（あ）いていなかったので、父（ちち）は普通（ふつう）の部屋（へや）に入（はい）ることになりました。私（わたし）は一度（いちど）家（いえ）に戻（もど）って、入院（にゅういん）の${S("支度","支度","したく")}をしました。着替（きが）えや歯（は）ブラシを${S("用意する","用意","ようい")}して、家族（かぞく）は消化（しょうか）にいいお粥（かゆ）を${S("炊く","炊いて","たいて")}持（も）っていきました。`,
+`その夜（よる）、病室（びょうしつ）の${S("電灯","電灯","でんとう")}が${S("つく","つく")}と、父（ちち）の顔色（かおいろ）は少（すこ）し良（よ）くなっているように見（み）えました。看護師（かんごし）さんが「何（なに）を${S("召し上がる","召し上がり","めしあがり")}ますか」と優（やさ）しく聞（き）いてくれて、父（ちち）は${S("温い","温い","ぬるい")}スープを一口（ひとくち）飲（の）みました。「これはちょっとぬるいね」と父（ちち）は笑（わら）いました。看護師（かんごし）さんはベッドのシーツも${S("取り替える","取り替えて","とりかえて")}くれました。`,
+`翌日（よくじつ）、私（わたし）は${S("お見舞い","お見舞い","おみまい")}に行（い）きました。花屋（はなや）で${S("花","花","はな")}を買（か）って、病院（びょういん）の${S("瓶","瓶","びん")}に入（い）れてあげました。それから、小（ちい）さい${S("人形","人形","にんぎょう")}も一（ひと）つ持（も）っていくと、父（ちち）は子供（こども）みたいに喜（よろこ）んでくれました。看護師（かんごし）さんが部屋（へや）の床（ゆか）を${S("掃く","掃いて","はいて")}いる間（あいだ）、私（わたし）は読（よ）み終（お）わった本（ほん）を棚（たな）に${S("戻す","戻して","もどして")}おきました。`,
+`薬（くすり）はとても${S("苦い","苦くて","にがくて")}、父（ちち）はいつも顔（かお）をしかめていました。傷（きず）に薬（くすり）を${S("塗る","塗って","ぬって")}もらってから、痛（いた）みは少（すこ）しずつ${S("なくなる","なくなって")}いきました。ただ、疲（つか）れは少（すこ）し${S("残る","残って","のこって")}いるようで、医者（いしゃ）さんに「お酒（さけ）は当分（とうぶん）${S("止める","止める","やめる")}ように」と言（い）われ、${S("なるべく","なるべく")}休（やす）んだ方（ほう）がいいとも言（い）われました。`,
+`入院（にゅういん）している間（あいだ）、田舎（いなか）のおばあちゃんから${S("電報","電報","でんぽう")}が届（とど）きました。「早（はや）く元気（げんき）になりますように」と書（か）いてありました。`,
+`一週間後（いっしゅうかんご）、父（ちち）は${S("大分","大分","だいぶ")}元気（げんき）になりました。少（すこ）し${S("痩せる","痩せて","やせて")}しまいましたが、医者（いしゃ）さんに「来週（らいしゅう）、退院（たいいん）する${S("予定","予定","よてい")}です」と言（い）われました。次（つぎ）の診察（しんさつ）も${S("予約する","予約","よやく")}して、父（ちち）はやっと家（いえ）に${S("戻る","戻る","もどる")}ことができました。${S("息子","息子","むすこ")}の私（わたし）は、父（ちち）が元気（げんき）になった${S("様子","様子","ようす")}を見（み）て、本当（ほんとう）に安心（あんしん）しました。`
+];
+
+const story2 = [
+`先月（せんげつ）、私（わたし）は新（あたら）しい町（まち）に${S("引っ越す","引っ越し","ひっこし")}ました。${S("引っ越す","引っ越す","ひっこす")}${S("日","日","ひ")}は朝（あさ）から忙（いそが）しくて、${S("天気予報","天気予報","てんきよほう")}では雨（あめ）と言（い）っていましたが、幸（さいわ）い晴（は）れていました。`,
+`新（あたら）しい部屋（へや）の${S("引き出し","引き出し","ひきだし")}を${S("開く","開く","ひらく")}と、とても${S("深い","深くて","ふかくて")}、奥（おく）に前（まえ）の人（ひと）に忘（わす）れられた${S("指輪","指輪","ゆびわ")}が入（はい）っていました。`,
+`荷物（にもつ）を運（はこ）んでいる時（とき）、隣（となり）の人（ひと）と${S("知り合う","知り合いました","しりあいました")}。その人（ひと）は昔（むかし）、私（わたし）の高校（こうこう）の先生（せんせい）に${S("似る","似て","にて")}いる気（き）がしました。${S("すると","すると")}、聞（き）いてみたら本当（ほんとう）に学生${S("時代","時代","じだい")}に同（おな）じ学校（がっこう）にいたことが分（わ）かりました。`,
+`荷物（にもつ）を片付（かたづ）けながら、近（ちか）くの${S("売店","売店","ばいてん")}で${S("食料品","食料品","しょくりょうひん")}を買（か）いました。${S("店員","店員","てんいん")}さんはとても親切（しんせつ）でした。夜（よる）は疲（つか）れたので、新（あたら）しい${S("布団","布団","ふとん")}と${S("まくら","まくら")}で早（はや）く寝（ね）ました。`,
+`次（つぎ）の日（ひ）、近所（きんじょ）を${S("散歩","散歩","さんぽ")}してみました。普通（ふつう）の道（みち）を歩（ある）いていたら、${S("珍しい","珍しい","めずらしい")}カフェを見（み）つけました。店（みせ）の中（なか）を${S("回る","回って","まわって")}みると、大（おお）きくて${S("柔らかい","柔らかすぎる","やわらかすぎる")}パンを売（う）っていました。私（わたし）はケーキを一（ひと）つ${S("注文する","注文","ちゅうもん")}して、店員（てんいん）さんに${S("半分","半分","はんぶん")}に切（き）ってもらいました。`,
+`そこで、道（みち）の${S("太い","太い","ふとい")}木（き）の下（した）に小（ちい）さいコインが落（お）ちているのを${S("拾う","拾いました","ひろいました")}。隣（となり）の家（いえ）の猫（ねこ）は少（すこ）し${S("太る","太って","ふとって")}しまったみたいでした。`,
+`夏（なつ）が近（ちか）づいてきたので、${S("水着","水着","みずぎ")}を買（か）いに行（い）くことにしました。店員（てんいん）さんは私（わたし）に${S("向く","向いて","むいて")}いる色（いろ）を選（えら）んでくれました。会計（かいけい）の時（とき）、値段（ねだん）が${S("普通","普通","ふつう")}の${S("倍","倍","ばい")}になっていることに店員（てんいん）さんが気（き）づきました。`,
+`家（いえ）に帰（かえ）ると、床（ゆか）が少（すこ）し${S("汚れる","汚れて","よごれて")}いました。引（ひ）っ越（こ）しの時（とき）に${S("汚す","汚して","よごして")}しまったようです。拭（ふ）きながら、りんごの皮（かわ）を${S("剥く","剥いて","むいて")}食（た）べました。`,
+`最後（さいご）に、遠（とお）くに住（す）んでいる友達（ともだち）へ贈（おく）り物（もの）を送（おく）ることにしました。プレゼントを丁寧（ていねい）に${S("包む","包んで","つつんで")}、${S("別","別","べつ")}の箱（はこ）に入（い）れました。${S("指","指","ゆび")}でリボンを結（むす）びました。`
+];
+
+const grammar1 = [
+["～てしまう","倒れてしまいました","完成／帶有遺憾或意外語氣"],
+["～なければならない","注射をしなければならない","必須～"],
+["～ことになる","入院することになりました","事情演變成～、被決定為～"],
+["～ように","良くなっているように見えました","像～一樣／傳話／祈願等"],
+["～てもらう・～てくれる","検査をしてくれました","請對方為自己做～／對方為我做～"],
+["～ておく","本を棚に戻しておきました","事先做好、先保持某狀態"],
+["～た方がいい","休んだ方がいい","最好～"],
+["～そうだ","我慢していたそうです","聽說～"],
+["～らしい","おばあちゃんらしい","很有～的樣子"],
+["～ことができる","家に戻ることができました","能夠～"]
+];
+const grammar2 = [
+["～てみる","散歩してみました","試著做～看看"],
+["～ながら","片付けながら","一邊～一邊～"],
+["～ことにする","渡すことにしました","自己決定～"],
+["受身形","忘れられた指輪","被～"],
+["使役＋てあげる","食べさせてあげました","讓對方做～"],
+["～ようになる","話すようになって","變得會～"],
+["～すぎる","柔らかすぎる","太～了"],
+["～ば","天気がよければ","如果～"],
+["～でしょう","続くでしょう","應該會～吧"],
+["すると","すると～","於是、接著、結果"]
+];
+
+function renderStory(id, paras){ document.getElementById(id).innerHTML = paras.map(p=>`<p>${p}</p>`).join(""); }
+renderStory("story1",story1); renderStory("story2",story2);
+
+function fillGrammar(id,rows){
+  document.getElementById(id).innerHTML = rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("");
+}
+fillGrammar("grammar1",grammar1); fillGrammar("grammar2",grammar2);
+
+let mode="read";
+function wordNormalHTML(w){
+  const label=w.dataset.label, reading=w.dataset.reading;
+  return `${label}${reading?`<span class="reading">（${reading}）</span>`:""}`;
+}
+function renderWord(w){
+  const v=vocab[w.dataset.key];
+  w.classList.remove("hidden-word","hidden-reading","zh-mode");
+  if(w.dataset.revealed==="1" || mode==="read"){
+    w.innerHTML=wordNormalHTML(w);
+    return;
+  }
+  if(mode==="reading"){
+    w.innerHTML=wordNormalHTML(w);
+    w.classList.add("hidden-reading");
+  } else if(mode==="hide"){
+    w.textContent="＿＿＿＿";
+    w.classList.add("hidden-word");
+  } else if(mode==="zh"){
+    w.textContent=`【${v.zh.split("、")[0]}】`;
+    w.classList.add("zh-mode");
+  }
+}
+function applyMode(){
+  document.querySelectorAll(".word").forEach(w=>{w.dataset.revealed="0";renderWord(w);});
+}
+document.querySelectorAll("#modeButtons button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#modeButtons button").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active"); mode=b.dataset.mode; applyMode();
+});
+function activateWord(w){
+  if((mode==="hide"||mode==="zh") && w.dataset.revealed!=="1"){
+    w.dataset.revealed="1"; renderWord(w); return;
+  }
+  openCard(w.dataset.key);
+}
+document.addEventListener("click",e=>{
+  const w=e.target.closest(".word"); if(!w) return; activateWord(w);
+});
+document.addEventListener("keydown",e=>{
+  if((e.key==="Enter"||e.key===" ") && e.target.classList.contains("word")){
+    e.preventDefault(); activateWord(e.target);
+  }
+});
+
+const modal=document.getElementById("modal"), sheet=document.getElementById("sheet");
+modal.addEventListener("click",e=>{ if(e.target===modal) modal.classList.remove("show"); });
+
+function speak(text){
+  if(!("speechSynthesis" in window)){ alert("此瀏覽器不支援語音朗讀"); return; }
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang="ja-JP"; u.rate=.85;
+  const jaVoice=speechSynthesis.getVoices().find(v=>/^ja(-|_)/i.test(v.lang));
+  if(jaVoice) u.voice=jaVoice;
+  speechSynthesis.speak(u);
+}
+function progressData(){ try{return JSON.parse(localStorage.getItem("jp70-progress")||"{}")}catch{return{}}}
+function saveProgress(d){ localStorage.setItem("jp70-progress",JSON.stringify(d)); updateProgress(); }
+function openCard(key){
+  const v=vocab[key], d=progressData(), st=d[key]||"";
+  sheet.innerHTML=`
+    <button onclick="document.getElementById('modal').classList.remove('show')" style="float:right">關閉</button>
+    <h3>${v.dict}</h3>
+    <div class="meta">${v.reading}｜${v.pos}</div>
+    <div class="kv"><strong>中文</strong><div>${v.zh}</div></div>
+    <div class="kv"><strong>本文形式</strong><div>${v.form}</div></div>
+    <div class="kv"><strong>故事例句</strong><div class="example">${v.ex}</div></div>
+    <div class="actions">
+      <button onclick="speak('${v.dict.replaceAll("'","\\'")}')">播放單字</button>
+      <button onclick="speak('${v.ex.replaceAll("'","\\'")}')">播放例句</button>
+    </div>
+    <div class="kv"><strong>熟悉度</strong>
+      <div class="actions">
+        <button class="status-btn good ${st==="good"?"active":""}" onclick="setStatus('${key}','good')">記得</button>
+        <button class="status-btn mid ${st==="mid"?"active":""}" onclick="setStatus('${key}','mid')">有點模糊</button>
+        <button class="status-btn bad ${st==="bad"?"active":""}" onclick="setStatus('${key}','bad')">不記得</button>
+      </div>
+    </div>`;
+  modal.classList.add("show");
+}
+window.speak=speak;
+window.setStatus=(key,status)=>{
+  const d=progressData(); d[key]=status; saveProgress(d); openCard(key);
+};
+function updateProgress(){
+  const d=progressData(), keys=Object.keys(vocab);
+  const good=keys.filter(k=>d[k]==="good").length;
+  const mid=keys.filter(k=>d[k]==="mid").length;
+  const bad=keys.filter(k=>d[k]==="bad").length;
+  const fresh=keys.length-good-mid-bad;
+  document.getElementById("progressText").textContent=`已熟悉 ${good} / ${keys.length}`;
+  document.getElementById("progressFill").style.width=`${good/keys.length*100}%`;
+  document.getElementById("statGood").textContent=good;
+  document.getElementById("statMid").textContent=mid;
+  document.getElementById("statBad").textContent=bad;
+  document.getElementById("statNew").textContent=fresh;
+}
+updateProgress();
+applyMode();
+
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active"); document.getElementById(b.dataset.tab).classList.add("active");
+});
+
+let quizKeys=Object.keys(vocab), qi=0, quizDir="jpzh", quizFilter="all";
+function getFilteredKeys(){
+  const d=progressData(), all=Object.keys(vocab);
+  if(quizFilter==="weak") return all.filter(k=>d[k]==="mid"||d[k]==="bad");
+  if(quizFilter==="new") return all.filter(k=>!d[k]);
+  return all;
+}
+function shuffle(){
+  quizKeys=[...getFilteredKeys()].sort(()=>Math.random()-.5); qi=0; renderQuiz();
+}
+function renderQuiz(){
+  const ans=document.getElementById("quizAnswer");
+  document.getElementById("filterInfo").textContent=`目前題庫：${quizKeys.length} 字`;
+  if(!quizKeys.length){
+    document.getElementById("quizCount").textContent="0 / 0";
+    document.getElementById("quizQuestion").textContent="目前沒有符合條件的單字";
+    document.getElementById("quizHint").textContent=quizFilter==="weak" ? "先把幾個單字標成「模糊」或「不記得」，就會出現在這裡。" : "目前所有單字都已經標記過。";
+    ans.classList.remove("show"); ans.innerHTML="";
+    return;
+  }
+  const k=quizKeys[qi], v=vocab[k];
+  document.getElementById("quizCount").textContent=`${qi+1} / ${quizKeys.length}`;
+  if(quizDir==="jpzh"){
+    document.getElementById("quizQuestion").textContent=v.dict;
+    document.getElementById("quizHint").textContent=`讀音：${v.reading}`;
+    ans.innerHTML=`<strong>${v.zh}</strong><div class="example">${v.ex}</div>`;
+  }else{
+    document.getElementById("quizQuestion").textContent=v.zh.split("、")[0];
+    document.getElementById("quizHint").textContent="請先回想日文，再顯示答案";
+    ans.innerHTML=`<strong>${v.dict}</strong>（${v.reading}）<div class="example">${v.ex}</div>`;
+  }
+  ans.classList.remove("show");
+  const d=progressData(),st=d[k]||"";
+  document.querySelectorAll(".quiz-controls .status-btn").forEach(b=>b.classList.toggle("active",b.dataset.status===st));
+}
+document.getElementById("showAnswer").onclick=()=>document.getElementById("quizAnswer").classList.add("show");
+document.getElementById("nextQuiz").onclick=()=>{if(!quizKeys.length)return;qi=(qi+1)%quizKeys.length;renderQuiz()};
+document.getElementById("prevQuiz").onclick=()=>{if(!quizKeys.length)return;qi=(qi-1+quizKeys.length)%quizKeys.length;renderQuiz()};
+document.getElementById("quizShuffle").onclick=shuffle;
+document.getElementById("quizJpZh").onclick=()=>{
+  quizDir="jpzh"; document.getElementById("quizJpZh").classList.add("active"); document.getElementById("quizZhJp").classList.remove("active"); renderQuiz();
+};
+document.getElementById("quizZhJp").onclick=()=>{
+  quizDir="zhjp"; document.getElementById("quizZhJp").classList.add("active"); document.getElementById("quizJpZh").classList.remove("active"); renderQuiz();
+};
+document.getElementById("speakQuiz").onclick=()=>{ if(!quizKeys.length)return; const v=vocab[quizKeys[qi]]; speak(v.dict); };
+document.querySelectorAll("[data-qfilter]").forEach(b=>b.onclick=()=>{
+  quizFilter=b.dataset.qfilter;
+  document.querySelectorAll("[data-qfilter]").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  shuffle();
+});
+document.querySelectorAll(".quiz-controls .status-btn").forEach(b=>b.onclick=()=>{
+  if(!quizKeys.length)return;
+  const current=quizKeys[qi], d=progressData(); d[current]=b.dataset.status; saveProgress(d);
+  if(quizFilter!=="all"){ quizKeys=getFilteredKeys(); if(qi>=quizKeys.length) qi=Math.max(0,quizKeys.length-1); }
+  renderQuiz();
+});
+document.getElementById("resetProgress").onclick=()=>{
+  if(confirm("確定要清除全部 70 個單字的學習紀錄嗎？")){localStorage.removeItem("jp70-progress");updateProgress();renderQuiz();}
+};
+shuffle();
+</script>
+</body>
+</html>

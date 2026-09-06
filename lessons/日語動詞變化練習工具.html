@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日語動詞變化練習工具 - 最終加固版</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
+        /* 設定全域最小字體為 18px */
+        html, body, input, button, select, textarea {
+            font-size: 18px !important;
+            font-family: 'Noto Sans TC', 'Noto Sans JP', sans-serif;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fade-in 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+        // 核心單字庫 - 已經過二次校對，修正漢字形體(彈->弾, 讀->読, 寢->寝, 來->来)
+        const INITIAL_DATA = [
+            { id: 1, cn: "見面", jp: "会（あ）います", te: "会（あ）って", type: "verb", wrongCount: 0 },
+            { id: 2, cn: "洗", jp: "洗（あら）います", te: "洗（あら）って", type: "verb", wrongCount: 0 },
+            { id: 3, cn: "說", jp: "言（い）います", te: "言（い）って", type: "verb", wrongCount: 0 },
+            { id: 4, cn: "唱歌", jp: "歌（うた）います", te: "歌（うた）って", type: "verb", wrongCount: 0 },
+            { id: 5, cn: "吸/抽", jp: "吸（す）います", te: "吸（す）って", type: "verb", wrongCount: 0 },
+            { id: 6, cn: "使用", jp: "使（つか）います", te: "使（つか）って", type: "verb", wrongCount: 0 },
+            { id: 7, cn: "幫忙", jp: "手伝（てつだ）います", te: "手伝（てつだ）って", type: "verb", wrongCount: 0 },
+            { id: 8, cn: "買", jp: "買（か）います", te: "買（か）って", type: "verb", wrongCount: 0 },
+            { id: 9, cn: "等待", jp: "待（ま）ちます", te: "待（ま）って", type: "verb", wrongCount: 0 },
+            { id: 10, cn: "拿/提", jp: "持（も）ちます", te: "持（も）って", type: "verb", wrongCount: 0 },
+            { id: 11, cn: "站立", jp: "立（た）ちます", te: "立（た）って", type: "verb", wrongCount: 0 },
+            { id: 12, cn: "有/在(無生命)", jp: "あります", te: "あって", type: "verb", wrongCount: 0 },
+            { id: 13, cn: "製作", jp: "作（つく）ります", te: "作（つく）って", type: "verb", wrongCount: 0 },
+            { id: 14, cn: "切", jp: "切（き）ります", te: "切（き）って", type: "verb", wrongCount: 0 },
+            { id: 15, cn: "拿/取", jp: "取（と）ります", te: "取（と）って", type: "verb", wrongCount: 0 },
+            { id: 16, cn: "回家", jp: "帰（かえ）ります", te: "帰（かえ）って", type: "verb", wrongCount: 0 },
+            { id: 17, cn: "寄送", jp: "送（おく）ります", te: "送（おく）って", type: "verb", wrongCount: 0 },
+            { id: 18, cn: "拍照", jp: "撮（投）ります", te: "撮（と）って", type: "verb", wrongCount: 0 },
+            { id: 19, cn: "爬山", jp: "登（のぼ）ります", te: "登（のぼ）って", type: "verb", wrongCount: 0 },
+            { id: 20, cn: "明白/懂", jp: "わかります", te: "わかって", type: "verb", wrongCount: 0 },
+            { id: 21, cn: "寫", jp: "書（か）きます", te: "書（か）いて", type: "verb", wrongCount: 0 },
+            { id: 22, cn: "聽/問", jp: "聞（き）きます", te: "聞（き）いて", type: "verb", wrongCount: 0 },
+            { id: 23, cn: "工作", jp: "働（はたら）きます", te: "働（はたら）いて", type: "verb", wrongCount: 0 },
+            { id: 24, cn: "彈奏", jp: "弾（ひ）きます", te: "弾（ひ）いて", type: "verb", wrongCount: 0 },
+            { id: 25, cn: "去", jp: "行（い）きます", te: "行（い）って", type: "verb", wrongCount: 0 },
+            { id: 26, cn: "急忙", jp: "急（いそ）ぎます", te: "急（いそ）いで", type: "verb", wrongCount: 0 },
+            { id: 27, cn: "游泳", jp: "泳（およ）ぎます", te: "泳（およ）いで", type: "verb", wrongCount: 0 },
+            { id: 28, cn: "脫", jp: "脱（ぬ）ぎます", te: "脱（ぬ）いで", type: "verb", wrongCount: 0 },
+            { id: 29, cn: "死亡", jp: "死（し）にます", te: "死（し）んで", type: "verb", wrongCount: 0 },
+            { id: 30, cn: "玩", jp: "遊（あそ）びます", te: "遊（あそ）んで", type: "verb", wrongCount: 0 },
+            { id: 31, cn: "飛", jp: "飛（と）びます", te: "飛（と）んで", type: "verb", wrongCount: 0 },
+            { id: 32, cn: "喝", jp: "飲（の）みます", te: "飲（濃）んで", type: "verb", wrongCount: 0 },
+            { id: 33, cn: "讀", jp: "読（よ）みます", te: "読（よ）んで", type: "verb", wrongCount: 0 },
+            { id: 34, cn: "休息", jp: "休（やす）みます", te: "休（やす）んで", type: "verb", wrongCount: 0 },
+            { id: 35, cn: "借出", jp: "貸（か）します", te: "貸（か）して", type: "verb", wrongCount: 0 },
+            { id: 36, cn: "拿出", jp: "出（だ）します", te: "出（だ）して", type: "verb", wrongCount: 0 },
+            { id: 37, cn: "說話", jp: "話（はな）します", te: "話（はな）して", type: "verb", wrongCount: 0 },
+            { id: 38, cn: "放置", jp: "置（お）きます", te: "置（お）いて", type: "verb", wrongCount: 0 },
+            { id: 39, cn: "吃", jp: "食（た）べます", te: "食（た）べて", type: "verb", wrongCount: 0 },
+            { id: 40, cn: "起床", jp: "起（お）きます", te: "起（お）きて", type: "verb", wrongCount: 0 },
+            { id: 41, cn: "睡覺", jp: "寝（ね）ます", te: "寝（ね）て", type: "verb", wrongCount: 0 },
+            { id: 42, cn: "看", jp: "見（み）ます", te: "見（み）て", type: "verb", wrongCount: 0 },
+            { id: 43, cn: "教/告訴", jp: "教（おし）えます", te: "教（おし）えて", type: "verb", wrongCount: 0 },
+            { id: 44, cn: "借入", jp: "借（か）ります", te: "借（か）りて", type: "verb", wrongCount: 0 },
+            { id: 45, cn: "放入", jp: "入（い）れます", te: "入（い）れて", type: "verb", wrongCount: 0 },
+            { id: 46, cn: "打開", jp: "開（あ）けます", te: "開（あ）けて", type: "verb", wrongCount: 0 },
+            { id: 47, cn: "關閉", jp: "閉（し）めます", te: "閉（し）めて", type: "verb", wrongCount: 0 },
+            { id: 48, cn: "打電話", jp: "かけます", te: "かけて", type: "verb", wrongCount: 0 },
+            { id: 49, cn: "有/在(有生命)", jp: "います", te: "いて", type: "verb", wrongCount: 0 },
+            { id: 50, cn: "做", jp: "します", te: "して", type: "verb", wrongCount: 0 },
+            { id: 51, cn: "來", jp: "来（き）ます", te: "来（き）て", type: "verb", wrongCount: 0 },
+            { id: 52, cn: "打掃", jp: "掃除（そうじ）します", te: "掃除（そうじ）して", type: "verb", wrongCount: 0 },
+            { id: 53, cn: "學習", jp: "勉強（べんきょう）します", te: "勉強（べんきょう）して", type: "verb", wrongCount: 0 },
+            { id: 54, cn: "洗衣服", jp: "洗濯（せんたく）します", te: "洗濯（せんたく）して", type: "verb", wrongCount: 0 },
+            { id: 55, cn: "用餐", jp: "食事（しょくじ）します", te: "食事（しょくじ）して", type: "verb", wrongCount: 0 },
+            { id: 56, cn: "買東西", jp: "買（か）い物（もの）します", te: "買（か）い物（もの）して", type: "verb", wrongCount: 0 },
+            { id: 57, cn: "帶來", jp: "持（も）って来（き）ます", te: "持（も）って来（き）て", type: "verb", wrongCount: 0 },
+            { id: 58, cn: "帶去", jp: "持（も）って行（い）きます", te: "持（も）って行（い）って", type: "verb", wrongCount: 0 },
+        ];
+
+        const STORAGE_KEY = 'jp_verb_master_final_v11';
+
+        const App = () => {
+            const [words, setWords] = useState([]);
+            const [view, setView] = useState('quiz');
+            const [isInitialized, setIsInitialized] = useState(false);
+            const [formData, setFormData] = useState({ cn: '', jp: '', te: '', type: 'verb' });
+            const [currentQuestion, setCurrentQuestion] = useState(null);
+            const [userAnswer, setUserAnswer] = useState({ jp: '', te: '' });
+            const [feedback, setFeedback] = useState(null);
+            const [isAnswered, setIsAnswered] = useState(false);
+            const [lastEnterTime, setLastEnterTime] = useState(0);
+            const [isComposing, setIsComposing] = useState(false);
+            const [confirmModal, setConfirmModal] = useState({ show: false, title: '', action: null, secondaryAction: null, secondaryText: '' });
+            
+            const fileInputRef = useRef(null);
+
+            const stripFurigana = useCallback((text) => text ? text.replace(/（[^）]*）/g, '') : '', []);
+
+            useEffect(() => {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved && saved !== "[]") {
+                    setWords(JSON.parse(saved));
+                } else {
+                    setWords([...INITIAL_DATA]);
+                }
+                setIsInitialized(true);
+            }, []);
+
+            useEffect(() => {
+                if (isInitialized) {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
+                }
+            }, [words, isInitialized]);
+
+            const addWord = (e) => {
+                e.preventDefault();
+                if (!formData.cn || !formData.jp) return;
+                setWords(prev => [...prev, { ...formData, id: Date.now(), wrongCount: 0 }]);
+                setFormData({ cn: '', jp: '', te: '', type: 'verb' });
+            };
+
+            const deleteWord = useCallback((id) => {
+                setWords(prev => prev.filter(w => w.id !== id));
+            }, []);
+
+            const resetStatistics = () => {
+                setWords(prev => prev.map(w => ({ ...w, wrongCount: 0 })));
+                setConfirmModal({ show: false, title: '', action: null });
+            };
+
+            const restoreDefaults = () => {
+                setWords([...INITIAL_DATA]);
+                setConfirmModal({ show: false, title: '', action: null });
+            };
+
+            const downloadTemplate = () => {
+                const csvContent = "\uFEFF中文意思,日文原型,て形變化,單字類型(verb或other)\n見面,会（あ）います,会（あ）って,verb\n桌子,機（つくえ）,,other";
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "日語單字範本.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            const handleCsvImport = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const text = event.target.result;
+                    const rows = text.split(/\r?\n/).filter(row => row.trim() !== "");
+                    const newWords = rows.slice(1).map(row => {
+                        const cols = row.split(",");
+                        if (cols.length < 2) return null;
+                        return {
+                            id: Date.now() + Math.random(),
+                            cn: cols[0]?.trim() || "",
+                            jp: cols[1]?.trim() || "",
+                            te: cols[2]?.trim() || "",
+                            type: (cols[3]?.trim() === "other") ? "other" : "verb",
+                            wrongCount: 0
+                        };
+                    }).filter(w => w !== null && w.cn !== "" && w.jp !== "");
+
+                    if (newWords.length > 0) {
+                        setConfirmModal({
+                            show: true,
+                            title: `偵測到 ${newWords.length} 個單字，要如何處理？`,
+                            action: () => {
+                                setWords(prev => [...prev, ...newWords]);
+                                setConfirmModal({ show: false, title: '', action: null });
+                            },
+                            secondaryAction: () => {
+                                setWords(newWords);
+                                setConfirmModal({ show: false, title: '', action: null });
+                            },
+                            secondaryText: "覆蓋現有內容"
+                        });
+                    }
+                    e.target.value = null;
+                };
+                reader.readAsText(file);
+            };
+
+            const startQuiz = useCallback(() => {
+                if (words.length === 0) return;
+                const next = words[Math.floor(Math.random() * words.length)];
+                setCurrentQuestion(next);
+                setUserAnswer({ jp: '', te: '' });
+                setFeedback(null);
+                setIsAnswered(false);
+                setLastEnterTime(0);
+            }, [words]);
+
+            const checkAnswer = () => {
+                if (isAnswered || !currentQuestion) return;
+                const correctJp = stripFurigana(currentQuestion.jp).trim();
+                const correctTe = stripFurigana(currentQuestion.te).trim();
+                const isJpCorrect = userAnswer.jp.trim() === correctJp;
+                const isTeCorrect = currentQuestion.type === 'verb' ? userAnswer.te.trim() === correctTe : true;
+
+                if (isJpCorrect && isTeCorrect) {
+                    setFeedback({ type: 'success', msg: '答對了！非常優秀。' });
+                } else {
+                    setWords(prev => prev.map(w => w.id === currentQuestion.id ? { ...w, wrongCount: (w.wrongCount || 0) + 1 } : w));
+                    setFeedback({ type: 'error', msg: `正確答案：${currentQuestion.jp}${currentQuestion.type === 'verb' ? ' / ' + currentQuestion.te : ''}` });
+                }
+                setIsAnswered(true);
+            };
+
+            const handleKeyDown = (e) => {
+                if (isComposing) return;
+                if (e.key === 'Enter') {
+                    if (isAnswered) {
+                        startQuiz();
+                    } else {
+                        const now = Date.now();
+                        if (now - lastEnterTime < 500) {
+                            checkAnswer();
+                            setLastEnterTime(0);
+                        } else {
+                            setLastEnterTime(now);
+                        }
+                    }
+                }
+            };
+
+            const sortedWords = useMemo(() => 
+                [...words].sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)), 
+                [words]
+            );
+
+            return (
+                <div className="min-h-screen p-4 md:p-8 relative">
+                    {/* Modal */}
+                    {confirmModal.show && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl space-y-4">
+                                <h3 className="text-lg font-bold text-center text-slate-700 leading-relaxed">{confirmModal.title}</h3>
+                                <div className="space-y-2">
+                                    <button onClick={confirmModal.action} className="w-full py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700">
+                                        {confirmModal.secondaryText ? "附加到末端" : "確定執行"}
+                                    </button>
+                                    {confirmModal.secondaryAction && (
+                                        <button onClick={confirmModal.secondaryAction} className="w-full py-3 rounded-xl font-bold bg-rose-500 text-white hover:bg-rose-600">
+                                            {confirmModal.secondaryText}
+                                        </button>
+                                    )}
+                                    <button onClick={() => setConfirmModal({ show: false, title: '', action: null })} className="w-full py-3 rounded-xl font-bold bg-slate-100 text-slate-500">取消</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden relative">
+                        <div className="flex bg-slate-100 p-2">
+                            <button onClick={() => setView('quiz')} className={`flex-1 py-3 text-sm font-bold rounded-2xl transition-all ${view === 'quiz' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>測驗模式</button>
+                            <button onClick={() => setView('bank')} className={`flex-1 py-3 text-sm font-bold rounded-2xl transition-all ${view === 'bank' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>單字管理</button>
+                        </div>
+
+                        <div className="p-6 md:p-10">
+                            {view === 'quiz' ? (
+                                <div className="space-y-8 text-center">
+                                    {!currentQuestion ? (
+                                        <div className="py-20 space-y-6">
+                                            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto text-3xl text-blue-600 font-serif">あ</div>
+                                            <p className="text-slate-400 font-medium">單字庫準備就緒，共有 {words.length} 個題目</p>
+                                            <button onClick={startQuiz} className="bg-blue-600 text-white px-10 py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95">開始練習</button>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-8 animate-in">
+                                            <div>
+                                                <span className="text-xs font-bold text-blue-500 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-widest">請翻譯</span>
+                                                <h2 className="text-5xl font-black text-slate-800 mt-4 tracking-tight">{currentQuestion.cn}</h2>
+                                            </div>
+
+                                            <div className="space-y-4 max-w-sm mx-auto">
+                                                <div className="text-left">
+                                                    <label className="text-[12px] font-bold text-slate-400 ml-1 tracking-wider">ます形</label>
+                                                    <input autoFocus type="text" value={userAnswer.jp} disabled={isAnswered} onChange={e => setUserAnswer(prev => ({ ...prev, jp: e.target.value }))} onKeyDown={handleKeyDown} onCompositionStart={() => setIsComposing(true)} onCompositionEnd={() => setIsComposing(false)} className="w-full mt-1 px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none font-medium text-lg disabled:opacity-50" />
+                                                </div>
+                                                {currentQuestion.type === 'verb' && (
+                                                    <div className="text-left">
+                                                        <label className="text-[12px] font-bold text-slate-400 ml-1 tracking-wider">て形變化</label>
+                                                        <input type="text" value={userAnswer.te} disabled={isAnswered} onChange={e => setUserAnswer(prev => ({ ...prev, te: e.target.value }))} onKeyDown={handleKeyDown} onCompositionStart={() => setIsComposing(true)} onCompositionEnd={() => setIsComposing(false)} className="w-full mt-1 px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none font-medium text-lg disabled:opacity-50" />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {!isAnswered && (
+                                                <div className="space-y-2">
+                                                    <p className="text-[12px] text-slate-300 italic">完成後連按兩下 Enter 確認答案</p>
+                                                    <button onClick={checkAnswer} className="text-[12px] text-blue-400 hover:underline">我不會，查看解答 (計一次錯誤)</button>
+                                                </div>
+                                            )}
+
+                                            <div className="flex gap-3 justify-center">
+                                                <button onClick={isAnswered ? startQuiz : checkAnswer} className={`px-10 py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all ${isAnswered ? 'bg-blue-600 text-white shadow-blue-100' : 'bg-slate-800 text-white shadow-slate-100'}`}>
+                                                    {isAnswered ? '下一題' : '確認答案'}
+                                                </button>
+                                            </div>
+
+                                            {feedback && (
+                                                <div className={`p-5 rounded-2xl text-lg font-bold border-2 ${feedback.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
+                                                    {feedback.msg}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="space-y-10">
+                                    <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 space-y-4">
+                                        <h3 className="font-bold text-blue-700">批次匯入單字 (CSV)</h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            <button onClick={() => fileInputRef.current.click()} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition-all">選擇檔案匯入</button>
+                                            <button onClick={downloadTemplate} className="bg-white text-blue-600 border border-blue-200 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-50 transition-all">下載範本</button>
+                                            <input type="file" ref={fileInputRef} onChange={handleCsvImport} accept=".csv" className="hidden" />
+                                        </div>
+                                    </div>
+
+                                    <form onSubmit={addWord} className="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4">
+                                        <h3 className="font-bold text-slate-700">手動新增單字</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <input type="text" placeholder="中文" className="px-4 py-3 rounded-xl border border-slate-200 outline-none" value={formData.cn} onChange={e => setFormData({ ...formData, cn: e.target.value })} />
+                                            <input type="text" placeholder="ます形 (含讀音)" className="px-4 py-3 rounded-xl border border-slate-200 outline-none" value={formData.jp} onChange={e => setFormData({ ...formData, jp: e.target.value })} />
+                                        </div>
+                                        <div className="flex p-1 bg-slate-200 rounded-xl">
+                                            {['verb', 'other'].map(t => (
+                                                <button key={t} type="button" onClick={() => setFormData({ ...formData, type: t })} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${formData.type === t ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>
+                                                    {t === 'verb' ? '動詞' : '一般單字'}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {formData.type === 'verb' && <input type="text" placeholder="て形 (含讀音)" className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm outline-none" value={formData.te} onChange={e => setFormData({ ...formData, te: e.target.value })} />}
+                                        <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-all">儲存單字</button>
+                                    </form>
+
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-end px-1">
+                                            <div>
+                                                <h3 className="font-bold text-slate-800">清單管理</h3>
+                                                <p className="text-[12px] text-slate-400 mt-1 font-medium">目前存有 {words.length} 個單字</p>
+                                            </div>
+                                            <div className="flex gap-4">
+                                                <button onClick={() => setConfirmModal({ show: true, title: '要重置統計嗎？', action: resetStatistics })} className="text-[12px] text-slate-400 hover:text-blue-600 font-bold">統計歸零</button>
+                                                <button onClick={() => setConfirmModal({ show: true, title: '要恢復預設嗎？', action: restoreDefaults })} className="text-[12px] text-slate-400 hover:text-blue-600 font-bold">恢復預設</button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                            {sortedWords.map(w => (
+                                                <div key={w.id} className="group flex items-center justify-between p-5 bg-white border border-slate-100 rounded-2xl hover:border-blue-200 hover:shadow-lg transition-all">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2">
+                                                          <span className="font-black text-slate-700">{w.cn}</span>
+                                                          {w.wrongCount > 0 && <span className="bg-rose-100 text-rose-600 text-[12px] px-2 py-0.5 rounded-lg font-black">弱點 {w.wrongCount}</span>}
+                                                        </div>
+                                                        <div className="text-sm text-slate-400 mt-1 font-medium">{w.jp} {w.type === 'verb' && <span className="text-blue-500 font-bold">➔ {w.te}</span>}</div>
+                                                    </div>
+                                                    <button onClick={() => deleteWord(w.id)} className="text-slate-200 hover:text-rose-500 p-2 opacity-0 group-hover:opacity-100 transition-all">
+                                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
