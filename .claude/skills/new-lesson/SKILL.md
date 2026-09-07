@@ -108,7 +108,15 @@ python3 build-index.py
 ```
 確認新課以 `title` 出現在 `index.html`。
 
-## 步驟 11 — 自我檢核（逐項打勾，不過就修）
+## 步驟 11 — 自我檢核
+
+**先跑自動驗證**（會擋掉大部分結構錯誤）：
+```bash
+python3 validate-lessons.py <id>
+```
+沒過就照訊息修，過了再往下人工檢查。
+
+逐項打勾，不過就修：
 
 內容（對照 `docs/lesson-authoring.md`）：
 - [ ] 目標單字 40–80 個；每個在故事至少出現 1 次
@@ -132,6 +140,7 @@ python3 build-index.py
 ```bash
 ./publish.sh "新課程：【title】"
 ```
+（`validate-on-publish` hook 會在這裡再驗一次 JSON，沒過會擋下。）
 告訴使用者：Pages 1–2 分鐘後更新，總單字表會自動出現這課、首頁目錄多一個連結（顯示名＝故事標題）。
 
 ---

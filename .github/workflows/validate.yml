@@ -1,0 +1,27 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: JSON 合法性
+        run: |
+          for f in data/vocab.json data/lessons/*.json audio/manifest.json; do
+            [ -e "$f" ] || continue
+            python3 -m json.tool "$f" > /dev/null && echo "ok  $f"
+          done
+      - name: 引擎課內容驗證
+        run: python3 validate-lessons.py
+      - name: 目錄與現況一致（build-index 無 diff）
+        run: |
+          python3 build-index.py
+          git diff --exit-code index.html || (echo "index.html 過期，請本機跑 build-index.py 後 commit" && exit 1)

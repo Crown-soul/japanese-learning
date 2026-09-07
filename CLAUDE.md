@@ -53,9 +53,12 @@
 | 過去做了什麼（人看的，AI 不用載入） | `docs/changelog.md` |
 | 生成新課的完整步驟 | `.claude/skills/new-lesson/SKILL.md` |
 
-## Hook
+## 驗證與 Hook
 
-- `.claude/hooks/require-tts-key.sh`（PreToolUse/Bash）：偵測到 `generate-audio.py` 且沒有 `tts-key.txt`／`GOOGLE_TTS_API_KEY` 時，擋下執行並提醒放金鑰。其他指令一律放行。
+- **`python3 validate-lessons.py [<id>]`**：驗引擎課 JSON —— 合法性、欄位、`grammar.point` 在 `docs/n4-grammar.md`、`grammarQuiz.g` 索引、`reading.ref` 是內文子字串、目標單字都有出現在故事、薄殼 `<title>` 一致、vocab `reading` 全假名。**新課 publish 前一定要過。**
+- `.claude/hooks/require-tts-key.sh`（PreToolUse/Bash）：偵測到 `generate-audio.py` 但沒金鑰 → 擋下 + 提醒。
+- `.claude/hooks/validate-on-publish.sh`（PreToolUse/Bash）：偵測到 `publish.sh` → 先跑 `validate-lessons.py`，有錯就擋下並列出。
+- `.github/workflows/validate.yml`：push/PR 時跑 JSON 檢查 + `validate-lessons.py` + build-index 無 diff。
 
 ## 環境
 

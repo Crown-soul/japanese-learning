@@ -28,6 +28,8 @@ japanese-learning/
 ├── generate-audio.py          Google TTS 產語音 + prune 舊檔（需 tts-key.txt）
 ├── build-audio-check.py       產 audio-check.html
 ├── build-index.py             產 index.html
+├── validate-lessons.py        驗 data/lessons/*.json 與 vocab.json 一致性
+├── .github/workflows/validate.yml  push/PR 時跑驗證
 ├── try-voices.py              試聽多個語音（開發用）
 ├── publish.sh                 build-index → git add -A → commit → push
 ├── CLAUDE.md / docs/          AI 協作設定與知識

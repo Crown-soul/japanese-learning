@@ -29,6 +29,12 @@
   - `docs/n4-grammar.md`：N4 文法參考清單。`docs/` 其他：architecture / lesson-authoring / tts-notes / handoff-template / changelog。`CLAUDE.md`。
   - `.claude/skills/new-lesson/SKILL.md`：拍單字照片／貼單字 → 生成整課。
   - 舊課 `日文70單字學習器.html` 不遷移。
+  - 引擎修正：`play(v.dict)`（不是 reading，manifest key 是漢字）、注音 regex 對齊 `generate-audio.py`、`boot()` try/catch。
+  - `.claude/hooks/require-tts-key.sh`：沒金鑰時擋 `generate-audio.py`。
+- **JSON 自動驗證**：
+  - `validate-lessons.py`：驗合法性、`grammar.point` 在 `docs/n4-grammar.md`、`grammarQuiz.g` 索引、`reading.ref` 是內文子字串、目標單字都在故事出現、薄殼 `<title>` 一致、vocab `reading` 全假名。
+  - `.claude/hooks/validate-on-publish.sh`：`publish.sh` 前跑一次，有錯擋下。
+  - `.github/workflows/validate.yml`：push/PR 跑 JSON 檢查 + validate-lessons + build-index 無 diff。
 
 ## 已擱置
 
