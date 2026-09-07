@@ -13,3 +13,8 @@ tts-key.txt
 
 # 語音試聽暫存
 audio/_samples/
+
+# CI / 本機測試（headless console 檢查會裝 playwright）
+node_modules/
+package-lock.json
+package.json

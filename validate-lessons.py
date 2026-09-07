@@ -194,6 +194,33 @@ def check_vocab(vocab, only):
             err(tag, f"reading「{w['reading']}」不是純假名（引擎課單字卡用它合成）")
 
 
+def check_backlinks():
+    for html in sorted(LESSONS_HTML.glob("*.html")):
+        t = html.read_text(encoding="utf-8", errors="ignore")
+        if 'href="../"' not in t and "href='../'" not in t:
+            err(html.name, "缺「← 回目錄」連結（href=\"../\"）")
+
+
+def check_audio_coverage(files, vocab):
+    man_path = ROOT / "audio" / "manifest.json"
+    if not man_path.exists():
+        return
+    man = json.loads(man_path.read_text(encoding="utf-8"))
+    for path in files:
+        lid = path.stem
+        data = json.loads(path.read_text(encoding="utf-8"))
+        keys = set()
+        for w in vocab:
+            if lid in (w.get("lessons") or []):
+                keys.add(w.get("dict")); keys.add(w.get("ex"))
+        for s in data.get("stories", []):
+            for p in s.get("paragraphs", []):
+                keys.add(plain(p))
+        missing = [k for k in keys if k and k not in man]
+        if missing:
+            warn(lid, f"{len(missing)} 段還沒產語音（跑 generate-audio.py）：{missing[0][:20]}…")
+
+
 def main():
     only = sys.argv[1] if len(sys.argv) > 1 else None
     if not VOCAB.exists():
@@ -211,6 +238,8 @@ def main():
     for f in files:
         check_lesson(f, vocab, n4)
     check_vocab(vocab, only)
+    check_backlinks()
+    check_audio_coverage(files, vocab)
 
     for w in warns:
         print(f"⚠ {w}")
