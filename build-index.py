@@ -3,6 +3,12 @@
 掃描 lessons/ 資料夾裡的所有 .html 檔，
 自動產生首頁 index.html（目錄／索引）。
 
+日期規則（本機與 CI 要算出同一份，CI 才能檢查 index.html 沒過期）：
+  1. 檔名開頭 YYYY-MM-DD → 用它
+  2. 否則用該檔最後一次 commit 的日期（git log）
+  3. 有未提交變更／不在 git 裡 → 用檔案 mtime（通常＝今天）
+「最後更新」= 所有課程日期的最大值，不是執行當天。
+
 用法：
     python3 build-index.py
 """
@@ -10,6 +16,7 @@
 import re
 import html
 import datetime
+import subprocess
 import urllib.parse
 from pathlib import Path
 
@@ -29,6 +36,21 @@ def read_title(path: Path) -> str:
     return path.stem
 
 
+def git_commit_date(path: Path):
+    """檔案最後一次 commit 的日期（YYYY-MM-DD）。
+    有未提交的變更、或不在 git 裡 → 回 None（呼叫端改用 mtime）。
+    這樣本機與 CI 算出來的日期一致，index.html 才不會每天／每台機器都不同。"""
+    try:
+        rel = str(path.relative_to(ROOT))
+        run = lambda *a: subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True, timeout=10).stdout.strip()
+        if run("status", "--porcelain", "--", rel):
+            return None
+        out = run("log", "-1", "--format=%cs", "--", rel)
+        return datetime.date.fromisoformat(out) if out else None
+    except Exception:
+        return None
+
+
 def lesson_date(path: Path) -> datetime.date:
     m = DATE_PREFIX_RE.match(path.stem)
     if m:
@@ -36,8 +58,10 @@ def lesson_date(path: Path) -> datetime.date:
             return datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
         except ValueError:
             pass
-    ts = path.stat().st_mtime
-    return datetime.date.fromtimestamp(ts)
+    d = git_commit_date(path)
+    if d:
+        return d
+    return datetime.date.fromtimestamp(path.stat().st_mtime)
 
 
 def collect():
@@ -107,7 +131,7 @@ def main():
     )
     page = PAGE.format(
         count=len(items),
-        updated=datetime.date.today().isoformat(),
+        updated=(max(it["date"] for it in items) if items else datetime.date.today()).isoformat(),
         rows=rows,
     )
     OUTPUT.write_text(page, encoding="utf-8")

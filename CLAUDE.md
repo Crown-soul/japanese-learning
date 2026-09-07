@@ -49,18 +49,18 @@
 | 引擎課 JSON schema、故事標記、樣式/RWD 規則、驗收標準 | `docs/lesson-authoring.md` |
 | N4 文法點（skill 只能從這裡挑） | `docs/n4-grammar.md` |
 | TTS 金鑰、發音修正機制、已知誤讀 | `docs/tts-notes.md` |
-| 任務中途交接 | `docs/handoff-template.md` |
+| 任務中途交接（範本；實際交接文件不進 repo） | `docs/handoff-template.md` |
 | 過去做了什麼（人看的，AI 不用載入） | `docs/changelog.md` |
 | 生成新課的完整步驟 | `.claude/skills/new-lesson/SKILL.md` |
 
 ## 驗證與 Hook
 
 - **`python3 validate-lessons.py [<id>]`**：驗引擎課 JSON —— 合法性、欄位、`grammar.point` 在 `docs/n4-grammar.md`、`grammarQuiz.g` 索引、`reading.ref` 是內文子字串、目標單字都有出現在故事、薄殼 `<title>`/`data-lesson` 一致、vocab `reading` 全假名、**所有 `lessons/*.html` 有 `← 回目錄`**、音檔是否已產（warn）。**新課 publish 前一定要過。**
-- `.claude/hooks/require-tts-key.sh`（PreToolUse/Bash）：偵測到 `generate-audio.py` 但沒金鑰 → 擋下 + 提醒。
-- `.claude/hooks/validate-on-publish.sh`（PreToolUse/Bash）：偵測到 `publish.sh` → 先跑 `validate-lessons.py`，有錯就擋下並列出。
-- `.claude/hooks/check-backlinks.sh`（Stop）：Claude 回完話後掃 `lessons/*.html` 有沒有漏 `← 回目錄`（只提醒）。
+- `.claude/hooks/require-tts-key.sh`（PreToolUse/Bash）：偵測到**執行** `python3 generate-audio.py` 但沒金鑰 → 擋下 + 提醒（cat/grep/sed 它不會觸發）。
+- `.claude/hooks/validate-on-publish.sh`（PreToolUse/Bash）：偵測到**執行** `./publish.sh` → 先跑 `validate-lessons.py`，有錯就擋下並列出。
+- `.claude/hooks/check-backlinks.sh`（Stop）：Claude 回完話後掃 `lessons/*.html` 有沒有漏 `← 回目錄`（只提醒；引擎課薄殼由引擎注入，視為已有）。
 - `.github/workflows/validate.yml`：push/PR 跑 JSON 檢查 + `node --check assets/*.js` + `validate-lessons.py` + build-index 無 diff + `check-console.mjs`（headless Chromium 開每課、抓 console error）。
-- AI 協作設定的完整盤點見 `docs/ai-setup-audit.md`；目前這一棒的交接見 `docs/handoff-current.md`。
+- `build-index.py` 的日期用各檔**最後 commit 日**（未提交的才用 mtime），本機與 CI 一致；「最後更新」= 各課日期最大值。
 
 ## 環境
 

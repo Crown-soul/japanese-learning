@@ -197,8 +197,12 @@ def check_vocab(vocab, only):
 def check_backlinks():
     for html in sorted(LESSONS_HTML.glob("*.html")):
         t = html.read_text(encoding="utf-8", errors="ignore")
-        if 'href="../"' not in t and "href='../'" not in t:
-            err(html.name, "缺「← 回目錄」連結（href=\"../\"）")
+        if 'href="../"' in t or "href='../'" in t:
+            continue
+        # 引擎課薄殼：回目錄連結由 assets/lesson-engine.js 的 shell() 注入，HTML 本身沒有
+        if "data-lesson=" in t and "lesson-engine.js" in t:
+            continue
+        err(html.name, "缺「← 回目錄」連結（href=\"../\"）")
 
 
 def check_audio_coverage(files, vocab):

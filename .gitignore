@@ -7,9 +7,13 @@
 __pycache__/
 .claude/settings.local.json
 
-# Google Cloud TTS 金鑰（絕對不要進 git）
+# Google Cloud TTS 金鑰（絕對不要進 git）—— 連備份／改名版本一起擋
 tts-key.txt
+tts-key.txt.*
+tts-key*.txt
 .env
+.env.*
+*.bak
 
 # 語音試聽暫存
 audio/_samples/

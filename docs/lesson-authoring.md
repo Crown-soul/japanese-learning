@@ -35,7 +35,7 @@
 
 - `stories`：1–3 篇。`stories[].title` 引擎會顯示在 `<h2>`；省略則顯示「篇N」。
 - `grammar`：對照表用。`n4ref` 必填、來源見 `docs/n4-grammar.md`。
-- `grammarQuiz[].g`：index 進 `grammar[]`（答完顯示該文法的說明）。`s` 一定含全形空格 `（　）`。`a` 是 `o` 的正解索引。
+- `grammarQuiz[].g`：index 進 `grammar[]`（答完顯示該文法的說明）。`s` 一定含全形空格 `（　）`。`a` 是 `o` 的正解索引。干擾項優先取該文法點在 `docs/n4-grammar.md` 的「對比：」欄；沒有對比欄才用「同類但語意不合」的。干擾項不得使用清單外文法。
 - `reading[].st`：故事序號（1 起）。`ref` 是文章依據句，答完會秀。
 
 ## 故事段落標記

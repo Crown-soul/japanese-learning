@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # build-index.py 用 git log 算各課日期，要完整歷史
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"

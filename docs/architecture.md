@@ -29,7 +29,8 @@ japanese-learning/
 ├── build-audio-check.py       產 audio-check.html
 ├── build-index.py             產 index.html
 ├── validate-lessons.py        驗 data/lessons/*.json 與 vocab.json 一致性
-├── .github/workflows/validate.yml  push/PR 時跑驗證
+├── .github/workflows/validate.yml  push/PR 時跑驗證（含 check-console.mjs headless 檢查）
+├── .claude/                   settings.json（hook 註冊）、hooks/、skills/new-lesson/、launch.json（本機預覽）
 ├── try-voices.py              試聽多個語音（開發用）
 ├── publish.sh                 build-index → git add -A → commit → push
 ├── CLAUDE.md / docs/          AI 協作設定與知識

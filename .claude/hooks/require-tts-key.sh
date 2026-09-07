@@ -1,8 +1,9 @@
 #!/bin/sh
-# PreToolUse(Bash) hook：跑 generate-audio.py 之前確認 Google TTS 金鑰在，
-# 沒有就擋下這次執行並提醒放金鑰。其他指令一律放行。
+# PreToolUse(Bash) hook：「執行」generate-audio.py 之前確認 Google TTS 金鑰在，
+# 沒有就擋下這次執行並提醒放金鑰。
+# 只攔真的在跑它的指令（python3 generate-audio.py）；cat / grep / sed 它的內容一律放行。
 input=$(cat 2>/dev/null)
-echo "$input" | grep -q "generate-audio\.py" || exit 0
+echo "$input" | grep -Eq 'python[0-9.]* +([^ "]*/)?generate-audio\.py' || exit 0
 
 root="${CLAUDE_PROJECT_DIR:-.}"
 [ -n "${GOOGLE_TTS_API_KEY:-}" ] && exit 0
