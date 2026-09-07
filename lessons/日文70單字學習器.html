@@ -170,6 +170,7 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 
 <div class="tabs">
   <button class="active" data-tab="stories">故事</button>
+  <button data-tab="vocabtable">單字表</button>
   <button data-tab="quiz">單字測驗</button>
   <button data-tab="grammar">文法</button>
 </div>
@@ -293,87 +294,26 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 
   <button class="reset" id="resetProgress">重設學習紀錄</button>
 </section>
+
+<section id="vocabtable" class="section">
+  <div class="panel">
+    <div class="legend">本課 70 個單字一覽。點任一列看詳解與複習狀態，列首的 ▶ 可聽發音。注音顯示跟著上方「注音」控制。</div>
+  </div>
+  <div id="vocabTableHost"></div>
+</section>
 </div>
 
 <div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
 
+<script src="../assets/vocab-table.js"></script>
 <script>
 /* ============================================================
-   資料（單字 / 故事 / 文法）— 內容與舊版相同
+   資料（單字 / 故事 / 文法）
+   單字改由共用資料庫 ../data/vocab.json 載入（見底部「啟動」）。
+   故事與文法仍寫在這裡（各課專屬）。
    ============================================================ */
-const vocab = {
-"倒れる":{reading:"たおれる",zh:"倒下、倒臥",pos:"自動詞",dict:"倒れる",form:"本文：倒れて（て形）",ex:"父が急に倒れてしまいました。"},
-"様子":{reading:"ようす",zh:"樣子、情況、狀態",pos:"名詞",dict:"様子",form:"様子",ex:"父の様子がおかしかったので、救急車を呼びました。"},
-"隅":{reading:"すみ",zh:"角落",pos:"名詞",dict:"隅",form:"隅",ex:"部屋の隅で倒れていました。"},
-"医者":{reading:"いしゃ",zh:"醫生",pos:"名詞",dict:"医者",form:"医者",ex:"医者さんがすぐに検査をしてくれました。"},
-"頭":{reading:"あたま",zh:"頭",pos:"名詞",dict:"頭",form:"頭",ex:"頭が痛かったんですね。"},
-"注射する":{reading:"ちゅうしゃする",zh:"打針、注射",pos:"サ變動詞",dict:"注射する",form:"本文：注射をする",ex:"注射をしなければならないと言われました。"},
-"特別":{reading:"とくべつ",zh:"特別",pos:"な形容詞／名詞",dict:"特別",form:"特別な部屋",ex:"特別な部屋は空いていませんでした。"},
-"支度":{reading:"したく",zh:"準備、整裝",pos:"名詞／サ變",dict:"支度する",form:"本文：支度をしました",ex:"入院の支度をしました。"},
-"用意する":{reading:"よういする",zh:"準備",pos:"サ變動詞",dict:"用意する",form:"本文：用意して（て形）",ex:"着替えや歯ブラシを用意しました。"},
-"炊く":{reading:"たく",zh:"煮、炊（飯）",pos:"他動詞",dict:"炊く",form:"本文：炊いて（て形）",ex:"お粥を炊いて持っていきました。"},
-"電灯":{reading:"でんとう",zh:"電燈",pos:"名詞",dict:"電灯",form:"電灯",ex:"病室の電灯がつきました。"},
-"つく":{reading:"つく",zh:"亮起、點著",pos:"自動詞",dict:"つく",form:"本文：つく",ex:"電灯がつく。"},
-"召し上がる":{reading:"めしあがる",zh:"吃、喝（尊敬語）",pos:"動詞",dict:"召し上がる",form:"本文：召し上がりますか",ex:"何を召し上がりますか。"},
-"温い":{reading:"ぬるい",zh:"微溫、不夠熱",pos:"い形容詞",dict:"温い",form:"温いスープ",ex:"これはちょっとぬるいね。"},
-"取り替える":{reading:"とりかえる",zh:"更換、替換",pos:"他動詞",dict:"取り替える",form:"本文：取り替えて（て形）",ex:"シーツを取り替えてくれました。"},
-"お見舞い":{reading:"おみまい",zh:"探病、慰問",pos:"名詞",dict:"お見舞い",form:"お見舞い",ex:"翌日、お見舞いに行きました。"},
-"花":{reading:"はな",zh:"花",pos:"名詞",dict:"花",form:"花",ex:"花屋で花を買いました。"},
-"瓶":{reading:"びん",zh:"瓶子",pos:"名詞",dict:"瓶",form:"瓶",ex:"病院の瓶に入れてあげました。"},
-"人形":{reading:"にんぎょう",zh:"人偶、娃娃",pos:"名詞",dict:"人形",form:"人形",ex:"小さい人形も持っていきました。"},
-"掃く":{reading:"はく",zh:"掃、清掃",pos:"他動詞",dict:"掃く",form:"本文：掃いて（て形）",ex:"看護師さんが床を掃いていました。"},
-"戻す":{reading:"もどす",zh:"放回、恢復原狀",pos:"他動詞",dict:"戻す",form:"本文：戻して（て形）",ex:"本を棚に戻しておきました。"},
-"苦い":{reading:"にがい",zh:"苦的",pos:"い形容詞",dict:"苦い",form:"本文：苦くて（て形）",ex:"薬はとても苦かったです。"},
-"塗る":{reading:"ぬる",zh:"塗、擦",pos:"他動詞",dict:"塗る",form:"本文：塗って（て形）",ex:"傷に薬を塗ってもらいました。"},
-"なくなる":{reading:"なくなる",zh:"消失、沒有了",pos:"自動詞",dict:"なくなる",form:"本文：なくなって",ex:"痛みは少しずつなくなっていきました。"},
-"残る":{reading:"のこる",zh:"剩下、殘留",pos:"自動詞",dict:"残る",form:"本文：残って（て形）",ex:"疲れは少し残っているようです。"},
-"止める":{reading:"やめる",zh:"停止、戒掉",pos:"他動詞",dict:"止める",form:"本文：止める",ex:"お酒は当分止めるように言われました。"},
-"なるべく":{reading:"なるべく",zh:"盡量、儘可能",pos:"副詞",dict:"なるべく",form:"なるべく",ex:"なるべく休んだ方がいいです。"},
-"なるほど":{reading:"なるほど",zh:"原來如此、的確",pos:"副詞",dict:"なるほど",form:"なるほど",ex:"なるほど、少し前から痛かったんですね。"},
-"電報":{reading:"でんぽう",zh:"電報",pos:"名詞",dict:"電報",form:"電報",ex:"おばあちゃんから電報が届きました。"},
-"大分":{reading:"だいぶ",zh:"相當、很大程度",pos:"副詞",dict:"大分",form:"大分",ex:"父は大分元気になりました。"},
-"痩せる":{reading:"やせる",zh:"變瘦",pos:"自動詞",dict:"痩せる",form:"本文：痩せて（て形）",ex:"少し痩せてしまいました。"},
-"予定":{reading:"よてい",zh:"預定、計畫",pos:"名詞",dict:"予定",form:"予定",ex:"来週、退院する予定です。"},
-"予約する":{reading:"よやくする",zh:"預約",pos:"サ變動詞",dict:"予約する",form:"本文：予約して（て形）",ex:"次の診察も予約しました。"},
-"戻る":{reading:"もどる",zh:"返回、回去",pos:"自動詞",dict:"戻る",form:"本文：戻る",ex:"家に戻ることができました。"},
-"息子":{reading:"むすこ",zh:"兒子",pos:"名詞",dict:"息子",form:"息子",ex:"息子の私は、本当に安心しました。"},
-
-"引っ越す":{reading:"ひっこす",zh:"搬家",pos:"自動詞",dict:"引っ越す",form:"本文：引っ越しました",ex:"新しい町に引っ越しました。"},
-"時代":{reading:"じだい",zh:"時代、時期",pos:"名詞",dict:"時代",form:"学生時代",ex:"学生時代に同じ学校にいたことが分かりました。"},
-"天気予報":{reading:"てんきよほう",zh:"天氣預報",pos:"名詞",dict:"天気予報",form:"天気予報",ex:"天気予報では雨と言っていました。"},
-"引き出し":{reading:"ひきだし",zh:"抽屜",pos:"名詞",dict:"引き出し",form:"引き出し",ex:"新しい部屋の引き出しを開くと…。"},
-"開く":{reading:"ひらく",zh:"打開、開啟",pos:"他動詞",dict:"開く",form:"本文：開く",ex:"引き出しを開くと、指輪が入っていました。"},
-"深い":{reading:"ふかい",zh:"深的",pos:"い形容詞",dict:"深い",form:"本文：深くて",ex:"引き出しはとても深かったです。"},
-"指輪":{reading:"ゆびわ",zh:"戒指",pos:"名詞",dict:"指輪",form:"指輪",ex:"奥に指輪が入っていました。"},
-"知り合う":{reading:"しりあう",zh:"認識、結識",pos:"自動詞",dict:"知り合う",form:"本文：知り合いました",ex:"隣の人と知り合いました。"},
-"似る":{reading:"にる",zh:"相似、像",pos:"自動詞",dict:"似る",form:"本文：似ている",ex:"高校の先生に似ている気がしました。"},
-"すると":{reading:"すると",zh:"於是、接著、結果",pos:"接續詞",dict:"すると",form:"すると",ex:"すると、聞いてみたら本当に同じ学校でした。"},
-"売店":{reading:"ばいてん",zh:"販賣部、小賣店",pos:"名詞",dict:"売店",form:"売店",ex:"近くの売店で食料品を買いました。"},
-"食料品":{reading:"しょくりょうひん",zh:"食品、食材",pos:"名詞",dict:"食料品",form:"食料品",ex:"売店で食料品を買いました。"},
-"店員":{reading:"てんいん",zh:"店員",pos:"名詞",dict:"店員",form:"店員",ex:"店員さんはとても親切でした。"},
-"布団":{reading:"ふとん",zh:"日式棉被、寢具",pos:"名詞",dict:"布団",form:"布団",ex:"新しい布団で早く寝ました。"},
-"まくら":{reading:"まくら",zh:"枕頭",pos:"名詞",dict:"まくら",form:"まくら",ex:"新しいまくらで寝ました。"},
-"散歩":{reading:"さんぽ",zh:"散步",pos:"名詞／サ變",dict:"散歩する",form:"本文：散歩して",ex:"近所を散歩してみました。"},
-"珍しい":{reading:"めずらしい",zh:"少見的、稀奇的",pos:"い形容詞",dict:"珍しい",form:"珍しいカフェ",ex:"珍しいカフェを見つけました。"},
-"回る":{reading:"まわる",zh:"轉、繞、逛",pos:"自動詞",dict:"回る",form:"本文：回って（て形）",ex:"店の中を回ってみました。"},
-"柔らかい":{reading:"やわらかい",zh:"柔軟的",pos:"い形容詞",dict:"柔らかい",form:"本文：柔らかすぎる",ex:"柔らかすぎるパンを売っていました。"},
-"注文する":{reading:"ちゅうもんする",zh:"點餐、訂購",pos:"サ變動詞",dict:"注文する",form:"本文：注文して",ex:"ケーキを一つ注文しました。"},
-"半分":{reading:"はんぶん",zh:"一半",pos:"名詞",dict:"半分",form:"半分",ex:"半分に切ってもらいました。"},
-"太い":{reading:"ふとい",zh:"粗的",pos:"い形容詞",dict:"太い",form:"太い木",ex:"道の太い木の下にコインがありました。"},
-"拾う":{reading:"ひろう",zh:"撿起",pos:"他動詞",dict:"拾う",form:"本文：拾いました",ex:"小さいコインを拾いました。"},
-"太る":{reading:"ふとる",zh:"變胖",pos:"自動詞",dict:"太る",form:"本文：太って",ex:"猫は少し太ってしまったみたいです。"},
-"水着":{reading:"みずぎ",zh:"泳衣",pos:"名詞",dict:"水着",form:"水着",ex:"水着を買いに行くことにしました。"},
-"向く":{reading:"むく",zh:"適合、朝向",pos:"自動詞",dict:"向く",form:"本文：向いている",ex:"私に向いている色を選んでくれました。"},
-"倍":{reading:"ばい",zh:"倍、倍數",pos:"名詞",dict:"倍",form:"倍",ex:"値段が普通の倍になっていました。"},
-"普通":{reading:"ふつう",zh:"普通、一般",pos:"名詞／な形容詞",dict:"普通",form:"普通",ex:"普通の道を歩いていました。"},
-"汚れる":{reading:"よごれる",zh:"變髒",pos:"自動詞",dict:"汚れる",form:"本文：汚れて",ex:"床が少し汚れていました。"},
-"汚す":{reading:"よごす",zh:"弄髒",pos:"他動詞",dict:"汚す",form:"本文：汚して",ex:"引っ越しの時に床を汚してしまいました。"},
-"剥く":{reading:"むく",zh:"剝皮",pos:"他動詞",dict:"剥く",form:"本文：剥いて（て形）",ex:"りんごの皮を剥いて食べました。"},
-"包む":{reading:"つつむ",zh:"包、包裹",pos:"他動詞",dict:"包む",form:"本文：包んで（て形）",ex:"プレゼントを丁寧に包みました。"},
-"別":{reading:"べつ",zh:"另外、不同",pos:"名詞／な形容詞",dict:"別",form:"別の箱",ex:"別の箱に入れました。"},
-"指":{reading:"ゆび",zh:"手指",pos:"名詞",dict:"指",form:"指",ex:"指でリボンを結びました。"},
-"日":{reading:"ひ",zh:"日子、天",pos:"名詞",dict:"日",form:"日",ex:"引っ越す日は朝から忙しかったです。"}
-};
+const LESSON_ID = "日文70單字學習器";
+const vocab = {};   // 啟動時用 vocab.json 填入，key = 單字標題
 
 /* S() 現在只是「登記」目標單字並回傳一個佔位符，實際 HTML 之後再產生。
    這樣同一段文字既能算出乾淨純文字（對照語音檔），也能算出含 ruby 的 HTML。 */
@@ -643,6 +583,23 @@ document.addEventListener("click",e=>{
 });
 // 切分頁時停掉正在播的全篇
 document.querySelectorAll(".tabs button, [data-sview]").forEach(b=>b.addEventListener("click",stopAudio));
+
+/* 單字表分頁：點整列（避開 ▶）→ 開詳解卡 */
+function renderVocabTab(){
+  const host=document.getElementById("vocabTableHost");
+  if(!host) return;
+  if(window.vocabTableHTML) host.innerHTML=vocabTableHTML(Object.values(vocab),{wordClickable:true});
+  else host.innerHTML='<p class="legend">單字表元件載入失敗，請重新整理，或用本機伺服器／線上版開啟。</p>';
+}
+const vtHost=document.getElementById("vocabTableHost");
+vtHost.addEventListener("click",e=>{
+  if(e.target.closest("button")) return;               // ▶ 播放不算
+  const r=e.target.closest("[data-key]"); if(r) openCard(r.dataset.key);
+});
+vtHost.addEventListener("keydown",e=>{
+  if(e.key!=="Enter"&&e.key!==" ") return;
+  const w=e.target.closest(".vt-word"); if(w){ e.preventDefault(); openCard(w.dataset.key); }
+});
 document.addEventListener("keydown",e=>{
   if((e.key==="Enter"||e.key===" ") && e.target.classList && e.target.classList.contains("word")){
     e.preventDefault(); activateWord(e.target);
@@ -665,8 +622,10 @@ sheet.addEventListener("click",e=>{
 });
 let currentCardKey=null;
 function openCard(key){
+  const v=vocab[key];
+  if(!v) return;                 // 單字庫還沒載入完（極短暫）就先忽略點擊
   currentCardKey=key;
-  const v=vocab[key], rec=srsData()[key];
+  const rec=srsData()[key];
   const boxTxt = !rec ? "尚未練習"
     : rec.box>=4 ? `熟練 · 下次 ${fmtDate(rec.due)}`
     : rec.box>=1 ? `學習中（box ${rec.box}）· 下次 ${fmtDate(rec.due)}`
@@ -1033,15 +992,33 @@ document.querySelectorAll("[data-rqfilter]").forEach(b=>b.onclick=()=>{
 });
 
 /* ============================================================
-   啟動
+   啟動：先載入共用單字庫，再初始化需要 vocab 的部分
    ============================================================ */
-migrateProgress();
-applyFg();
-applyWordMode();
-updateProgress();
-shuffle();
-gqShuffle();
-rqShuffle();
+function boot(){
+  migrateProgress();
+  renderVocabTab();
+  applyFg();
+  applyWordMode();
+  updateProgress();
+  shuffle();
+  gqShuffle();
+  rqShuffle();
+}
+
+fetch("../data/vocab.json")
+  .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+  .then(list=>{
+    list.forEach(w=>{ if(!w.lessons || w.lessons.includes(LESSON_ID)) vocab[w.key]=w; });
+    if(!Object.keys(vocab).length) throw new Error("vocab.json 沒有本課的單字");
+    boot();
+  })
+  .catch(err=>{
+    console.error("單字庫載入失敗：", err);
+    document.querySelector(".app").insertAdjacentHTML("afterbegin",
+      '<p style="background:var(--bad);border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0">'
+      +'單字資料載入失敗，請用本機伺服器或線上版開啟（不能直接雙擊檔案）。故事與文法仍可閱讀。</p>');
+    boot();   // 故事／文法克漏字／讀解不依賴 vocab，仍然可用
+  });
 </script>
 </body>
 </html>
