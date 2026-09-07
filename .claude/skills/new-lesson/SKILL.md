@@ -88,8 +88,14 @@ description: >-
 
 ## 步驟 9 — 產語音
 
+**先確認金鑰**：`tts-key.txt` 存在且非空（或有 `GOOGLE_TTS_API_KEY`）。沒有就**停下來**請使用者放：
 ```bash
-python3 generate-audio.py      # 需 tts-key.txt；只會產這課的新段落
+printf '%s' '你的金鑰' > tts-key.txt
+```
+（`.claude/hooks/require-tts-key.sh` 也會在沒金鑰時擋下 `generate-audio.py` 並提醒。）
+
+```bash
+python3 generate-audio.py      # 只會產這課的新段落
 python3 build-audio-check.py
 ```
 - 若回 `BILLING_DISABLED` → 停下來，請使用者到 Google Cloud 啟用帳單（見 `docs/tts-notes.md`）。
@@ -109,6 +115,7 @@ python3 build-index.py
 - [ ] 1–3 篇故事，每篇 150–400 字
 - [ ] ≥8 個文法點，**每個都能在 `docs/n4-grammar.md` 找到**（逐一 grep 確認）
 - [ ] 克漏字每點 2 題、讀解每篇 5–7 題；每個 `reading[].ref` 真的在對應故事裡
+- [ ] 每個 `grammarQuiz[].g` 指到正確的 `grammar[]` 項目（答完顯示的說明對得上題目）
 - [ ] `data/vocab.json` 每個新字 `reading` = `dict` 完整假名
 
 檔案／技術：

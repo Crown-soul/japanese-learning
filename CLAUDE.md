@@ -19,7 +19,7 @@
 | 要做的事 | 怎麼做 |
 |---|---|
 | 新增一課（有單字照片／文字） | 用 `/new-lesson` skill（`.claude/skills/new-lesson/`）。不要手刻。 |
-| 改了單字／故事／例句 | `python3 generate-audio.py`（需 `tts-key.txt`）→ `python3 build-audio-check.py` → 請使用者用 audio-check 頁確認發音 |
+| 改了單字／故事／例句 | `python3 generate-audio.py`（需 `tts-key.txt`；沒放金鑰時 hook 會擋下並提醒）→ `python3 build-audio-check.py` → 請使用者用 audio-check 頁確認發音 |
 | 改了引擎樣式／行為（`assets/`） | 回歸測試**每一個引擎課** + `日文單字總表.html`（vocab-table.js 兩處都用） |
 | 發佈 | `./publish.sh "說明"`，然後等 Pages 1–2 分鐘 |
 | TTS 回 `BILLING_DISABLED` | 請使用者到 Google Cloud 啟用該專案帳單（免費額度內 $0），見 `docs/tts-notes.md` |
@@ -52,6 +52,10 @@
 | 任務中途交接 | `docs/handoff-template.md` |
 | 過去做了什麼（人看的，AI 不用載入） | `docs/changelog.md` |
 | 生成新課的完整步驟 | `.claude/skills/new-lesson/SKILL.md` |
+
+## Hook
+
+- `.claude/hooks/require-tts-key.sh`（PreToolUse/Bash）：偵測到 `generate-audio.py` 且沒有 `tts-key.txt`／`GOOGLE_TTS_API_KEY` 時，擋下執行並提醒放金鑰。其他指令一律放行。
 
 ## 環境
 

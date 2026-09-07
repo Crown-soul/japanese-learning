@@ -8,6 +8,7 @@
 - **需啟用帳單**：即使在免費額度（Neural2 每月 100 萬字元）內，Google 也要求專案綁一個有效帳單帳戶，否則回 `BILLING_DISABLED`。整份網站字元數 <5000，實際費用長期 $0。建議設 $1 預算警示。
 - 產完音檔、commit 進 repo 後，**網站執行完全不需要金鑰**（mp3 是靜態檔）。可到 Google Cloud Console 停用該金鑰，下次要重產再開。
 - 更新金鑰：`printf '%s' 'NEWKEY' > tts-key.txt`
+- **提醒機制**：`.claude/hooks/require-tts-key.sh`（PreToolUse/Bash）在偵測到要跑 `generate-audio.py` 但金鑰不在時，會擋下並印出放金鑰的指令。
 
 ## 降低發音錯誤率的機制（三層）
 

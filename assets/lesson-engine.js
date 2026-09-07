@@ -36,7 +36,7 @@
 
   /* ---------- 注音 / 目標單字 標記解析 ---------- */
   var KANJI = "一-鿿々〆ヶ";
-  var KANA = "぀-ゟー";
+  var KANA = "ぁ-んァ-ヶ・ーゝゞ〜";   // 與 generate-audio.py 的 FURIGANA_RE 一致
   var FURI_RE = new RegExp("([" + KANJI + "]+)（([" + KANA + "]+)）", "g");
   var STRIP_FURI_RE = new RegExp("（[" + KANA + "]+）", "g");
   var TARGET_RE = /\{\{([^{}|]+)\|([^{}|]+)(?:\|([^{}]*))?\}\}/g;
@@ -415,7 +415,7 @@
       q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 播放</button>';
       document.getElementById("quizHint").textContent = "聽日文發音，回想中文意思";
       ans.innerHTML = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">（' + esc(v.reading) + '）</span><div>' + esc(v.zh) + '</div><div class="example" lang="ja">' + esc(v.ex) + "</div>";
-      play(v.reading || v.dict);
+      play(v.dict);   // manifest key 是 dict（引擎課的音檔用假名合成、但 key 仍是漢字）
     }
     ans.classList.remove("show");
     document.querySelectorAll(".quiz-controls .status-btn").forEach(function (b) { b.classList.remove("active"); });
@@ -521,7 +521,7 @@
     sheet.addEventListener("click", function (e) {
       var b = e.target.closest("[data-act],[data-set]"); if (!b) return;
       if (b.dataset.act === "close") { modal.classList.remove("show"); return; }
-      if (b.dataset.act === "play-dict") play(currentCardKey && (vocab[currentCardKey].reading || vocab[currentCardKey].dict));
+      if (b.dataset.act === "play-dict") play(currentCardKey && vocab[currentCardKey].dict);
       else if (b.dataset.act === "play-ex") play(currentCardKey && vocab[currentCardKey].ex);
       else if (b.dataset.act === "rate") rateSrs(currentCardKey, b.dataset.val);
       else if (b.dataset.set === "theme") { LS.set("theme", b.dataset.val); applyTheme(); openSettings(); }
@@ -603,9 +603,9 @@
     document.getElementById("quizZhJp").onclick = function () { setQuizDir("zhjp"); };
     document.getElementById("quizListen").onclick = function () { setQuizDir("listen"); };
     document.getElementById("quizQuestion").addEventListener("click", function (e) {
-      if (e.target.closest("#listenPlay") && quizKeys.length) play(vocab[quizKeys[qi]].reading || vocab[quizKeys[qi]].dict);
+      if (e.target.closest("#listenPlay") && quizKeys.length) play(vocab[quizKeys[qi]].dict);
     });
-    document.getElementById("speakQuiz").onclick = function () { if (quizKeys.length) play(vocab[quizKeys[qi]].reading || vocab[quizKeys[qi]].dict); };
+    document.getElementById("speakQuiz").onclick = function () { if (quizKeys.length) play(vocab[quizKeys[qi]].dict); };
     document.querySelectorAll("[data-qfilter]").forEach(function (b) {
       b.onclick = function () {
         quizFilter = b.dataset.qfilter;
@@ -735,8 +735,9 @@
     (res[1] || []).forEach(function (w) {
       if (!w.lessons || w.lessons.indexOf(LESSON_ID) >= 0) vocab[w.key] = w;
     });
-    if (!DATA || !DATA.stories) throw new Error("lesson JSON 缺 stories");
-    boot();
+    if (!DATA || !Array.isArray(DATA.stories) || !DATA.stories.length) throw new Error("lesson JSON 缺 stories");
+    try { boot(); }
+    catch (e) { console.error(e); fail("課程渲染失敗（" + e.message + "）。請把這段訊息回報。"); }
   }).catch(function (e) {
     console.error(e);
     fail("課程資料載入失敗（" + e.message + "）。請用本機伺服器或線上版開啟，不能雙擊檔案。");
