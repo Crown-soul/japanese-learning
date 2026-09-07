@@ -3,10 +3,10 @@
 用 Google Cloud Text-to-Speech 產生日文語音 MP3。
 
 會抓出：
-  - 單字（辭書形）＋ 例句 —— 來自共用資料庫 data/vocab.json
-  - 兩篇故事的每一段 —— 來自 lessons/日文70單字學習器.html
-每段合成一個 MP3 放到 audio/，並寫一份 audio/manifest.json
-（HTML 靠這份對照表知道每段文字要播哪個檔）。
+  - 單字（辭書形）＋ 例句 —— data/vocab.json
+    （引擎課的單字卡改用「完整假名 reading」合成，讀音更準；舊 HTML 課仍用漢字＋修正表）
+  - 故事每一段 —— 舊課 lessons/*.html 的 const storyN；引擎課 data/lessons/*.json
+每段合成一個 MP3 放到 audio/，寫一份 audio/manifest.json（clean-text -> filename）。
 跑完會刪掉 manifest 沒用到的舊 mp3。
 
 已經產生過的檔案會跳過，重跑不會浪費額度。
@@ -88,47 +88,65 @@ def get_api_key() -> str:
 
 
 # ---------- 抽文字 ----------
-# 單字／例句：共用資料庫 data/vocab.json
-# 故事段落：掃 lessons/*.html 裡的 const storyN = [ `...`, ... ]（各課專屬）
+# 回傳 [(manifest_key, synth_text)]：
+#   - manifest_key 是 HTML/引擎裡 play() 會查的字串
+#   - synth_text 是實際送去 TTS 的文字（可能不同，例如單字卡用假名合成）
+# 單字／例句：data/vocab.json
+# 故事段落：舊課 lessons/*.html 的 const storyN；引擎課 data/lessons/*.json
 VOCAB_JSON = ROOT / "data" / "vocab.json"
+LESSON_DATA_DIR = ROOT / "data" / "lessons"
 
 FURIGANA_RE = re.compile(r"（[ぁ-んァ-ヶ・ーゝゞ〜]+）")
-# S() 可能是 3 個參數 S("key","label","reading") 或 2 個參數 S("key","label")
+# 舊課：${S("key","label"[,"reading"])}
 SFUNC_RE = re.compile(r'\$\{S\("[^"]*","([^"]*)"(?:,"[^"]*")?\)\}')
-# 任一課的 const story1 / story2 / story3 ...
 STORY_BLOCK_RE = re.compile(r"const story\d+\s*=\s*\[(.*?)\n\];", re.DOTALL)
+# 引擎課：{{key|label[|reading]}}
+TARGET_RE = re.compile(r"\{\{[^{}|]+\|([^{}|]+)(?:\|[^{}]*)?\}\}")
 
 
-def clean_story_text(raw: str) -> str:
-    # ${S("key","本文形","reading")} -> 本文形
-    t = SFUNC_RE.sub(r"\1", raw)
-    # 去掉 漢字（かな） 的注音
-    t = FURIGANA_RE.sub("", t)
-    return t.strip()
+def clean_story_html(raw: str) -> str:
+    return FURIGANA_RE.sub("", SFUNC_RE.sub(r"\1", raw)).strip()
 
 
-def extract_texts():
+def clean_story_json(raw: str) -> str:
+    return FURIGANA_RE.sub("", TARGET_RE.sub(r"\1", raw)).strip()
+
+
+def extract_pairs():
     if not VOCAB_JSON.exists():
         sys.exit(f"找不到單字資料庫 {VOCAB_JSON}")
     vocab = json.loads(VOCAB_JSON.read_text(encoding="utf-8"))
-    words = [w["dict"] for w in vocab]
-    sentences = [w["ex"] for w in vocab]
+    engine_ids = {p.stem for p in LESSON_DATA_DIR.glob("*.json")} if LESSON_DATA_DIR.exists() else set()
 
-    stories = []
+    pairs = []  # (key, synth)
+    for w in vocab:
+        lessons = w.get("lessons") or []
+        # 全部所屬課程都是引擎課、且有 reading -> 單字卡用「完整假名」合成，讀音 100% 正確
+        use_kana = bool(lessons) and all(l in engine_ids for l in lessons) and w.get("reading")
+        pairs.append((w["dict"], w["reading"] if use_kana else w["dict"]))
+        pairs.append((w["ex"], w["ex"]))
+
     for html_file in sorted(LESSONS_DIR.glob("*.html")):
         html = html_file.read_text(encoding="utf-8")
         for block in STORY_BLOCK_RE.finditer(html):
             for lit in re.findall(r"`([^`]*)`", block.group(1)):
-                cleaned = clean_story_text(lit)
-                if cleaned:
-                    stories.append(cleaned)
+                c = clean_story_html(lit)
+                if c:
+                    pairs.append((c, c))
+    for jf in sorted(LESSON_DATA_DIR.glob("*.json")) if LESSON_DATA_DIR.exists() else []:
+        data = json.loads(jf.read_text(encoding="utf-8"))
+        for story in data.get("stories", []):
+            for para in story.get("paragraphs", []):
+                c = clean_story_json(para)
+                if c:
+                    pairs.append((c, c))
 
-    # 去重，保留順序
+    # 去重（依 key），保留順序
     seen, ordered = set(), []
-    for t in words + sentences + stories:
-        if t and t not in seen:
-            seen.add(t)
-            ordered.append(t)
+    for key, synth in pairs:
+        if key and key not in seen:
+            seen.add(key)
+            ordered.append((key, synth))
     return ordered
 
 
@@ -178,29 +196,29 @@ def main():
     api_key = get_api_key()
     AUDIO_DIR.mkdir(exist_ok=True)
 
-    texts = extract_texts()
-    print(f"共 {len(texts)} 段文字，約 {sum(len(t) for t in texts)} 字元")
+    pairs = extract_pairs()
+    print(f"共 {len(pairs)} 段文字，約 {sum(len(s) for _, s in pairs)} 字元")
 
     manifest = {}
     made = skipped = 0
     total_chars_billed = 0
 
-    for i, text in enumerate(texts, 1):
-        fname = filename_for(text)
-        manifest[text] = fname
+    for i, (key, synth) in enumerate(pairs, 1):
+        fname = filename_for(synth)
+        manifest[key] = fname
         out = AUDIO_DIR / fname
         if out.exists():
             skipped += 1
             continue
         try:
-            audio = synthesize(apply_reading_fixes(text), api_key)
+            audio = synthesize(apply_reading_fixes(synth), api_key)
         except urllib.error.HTTPError as e:
             print(f"\n第 {i} 段失敗：HTTP {e.code}\n{e.read().decode('utf-8', 'ignore')}")
             sys.exit(1)
         out.write_bytes(audio)
         made += 1
-        total_chars_billed += len(text)
-        print(f"[{i}/{len(texts)}] {fname}  {text[:24]}")
+        total_chars_billed += len(synth)
+        print(f"[{i}/{len(pairs)}] {fname}  {key[:24]}")
         time.sleep(0.15)  # 客氣一點
 
     MANIFEST.write_text(

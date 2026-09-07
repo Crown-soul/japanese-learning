@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-產生 audio-check.html —— 一頁把 157 個語音檔全部列出來，
+產生 audio-check.html —— 一頁把所有語音檔列出來，
 每個都有「▶ 播放」「✓ 沒問題 / ✗ 讀錯」按鈕，畫面會顯示課文想要的讀音當對照。
+資料來源：data/vocab.json（單字／例句）＋ lessons/*.html 與 data/lessons/*.json（故事）。
 標記為 ✗ 的會自動集中到最下面，格式可直接貼回給 Claude 加進修正表。
 進度存在瀏覽器裡，可以分幾次聽完。
 
@@ -16,6 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent
 LESSONS_DIR = ROOT / "lessons"
+LESSON_DATA_DIR = ROOT / "data" / "lessons"
 VOCAB_JSON = ROOT / "data" / "vocab.json"
 MANIFEST = ROOT / "audio" / "manifest.json"
 OUT = ROOT / "audio-check.html"
@@ -23,18 +25,20 @@ OUT = ROOT / "audio-check.html"
 SFUNC_RE = re.compile(r'\$\{S\("[^"]*","([^"]*)"(?:,"([^"]*)")?\)\}')
 FURIGANA_RE = re.compile(r"（[ぁ-んァ-ヶ・ーゝゞ〜]+）")
 STORY_BLOCK_RE = re.compile(r"const story\d+\s*=\s*\[(.*?)\n\];", re.DOTALL)
+TARGET_RE = re.compile(r"\{\{[^{}|]+\|([^{}|]+)(?:\|[^{}]*)?\}\}")
 
 
 def clean(raw: str) -> str:
     t = SFUNC_RE.sub(lambda m: m.group(1), raw)
+    t = TARGET_RE.sub(lambda m: m.group(1), t)
     return FURIGANA_RE.sub("", t).strip()
 
 
 def annotated(raw: str) -> str:
-    # S("key","label","reading") -> label（reading）；其餘 漢字（かな） 保留
-    return SFUNC_RE.sub(
-        lambda m: m.group(1) + (f"（{m.group(2)}）" if m.group(2) else ""), raw
-    ).strip()
+    # 目標單字 -> label（reading）；漢字（かな） 保留
+    t = SFUNC_RE.sub(lambda m: m.group(1) + (f"（{m.group(2)}）" if m.group(2) else ""), raw)
+    t = TARGET_RE.sub(lambda m: m.group(1), t)
+    return t.strip()
 
 
 def main():
@@ -57,6 +61,14 @@ def main():
                 c = clean(lit)
                 if c in manifest:
                     rows.append(("故事", c, annotated(lit), manifest[c]))
+    if LESSON_DATA_DIR.exists():
+        for jf in sorted(LESSON_DATA_DIR.glob("*.json")):
+            data = json.loads(jf.read_text(encoding="utf-8"))
+            for story in data.get("stories", []):
+                for para in story.get("paragraphs", []):
+                    c = clean(para)
+                    if c in manifest:
+                        rows.append(("故事", c, annotated(para), manifest[c]))
 
     # 去重（保順序）
     seen, uniq = set(), []
