@@ -26,9 +26,11 @@
 [hidden]{display:none!important}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Noto Sans JP",sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
 :lang(ja){font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic","Segoe UI",sans-serif}
-.app{max-width:880px;margin:0 auto;padding:0 14px 100px}
+.app{max-width:1000px;margin:0 auto;padding:0 16px 100px}
 
-header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top)) 0 8px;margin-bottom:14px}
+header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);padding:calc(8px + env(safe-area-inset-top)) 0 8px;margin-bottom:14px}
+.backlink{display:inline-block;font-size:13px;color:var(--muted);text-decoration:none;padding:2px 0;margin-bottom:4px}
+.backlink:hover{color:var(--text)}
 h1{font-size:1.1rem;margin:0 0 8px;display:flex;align-items:center;gap:8px}
 h1 .n{font-size:.8rem;color:var(--muted);font-weight:400}
 .gear{margin-left:auto;font-size:16px;padding:6px 10px;min-height:0;line-height:1}
@@ -64,14 +66,15 @@ button.active{background:var(--accent);color:var(--bg);border-color:var(--accent
 
 @media print{
   header{position:static;border:0;margin-bottom:8px}
-  .gear,.ctl-row{display:none}
+  .backlink,.gear,.ctl-row{display:none}
   .vt .play{display:none}
   body{background:#fff;color:#000;line-height:1.45}
   .vt{border:1px solid #000!important}
   .vt th,.vt td{border-bottom:1px solid #999!important;font-size:10.5pt!important}
   .vt thead th{background:#eee!important;color:#000!important}
-  .vt ruby rt{color:#444!important}
-  body.fg-none .vt ruby rt,body.fg-target .vt ruby rt{visibility:visible!important;font-size:.55em!important}
+  .vt .vt-read{color:#333!important}
+  /* 列印一律顯示讀音，不管畫面上是否關掉 */
+  body.fg-none .vt .vt-read,body.fg-target .vt .vt-read{visibility:visible!important;display:table-cell!important}
   .vt-group{break-after:avoid}
   .vt tbody tr{break-inside:avoid}
 }
@@ -80,6 +83,7 @@ button.active{background:var(--accent);color:var(--bg);border-color:var(--accent
 <body>
 <div class="app">
 <header>
+  <a class="backlink" href="../">← 回目錄</a>
   <h1>日文單字總表 <span class="n" id="count"></span>
     <button class="gear" id="gearBtn" aria-label="設定">⚙︎</button>
   </h1>
