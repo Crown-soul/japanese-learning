@@ -33,6 +33,16 @@
 | 指輪 | ゆびわ | （排在「指」前，避免被拆） | READING_FIXES |
 | 指 | ゆび | さす／し | READING_FIXES |
 | 日（單獨） | ひ | にち | EXACT_FIXES（子字串會傷「今日」「日曜日」） |
+| 墓参り | はかまいり | ぼさん― | READING_FIXES |
+| 駅の角 | えきのかど | 「角」→つの | READING_FIXES |
+| 大家 | おおや | たいか／おおやけ | READING_FIXES |
+| 一日おき / 二日おき | いちにちおき / ふつかおき | 一日→ついたち | READING_FIXES |
+| 五分 | ごふん | ごぶん | READING_FIXES |
+| 行った / 行きます / 行きました | いった / いきます / いきました | おこなった | READING_FIXES |
+| 写した / 写しました | うつした / うつしました | しゃ― | READING_FIXES |
+| 楽に | らくに | たのしく― | READING_FIXES |
+| 粗い | あらい | そ― | READING_FIXES |
+| 餌 | えさ | じ | READING_FIXES |
 
 ## 生成新課時的預防步驟（skill 第 8 步）
 

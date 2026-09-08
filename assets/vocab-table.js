@@ -10,6 +10,7 @@
      rows : [{dict, reading, pos, zh, ex, key?, lessons?}]
      opts :
        group         : true → 依 lessons 分組（各組一個標題 + 一張表）
+       lessonTitles  : {課程id: 顯示名}（分組標題用；沒對到的 id 就顯示 id 本身）
        wordClickable : true → <tbody> 加 data-key，整個條目可點（給課文開詳解卡）
 
    版面：每個單字一個 <tbody>，內含兩列
@@ -137,7 +138,8 @@
     });
     var out = "";
     groups.forEach(function (ws, L) {
-      out += '<div class="vt-group">' + esc(L) + " ・ " + ws.length + " 字</div>" +
+      var name = (opts.lessonTitles && opts.lessonTitles[L]) || L;
+      out += '<div class="vt-group">' + esc(name) + " ・ " + ws.length + " 字</div>" +
              tableHTML(ws, opts);
     });
     return out;

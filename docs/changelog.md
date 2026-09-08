@@ -48,6 +48,20 @@
   - `.claude/hooks/validate-on-publish.sh`：`publish.sh` 前跑一次，有錯擋下。
   - `.github/workflows/validate.yml`：push/PR 跑 JSON 檢查 + validate-lessons + build-index 無 diff。
 
+## 2026-09-09
+
+- **第一門引擎課上線：`boarding-house`「下宿生活の一年」**（用 `/new-lesson` skill 生成）
+  - 來源：桌面 `japanese_chinese_vocabulary_corrected.md` 的 70 個 N4 單字（已附假名與中文）。
+  - 3 篇故事（399／400／400 字）：搬進下宿 → 台所與近所づきあい → 揺れた夜と別れの春；70 字全部在故事出現。
+  - 14 個 N4 文法點、28 題克漏字、18 題讀解；`避ける` 依使用者決定收 `さける`。
+  - `data/vocab.json` 70 → 140 字；新增 152 個音檔。
+  - `generate-audio.py` 修正表 +13 條（大家／五分／一日おき／行った／写した／楽に／粗い／餌／墓参り…），`docs/tts-notes.md` 同步。
+- **產出後全面校對**（使用者要求）：
+  - 故事 7 處：`通って五分`→`五分のところに`、`お宅` 改用在「大家さんのお宅」（原本對房客說「お宅のご飯」語感怪）、`切っていたら…切って`重複、連用中止跨主語（`聞き、隣の人が`→`聞いていたので`）、`ご馳走する` 助詞 へ→に、`二年間`→`この一年`（與「一年」時間軸矛盾）、第二次以後出現的漢字補注音。
+  - 克漏字 6 題：干擾項與正解同樣講得通（`てあげる`／`聞かされた`／`たあとで`），改成語意唯一。
+  - 單字 9 筆：`いくら`／`迷惑する` 的長字義拆到 `form`（中→日測驗只取第一個字義）、`満足` 補サ變、例句助詞與時間軸對齊。
+- **單字總表顯示課程標題**：`assets/vocab-table.js` 加 `opts.lessonTitles`；`日文單字總表.html` 讀 `data/lessons/<id>.json` 的 `title`，篩選鈕與分組標題不再顯示英文 id（只對英數 id 發 fetch，避免舊課 404 被 CI 當 console error）。
+
 ## 已擱置
 
 - 進度匯出／匯入

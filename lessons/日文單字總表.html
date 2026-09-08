@@ -201,7 +201,7 @@ document.getElementById("list").addEventListener("click",e=>{
 });
 
 /* ---------- 資料 + 渲染 ---------- */
-let DATA=[], lessonSel="__all__", query="";
+let DATA=[], lessonSel="__all__", query="", LESSON_TITLES={};
 function render(){
   const q=query.trim().toLowerCase();
   const rows=DATA.filter(w=>{
@@ -213,7 +213,7 @@ function render(){
   const host=document.getElementById("list");
   if(!window.vocabTableHTML){ host.innerHTML=`<p class="empty">表格元件載入失敗，請重新整理。</p>`; return; }
   if(!rows.length){ host.innerHTML=`<p class="empty">沒有符合「${esc(query.trim())}」的單字。</p>`; return; }
-  host.innerHTML=window.vocabTableHTML(rows,{group:lessonSel==="__all__"});
+  host.innerHTML=window.vocabTableHTML(rows,{group:lessonSel==="__all__",lessonTitles:LESSON_TITLES});
 }
 document.getElementById("search").addEventListener("input",e=>{ query=e.target.value; render(); });
 
@@ -225,8 +225,12 @@ fetch("../data/vocab.json")
     const lessons=[...new Set(DATA.flatMap(w=>w.lessons||[]))];
     if(lessons.length>1){
       const fh=document.getElementById("lessonFilter");
-      fh.innerHTML=`<button class="active" data-l="__all__">全部</button>`
-        +lessons.map(L=>`<button data-l="${esc(L)}">${esc(L)}</button>`).join("");
+      const label=L=>LESSON_TITLES[L]||L;
+      const paint=()=>{
+        fh.innerHTML=`<button class="active" data-l="__all__">全部</button>`
+          +lessons.map(L=>`<button data-l="${esc(L)}"${L===lessonSel?' class="active"':""}>${esc(label(L))}</button>`).join("");
+      };
+      paint();
       fh.addEventListener("click",e=>{
         const b=e.target.closest("button[data-l]"); if(!b) return;
         lessonSel=b.dataset.l;
@@ -234,6 +238,14 @@ fetch("../data/vocab.json")
         render();
       });
       document.getElementById("lessonRow").hidden=false;
+      // 引擎課有 data/lessons/<id>.json，拿它的 title 當顯示名；舊課沒有就沿用 id
+      // 只對「英數連字號」的 id 發 fetch —— 舊課 id 是中文，不去撞 404（CI 會把 404 當 console error）
+      Promise.all(lessons.filter(L=>/^[a-z0-9-]+$/.test(L)).map(L=>
+        fetch(`../data/lessons/${encodeURIComponent(L)}.json`)
+          .then(r=>r.ok?r.json():null)
+          .then(j=>{ if(j&&typeof j.title==="string"&&j.title.trim()) LESSON_TITLES[L]=j.title.trim(); })
+          .catch(()=>{})
+      )).then(()=>{ paint(); render(); });
     }
     render();
   })
