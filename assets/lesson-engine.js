@@ -41,6 +41,8 @@
   var STRIP_FURI_RE = new RegExp("（[" + KANA + "]+）", "g");
   var TARGET_RE = /\{\{([^{}|]+)\|([^{}|]+)(?:\|([^{}]*))?\}\}/g;
   var MARK_RE = /@@T(\d+)@@/g;
+  var GRAM_OPEN_RE = /\[\[g(\d+)\]\]/g;   // 文法點標記：[[g<grammar[]索引>]]…[[/g]]
+  var GRAM_CLOSE_RE = /\[\[\/g\]\]/g;
 
   function furiganize(s) {
     return s.replace(FURI_RE, function (m, k, r) {
@@ -61,8 +63,11 @@
       return "@@T" + (words.length - 1) + "@@";
     });
     var plain = t.replace(MARK_RE, function (m, i) { return words[+i].label; })
-                 .replace(STRIP_FURI_RE, "").trim();
-    var html = furiganize(t).replace(MARK_RE, function (m, i) { return wordSpan(words[+i]); });
+                 .replace(STRIP_FURI_RE, "")
+                 .replace(GRAM_OPEN_RE, "").replace(GRAM_CLOSE_RE, "").trim();
+    var html = furiganize(t).replace(MARK_RE, function (m, i) { return wordSpan(words[+i]); })
+                 .replace(GRAM_OPEN_RE, function (m, gi) { return '<span class="gram" data-g="' + gi + '" tabindex="0" role="button">'; })
+                 .replace(GRAM_CLOSE_RE, '<span class="gram-badge" aria-hidden="true">文</span></span>');
     return { plain: plain, html: html };
   }
 
@@ -182,10 +187,16 @@
 
   function storiesSection() {
     var cards = DATA.stories.map(function (s, i) {
+      var hasTr = Array.isArray(s.translation) && s.translation.length > 0;
       return '<article class="story-card">' +
         '<h2 lang="ja">' + esc(s.title || ("篇" + (i + 1))) +
         ' <button class="playall" data-story="' + i + '">▶ 全篇</button></h2>' +
-        '<div class="story-text" id="story' + i + '" lang="ja"></div></article>';
+        (hasTr ? '<div class="toolbar lang-tabs" role="group" aria-label="語言切換">' +
+          '<button class="active" data-lang="ja">日文</button>' +
+          '<button data-lang="zh">中文翻譯</button></div>' : '') +
+        '<div class="story-text" id="story' + i + '" lang="ja"></div>' +
+        (hasTr ? '<div class="story-text zh-pane" id="storyZh' + i + '" lang="zh" hidden></div>' : '') +
+        '</article>';
     }).join("");
     var rqFilters = '<button class="active" data-rqfilter="all">全部</button>';
     if (DATA.stories.length > 1) {
@@ -279,6 +290,10 @@
         var p = parsePara(raw);
         return '<p><button class="play" data-audio="' + esc(p.plain) + '" aria-label="播放這段">▶</button>' + p.html + "</p>";
       }).join("");
+      if (Array.isArray(s.translation) && s.translation.length) {
+        var zh = document.getElementById("storyZh" + i);
+        if (zh) zh.innerHTML = s.translation.map(function (t) { return "<p>" + esc(t) + "</p>"; }).join("");
+      }
     });
   }
   function renderGrammarTable() {
@@ -345,6 +360,18 @@
           '<button class="status-btn good" data-act="rate" data-val="good">記得</button>' +
           '<button class="status-btn mid" data-act="rate" data-val="mid">有點模糊</button>' +
           '<button class="status-btn bad" data-act="rate" data-val="bad">不記得</button></div></div>';
+    modal.classList.add("show");
+  }
+  function openGrammarCard(idx) {
+    var g = (DATA.grammar || [])[idx];
+    if (!g) return;
+    sheet.innerHTML =
+      '<button class="sheet-close" data-act="close">關閉</button>' +
+      '<h3 lang="ja">' + esc(g.point) + "</h3>" +
+      '<div class="kv"><strong>例句</strong><div class="example" lang="ja">' + esc(g.example) + "</div></div>" +
+      '<div class="kv"><strong>意思</strong><div>' + esc(g.meaning) + "</div></div>" +
+      (g.n4ref ? '<div class="kv"><strong>N4 依據</strong><div class="small">' + esc(g.n4ref) + "</div></div>" : "") +
+      '<div class="actions"><button data-act="goto-grammar">查看文法對照表 →</button></div>';
     modal.classList.add("show");
   }
   function rateSrs(key, rating) {
@@ -524,6 +551,11 @@
       if (b.dataset.act === "play-dict") play(currentCardKey && vocab[currentCardKey].dict);
       else if (b.dataset.act === "play-ex") play(currentCardKey && vocab[currentCardKey].ex);
       else if (b.dataset.act === "rate") rateSrs(currentCardKey, b.dataset.val);
+      else if (b.dataset.act === "goto-grammar") {
+        modal.classList.remove("show");
+        var gt = document.querySelector('.tabs [data-tab="grammar"]');
+        if (gt) gt.click();
+      }
       else if (b.dataset.set === "theme") { LS.set("theme", b.dataset.val); applyTheme(); openSettings(); }
       else if (b.dataset.set === "fs") { LS.set("fs", b.dataset.val); applyFont(); openSettings(); }
     });
@@ -575,12 +607,22 @@
         return;
       }
       var p = e.target.closest(".play"); if (p && p.dataset.audio != null) { stopAudio(); seqStop = false; play(p.dataset.audio); return; }
-      var w = e.target.closest(".word"); if (w && w.closest("#storyRead")) { activateWord(w); }
+      var w = e.target.closest(".word"); if (w && w.closest("#storyRead")) { activateWord(w); return; }
+      var g = e.target.closest(".gram"); if (g && g.closest("#storyRead")) { openGrammarCard(+g.dataset.g); return; }
+      var lb = e.target.closest(".lang-tabs button");
+      if (lb) {
+        stopAudio();
+        var card = lb.closest(".story-card");
+        card.querySelectorAll(".lang-tabs button").forEach(function (x) { x.classList.toggle("active", x === lb); });
+        card.querySelectorAll(".story-text").forEach(function (pane) {
+          pane.hidden = pane.classList.contains("zh-pane") ? lb.dataset.lang !== "zh" : lb.dataset.lang !== "ja";
+        });
+      }
     });
     document.addEventListener("keydown", function (e) {
-      if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("word") && e.target.closest("#storyRead")) {
-        e.preventDefault(); activateWord(e.target);
-      }
+      if (!(e.key === "Enter" || e.key === " ") || !e.target.classList || !e.target.closest("#storyRead")) return;
+      if (e.target.classList.contains("word")) { e.preventDefault(); activateWord(e.target); }
+      else if (e.target.classList.contains("gram")) { e.preventDefault(); openGrammarCard(+e.target.dataset.g); }
     });
 
     // vocab table tab: 整列點開詳解

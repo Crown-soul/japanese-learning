@@ -7,6 +7,7 @@
   --bg:#f7f7f8; --card:#fff; --text:#1f2328; --muted:#6b7280; --line:#e5e7eb;
   --accent:#111827; --soft:#eef2f7; --hl:#f2f4f7;
   --good:#eaf7ef; --warn:#fff7e6; --bad:#fff0f0;
+  --gram:#7a4a8f; --gram-soft:#f5eef8;
   --fs:18px;
 }
 @media (prefers-color-scheme:dark){
@@ -14,12 +15,14 @@
     --bg:#16181c; --card:#1f2329; --text:#e6e7ea; --muted:#9aa1ab; --line:#333842;
     --accent:#e6e7ea; --soft:#2a2f37; --hl:#2a2f37;
     --good:#173023; --warn:#332c15; --bad:#3a1f1f;
+    --gram:#cf9fe6; --gram-soft:#3a2a42;
   }
 }
 :root[data-theme="dark"]{
   --bg:#16181c; --card:#1f2329; --text:#e6e7ea; --muted:#9aa1ab; --line:#333842;
   --accent:#e6e7ea; --soft:#2a2f37; --hl:#2a2f37;
   --good:#173023; --warn:#332c15; --bad:#3a1f1f;
+  --gram:#cf9fe6; --gram-soft:#3a2a42;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -40,7 +43,7 @@ h1{font-size:1.1rem;margin:0 0 8px;display:flex;align-items:center;gap:8px}
 .ctl-row .grp button{flex:1;padding:7px 4px;min-height:38px;font-size:13px}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap}
 button,.btn{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:11px 13px;min-height:44px;font-size:15px;cursor:pointer;touch-action:manipulation}
-button:focus-visible,.word:focus-visible{outline:3px solid var(--muted);outline-offset:2px}
+button:focus-visible,.word:focus-visible,.gram:focus-visible{outline:3px solid var(--muted);outline-offset:2px}
 button.active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
 button:disabled{opacity:.45}
 
@@ -73,6 +76,13 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 .word.blank{display:inline-block;min-width:3.2em;text-align:center;background:var(--soft);border-radius:6px;border-bottom:0;padding:0 6px}
 .word.blank ruby{display:none}
 .word.blank::after{content:"＿＿";color:var(--muted)}
+
+/* ── 文法點（點整段淡色範圍都可點開，角標只是視覺提示，不是唯一熱區）── */
+.gram{background:var(--gram-soft);border-radius:4px;padding:.15em .1em;margin:-.15em -.1em;cursor:pointer}
+.gram-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;min-height:20px;
+  font-size:10px;font-weight:800;color:#fff;background:var(--gram);border-radius:5px;padding:2px 5px;
+  margin-left:3px;line-height:1;vertical-align:2px}
+.story-card .lang-tabs{margin:0 0 12px}
 
 .play{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;min-height:0;padding:0;border-radius:50%;font-size:11px;vertical-align:middle;margin-right:6px;flex:none}
 .legend{font-size:13px;color:var(--muted);margin-bottom:10px}

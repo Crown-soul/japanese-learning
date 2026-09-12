@@ -46,7 +46,9 @@ description: >-
 - 標記規則（見 `docs/lesson-authoring.md`）：
   - 一般漢字詞：`漢字（かな）`（全形括號）
   - 目標單字：`{{key|課文形|讀音}}`（`key` = vocab 的 key；`課文形` 純文字不加注音；`讀音` 是整個課文形的假名）
+  - **文法點**：步驟 3 選定的每個文法點，在它於故事裡出現的地方用 `[[g<索引>]]…[[/g]]` 包起來（`<索引>` = 該文法在 `grammar[]` 的 0 起位置，跟 `grammarQuiz[].g` 同一套索引）。同一文法點出現不只一次可以每次都標，至少標 1 次。
 - 寫完自己念一遍：句子自然、文法用對、注音正確。
+- **每篇故事都要寫 `translation`**：逐段的中文翻譯，陣列長度要跟 `paragraphs` 一樣（一段對一段）。翻譯自然、不要逐字硬翻。
 
 ## 步驟 5 — 出測驗
 
@@ -56,7 +58,7 @@ description: >-
 
 ## 步驟 6 — 建檔
 
-- `data/lessons/<id>.json`：`{id, title, stories[], grammar[], grammarQuiz[], reading[]}`
+- `data/lessons/<id>.json`：`{id, title, stories[], grammar[], grammarQuiz[], reading[]}`，`stories[]` 每篇是 `{title, paragraphs[], translation[]}`（`translation` 見步驟 4）
 - `lessons/<id>.html` 薄殼（照 `docs/architecture.md`，`<title>` = `title`）：
   ```html
   <!DOCTYPE html><html lang="zh-Hant"><head>
@@ -125,11 +127,14 @@ python3 validate-lessons.py <id>
 - [ ] 克漏字每點 2 題、讀解每篇 5–7 題；每個 `reading[].ref` 真的在對應故事裡
 - [ ] 每個 `grammarQuiz[].g` 指到正確的 `grammar[]` 項目（答完顯示的說明對得上題目）
 - [ ] `data/vocab.json` 每個新字 `reading` = `dict` 完整假名
+- [ ] 每篇故事都有 `translation`，長度跟 `paragraphs` 一樣、翻譯通順
+- [ ] 選定的文法點都用 `[[g#]]…[[/g]]` 標在故事裡（至少 1 次），`#` 對到正確的 `grammar[]` 索引
 
 檔案／技術：
 - [ ] `<id>` 英數連字號；薄殼有 `<title>` 與（引擎會自動加的）`← 回目錄`
 - [ ] `python3 -c "import json; json.load(open('data/lessons/<id>.json'))"` 通過
 - [ ] 本機 `http.server`，開 `/lessons/<id>.html`：四分頁都在、故事注音正確、目標字可點開詳解、單字表 two-row、三種測驗可作答、設定可換主題/字級
+- [ ] 故事卡的「日文／中文翻譯」可切換、文法角標點得開（內容對得上 `grammar[]`）
 - [ ] `read_console_messages` 無 error
 - [ ] `resize_window` 375px：手機版 OK
 - [ ] localStorage key 都是 `<id>:` 前綴

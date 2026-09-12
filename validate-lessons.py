@@ -12,6 +12,8 @@
   7. grammarQuiz[].g 是 grammar[] 的合法索引；s 含「（　）」；a 在 o 範圍內
   8. reading[].st 對到存在的故事；ref 的每個片段都是該故事純文字的子字串；a 在 o 範圍內
   9. vocab 新字：reading 全假名、必要欄位齊、lessons 非空
+ 10. 段落裡的 [[g#]]/[[/g]]（文法點點擊標記）數量成對、# 是 grammar[] 的合法索引
+ 11. stories[].translation（若有，供故事整篇翻譯用）長度要跟 paragraphs 一樣
 
 用法：
     python3 validate-lessons.py            # 驗全部
@@ -32,6 +34,8 @@ LESSONS_HTML = ROOT / "lessons"
 
 FURI_RE = re.compile(r"（[ぁ-んァ-ヶ・ーゝゞ〜]+）")
 TARGET_RE = re.compile(r"\{\{([^{}|]+)\|([^{}|]+)(?:\|([^{}]*))?\}\}")
+GRAM_OPEN_RE = re.compile(r"\[\[g(\d+)\]\]")
+GRAM_CLOSE_RE = re.compile(r"\[\[/g\]\]")
 KANA_ONLY = re.compile(r"^[ぁ-んァ-ヶ・ーゝゞ〜]+$")
 TITLE_RE = re.compile(r"<title>(.*?)</title>", re.I | re.S)
 
@@ -49,7 +53,14 @@ def warn(lid, msg):
 
 def plain(raw):
     t = TARGET_RE.sub(lambda m: m.group(2), raw)
+    t = GRAM_OPEN_RE.sub("", t)
+    t = GRAM_CLOSE_RE.sub("", t)
     return FURI_RE.sub("", t).strip()
+
+
+def story_paras(s):
+    """s 若不是物件（畸形 JSON）就當沒有段落，不要讓 .get 炸掉整支腳本。"""
+    return (s.get("paragraphs") or []) if isinstance(s, dict) else []
 
 
 def n4_points():
@@ -109,6 +120,9 @@ def check_lesson(path, vocab, n4):
             story_plain.append("")
             continue
         story_plain.append("".join(plain(p) for p in paras))
+        tr = s.get("translation")
+        if tr is not None and (not isinstance(tr, list) or len(tr) != len(paras)):
+            err(lid, f"stories[{si}].translation 長度必須跟 paragraphs 一樣（{len(paras)} 段）")
 
     # 這課的目標單字
     lesson_words = {w["key"] for w in vocab if lid in (w.get("lessons") or [])}
@@ -118,7 +132,7 @@ def check_lesson(path, vocab, n4):
     # {{}} 標記
     used = set()
     for si, s in enumerate(stories, 1):
-        for p in (s.get("paragraphs") or []):
+        for p in story_paras(s):
             for k, label, rd in TARGET_RE.findall(p):
                 k = k.strip()
                 used.add(k)
@@ -141,6 +155,18 @@ def check_lesson(path, vocab, n4):
         pt = (g.get("point") or "").strip()
         if n4 is not None and pt and pt not in n4 and re.sub(r"（.*?）", "", pt).strip() not in n4:
             err(lid, f"grammar[{gi}] 的 point「{pt}」在 docs/n4-grammar.md 找不到")
+
+    # 故事裡的文法標記 [[g#]]…[[/g]]
+    for si, s in enumerate(stories, 1):
+        for p in story_paras(s):
+            opens = GRAM_OPEN_RE.findall(p)
+            closes = len(GRAM_CLOSE_RE.findall(p))
+            if len(opens) != closes:
+                err(lid, f"stories[{si}] 段落的 [[g]]/[[/g]] 數量不一致")
+            for gi_s in opens:
+                gi_n = int(gi_s)
+                if not (0 <= gi_n < len(grammar)):
+                    err(lid, f"stories[{si}] 用了 [[g{gi_n}]] 但 grammar[] 沒有這個索引")
 
     # grammarQuiz
     for qi, q in enumerate(data.get("grammarQuiz") or []):

@@ -117,6 +117,8 @@ SFUNC_RE = re.compile(r'\$\{S\("[^"]*","([^"]*)"(?:,"[^"]*")?\)\}')
 STORY_BLOCK_RE = re.compile(r"const story\d+\s*=\s*\[(.*?)\n\];", re.DOTALL)
 # 引擎課：{{key|label[|reading]}}
 TARGET_RE = re.compile(r"\{\{[^{}|]+\|([^{}|]+)(?:\|[^{}]*)?\}\}")
+# 引擎課：文法點標記 [[g<索引>]]…[[/g]]（只影響顯示，音檔 key 要去掉）
+GRAM_RE = re.compile(r"\[\[g\d+\]\]|\[\[/g\]\]")
 
 
 def clean_story_html(raw: str) -> str:
@@ -124,7 +126,7 @@ def clean_story_html(raw: str) -> str:
 
 
 def clean_story_json(raw: str) -> str:
-    return FURIGANA_RE.sub("", TARGET_RE.sub(r"\1", raw)).strip()
+    return FURIGANA_RE.sub("", GRAM_RE.sub("", TARGET_RE.sub(r"\1", raw))).strip()
 
 
 def extract_pairs():
