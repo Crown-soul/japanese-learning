@@ -14,7 +14,8 @@
   9. vocab 新字：reading 全假名、必要欄位齊、lessons 非空
  10. 段落裡的 [[g#]]/[[/g]]（文法點點擊標記）數量成對、# 是 grammar[] 的合法索引
  11. 每篇故事都至少有一個 [[g#]] 標記；每個 grammar[] 文法點至少被標記一次
- 12. 每篇故事都有 translation，長度跟 paragraphs 一樣、每段非空
+ 12. [[g#]] 包起來的文字裡真的看得到該文法的字樣（活用形類無字樣可比，跳過並提醒人工看）
+ 13. 每篇故事都有 translation，長度跟 paragraphs 一樣、每段非空
 
 用法：
     python3 validate-lessons.py            # 驗全部
@@ -37,6 +38,7 @@ FURI_RE = re.compile(r"（[ぁ-んァ-ヶ・ーゝゞ〜]+）")
 TARGET_RE = re.compile(r"\{\{([^{}|]+)\|([^{}|]+)(?:\|([^{}]*))?\}\}")
 GRAM_OPEN_RE = re.compile(r"\[\[g(\d+)\]\]")
 GRAM_CLOSE_RE = re.compile(r"\[\[/g\]\]")
+GRAM_SPAN_RE = re.compile(r"\[\[g(\d+)\]\](.*?)\[\[/g\]\]", re.S)
 KANA_ONLY = re.compile(r"^[ぁ-んァ-ヶ・ーゝゞ〜]+$")
 TITLE_RE = re.compile(r"<title>(.*?)</title>", re.I | re.S)
 
@@ -57,6 +59,36 @@ def plain(raw):
     t = GRAM_OPEN_RE.sub("", t)
     t = GRAM_CLOSE_RE.sub("", t)
     return FURI_RE.sub("", t).strip()
+
+
+# point 裡代表「活用形／詞類佔位」的字，出現就無法用字面比對（文章不會出現這幾個字）
+PLACEHOLDER = ("形", "疑問詞", "＋", "特殊", "動詞", "名詞", "vs")
+# 動詞辭書形語尾＋な形／い形語尾：文章裡會活用，比對時砍掉最後一個字當詞幹
+CONJ_TAIL = "うくぐすつぬぶむるだい"
+
+
+def point_stems(point):
+    """把 grammar[].point 轉成「課文裡至少要出現其中一個」的字樣清單。
+
+    回傳 [] 代表這個文法點無法用字面比對（例：受身形、使役形、疑問詞＋か），
+    這種只能人工看，呼叫端要跳過而不是報錯。
+    """
+    stems = []
+    for variant in re.split(r"[／/]", point or ""):
+        v = re.sub(r"（.*?）|\(.*?\)", "", variant).strip().lstrip("～~")
+        v = v.strip("①②③ 　")
+        if not v or any(ph in v for ph in PLACEHOLDER):
+            continue
+        # 多格式（～ば～ほど、～たり～たりする）：每一格都要出現
+        parts = [x for x in v.split("～") if x]
+        cooked = []
+        for part in parts:
+            if len(part) > 2 and part[-1] in CONJ_TAIL:
+                part = part[:-1]          # 砍語尾，容許活用（ておく→てお、そうだ→そう）
+            cooked.append(part)
+        if cooked:
+            stems.append(cooked)
+    return stems
 
 
 def story_paras(s):
@@ -164,6 +196,7 @@ def check_lesson(path, vocab, n4):
 
     # 故事裡的文法標記 [[g#]]…[[/g]]
     marked_all = set()
+    unverifiable = set()
     for si, s in enumerate(stories, 1):
         marked_here = set()
         for p in story_paras(s):
@@ -177,6 +210,21 @@ def check_lesson(path, vocab, n4):
                     err(lid, f"stories[{si}] 用了 [[g{gi_n}]] 但 grammar[] 沒有這個索引")
                 else:
                     marked_here.add(gi_n)
+            # 標記位置對不對：被包起來的字裡要看得到該文法的字樣
+            for gi_s, inner in GRAM_SPAN_RE.findall(p):
+                gi_n = int(gi_s)
+                if not (0 <= gi_n < len(grammar)):
+                    continue
+                pt = (grammar[gi_n].get("point") or "").strip()
+                stems = point_stems(pt)
+                if not stems:
+                    unverifiable.add((gi_n, pt))   # 活用形之類，只能人工看
+                    continue
+                span = plain(inner)
+                if not any(all(part in span for part in variant) for variant in stems):
+                    want = "／".join("＋".join(v) for v in stems)
+                    err(lid, f"stories[{si}] 的 [[g{gi_n}]]「{span}」裡找不到"
+                             f"「{pt}」的字樣（{want}）——標記範圍可能包錯位置或索引指錯文法")
         if grammar and not marked_here:
             err(lid, f"stories[{si}] 整篇沒有任何 [[g#]] 文法標記"
                      f"（每篇故事都要標，不是只標第一篇）")
@@ -186,6 +234,9 @@ def check_lesson(path, vocab, n4):
         if never:
             listed = "、".join(f"g{gi}（{grammar[gi].get('point') or '?'}）" for gi in never)
             err(lid, f"這些文法點沒有在任何故事裡標記：{listed}")
+    if unverifiable:
+        listed = "、".join(f"g{gi}（{pt}）" for gi, pt in sorted(unverifiable))
+        warn(lid, f"這些文法點無法自動比對標記位置（活用形／佔位符號類），請人工確認：{listed}")
 
     # grammarQuiz
     for qi, q in enumerate(data.get("grammarQuiz") or []):
