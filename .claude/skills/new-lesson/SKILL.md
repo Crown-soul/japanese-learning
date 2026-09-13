@@ -46,9 +46,36 @@ description: >-
 - 標記規則（見 `docs/lesson-authoring.md`）：
   - 一般漢字詞：`漢字（かな）`（全形括號）
   - 目標單字：`{{key|課文形|讀音}}`（`key` = vocab 的 key；`課文形` 純文字不加注音；`讀音` 是整個課文形的假名）
-  - **文法點**：步驟 3 選定的每個文法點，在它於故事裡出現的地方用 `[[g<索引>]]…[[/g]]` 包起來（`<索引>` = 該文法在 `grammar[]` 的 0 起位置，跟 `grammarQuiz[].g` 同一套索引）。同一文法點出現不只一次可以每次都標，至少標 1 次。
+  - **文法點**：步驟 3 選定的每個文法點，在它於故事裡出現的地方用 `[[g<索引>]]…[[/g]]` 包起來（`<索引>` = 該文法在 `grammar[]` 的 0 起位置，跟 `grammarQuiz[].g` 同一套索引）。
 - 寫完自己念一遍：句子自然、文法用對、注音正確。
-- **每篇故事都要寫 `translation`**：逐段的中文翻譯，陣列長度要跟 `paragraphs` 一樣（一段對一段）。翻譯自然、不要逐字硬翻。
+
+### 每一篇都要做的兩件事（最常漏，寫一篇就做一篇）
+
+寫完第 1 篇不代表做完。**有幾篇故事，這兩件事就要做幾次**：
+
+1. **`translation`**：逐段中文翻譯，陣列長度等於該篇的 `paragraphs`、每段都不可留空。翻譯自然，不要逐字硬翻。
+2. **`[[g#]]` 文法標記**：每篇故事至少標到一個文法點；而且 `grammar[]` 裡**每一個**文法點，都要至少在某篇故事被標記一次。同一個文法點在多處出現，可以每次都標。
+
+寫完全部故事後，**當場跑這段確認**（不要留到步驟 11）：
+
+```bash
+python3 - <<'EOF'
+import json, re
+d = json.load(open('data/lessons/<id>.json'))
+marked = set()
+for i, s in enumerate(d['stories'], 1):
+    txt = "".join(s['paragraphs'])
+    g = set(re.findall(r'\[\[g(\d+)\]\]', txt))
+    marked |= {int(x) for x in g}
+    tr = s.get('translation')
+    print(f"篇{i}: paragraphs={len(s['paragraphs'])} "
+          f"translation={len(tr) if isinstance(tr, list) else '缺!'} "
+          f"文法標記={sorted(int(x) for x in g) or '缺!'}")
+miss = [i for i in range(len(d['grammar'])) if i not in marked]
+print("沒被標到的文法點:", [f"g{i} {d['grammar'][i]['point']}" for i in miss] or "無")
+EOF
+```
+每篇的 `translation` 要等於 `paragraphs`、每篇文法標記都不是「缺!」、最後一行是「無」，才算寫完。
 
 ## 步驟 5 — 出測驗
 
@@ -127,8 +154,8 @@ python3 validate-lessons.py <id>
 - [ ] 克漏字每點 2 題、讀解每篇 5–7 題；每個 `reading[].ref` 真的在對應故事裡
 - [ ] 每個 `grammarQuiz[].g` 指到正確的 `grammar[]` 項目（答完顯示的說明對得上題目）
 - [ ] `data/vocab.json` 每個新字 `reading` = `dict` 完整假名
-- [ ] 每篇故事都有 `translation`，長度跟 `paragraphs` 一樣、翻譯通順
-- [ ] 選定的文法點都用 `[[g#]]…[[/g]]` 標在故事裡（至少 1 次），`#` 對到正確的 `grammar[]` 索引
+- [ ] **每一篇**故事都有 `translation`，長度跟 `paragraphs` 一樣、每段非空、翻譯通順
+- [ ] **每一篇**故事都至少標到一個 `[[g#]]…[[/g]]`；`grammar[]` 每個文法點都至少被標記一次，`#` 對到正確索引
 
 檔案／技術：
 - [ ] `<id>` 英數連字號；薄殼有 `<title>` 與（引擎會自動加的）`← 回目錄`
@@ -155,3 +182,4 @@ python3 validate-lessons.py <id>
 - **不要動 `lessons/日文70單字學習器.html`**（舊課不遷移）。
 - 樣式／RWD／分頁內容**全部走引擎**，薄殼與 JSON 不放任何自訂 CSS/JS。要調外觀改 `assets/`（且要回歸測試每一課）。
 - 每次停在步驟 2 等使用者確認字表與主題；產完語音停在步驟 9 等使用者聽 audio-check。
+- **翻譯與文法標記是每篇都要做的，不是做一篇示範**。`validate-lessons.py` 會逐篇擋下來（缺翻譯、某篇沒文法標記、某個文法點從沒被標到，都會報錯），publish hook 也會再驗一次。

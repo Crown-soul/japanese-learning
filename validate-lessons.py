@@ -13,7 +13,8 @@
   8. reading[].st 對到存在的故事；ref 的每個片段都是該故事純文字的子字串；a 在 o 範圍內
   9. vocab 新字：reading 全假名、必要欄位齊、lessons 非空
  10. 段落裡的 [[g#]]/[[/g]]（文法點點擊標記）數量成對、# 是 grammar[] 的合法索引
- 11. stories[].translation（若有，供故事整篇翻譯用）長度要跟 paragraphs 一樣
+ 11. 每篇故事都至少有一個 [[g#]] 標記；每個 grammar[] 文法點至少被標記一次
+ 12. 每篇故事都有 translation，長度跟 paragraphs 一樣、每段非空
 
 用法：
     python3 validate-lessons.py            # 驗全部
@@ -121,8 +122,13 @@ def check_lesson(path, vocab, n4):
             continue
         story_plain.append("".join(plain(p) for p in paras))
         tr = s.get("translation")
-        if tr is not None and (not isinstance(tr, list) or len(tr) != len(paras)):
-            err(lid, f"stories[{si}].translation 長度必須跟 paragraphs 一樣（{len(paras)} 段）")
+        if not isinstance(tr, list) or not tr:
+            err(lid, f"stories[{si}] 缺 translation（每篇故事都要逐段中文翻譯，不是只做第一篇）")
+        elif len(tr) != len(paras):
+            err(lid, f"stories[{si}].translation 長度必須跟 paragraphs 一樣"
+                     f"（paragraphs {len(paras)} 段，translation {len(tr)} 段）")
+        elif any(not isinstance(t, str) or not t.strip() for t in tr):
+            err(lid, f"stories[{si}].translation 有空白段落，每一段都要翻譯")
 
     # 這課的目標單字
     lesson_words = {w["key"] for w in vocab if lid in (w.get("lessons") or [])}
@@ -157,7 +163,9 @@ def check_lesson(path, vocab, n4):
             err(lid, f"grammar[{gi}] 的 point「{pt}」在 docs/n4-grammar.md 找不到")
 
     # 故事裡的文法標記 [[g#]]…[[/g]]
+    marked_all = set()
     for si, s in enumerate(stories, 1):
+        marked_here = set()
         for p in story_paras(s):
             opens = GRAM_OPEN_RE.findall(p)
             closes = len(GRAM_CLOSE_RE.findall(p))
@@ -167,6 +175,17 @@ def check_lesson(path, vocab, n4):
                 gi_n = int(gi_s)
                 if not (0 <= gi_n < len(grammar)):
                     err(lid, f"stories[{si}] 用了 [[g{gi_n}]] 但 grammar[] 沒有這個索引")
+                else:
+                    marked_here.add(gi_n)
+        if grammar and not marked_here:
+            err(lid, f"stories[{si}] 整篇沒有任何 [[g#]] 文法標記"
+                     f"（每篇故事都要標，不是只標第一篇）")
+        marked_all |= marked_here
+    if grammar:
+        never = [gi for gi in range(len(grammar)) if gi not in marked_all]
+        if never:
+            listed = "、".join(f"g{gi}（{grammar[gi].get('point') or '?'}）" for gi in never)
+            err(lid, f"這些文法點沒有在任何故事裡標記：{listed}")
 
     # grammarQuiz
     for qi, q in enumerate(data.get("grammarQuiz") or []):
