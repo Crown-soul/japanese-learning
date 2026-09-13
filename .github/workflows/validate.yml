@@ -20,6 +20,8 @@ jobs:
           node-version: "20"
       - name: JS 語法（assets/*.js）
         run: for f in assets/*.js; do node --check "$f" && echo "ok  $f"; done
+      - name: Python 語法（*.py）
+        run: for f in *.py; do python3 -m py_compile "$f" && echo "ok  $f"; done
       - name: JSON 合法性
         run: |
           for f in data/vocab.json data/lessons/*.json audio/manifest.json; do
@@ -32,6 +34,10 @@ jobs:
         run: |
           python3 build-index.py
           git diff --exit-code index.html || (echo "index.html 過期，請本機跑 build-index.py 後 commit" && exit 1)
+      - name: 語音檢查表與現況一致（build-audio-check 無 diff）
+        run: |
+          python3 build-audio-check.py
+          git diff --exit-code audio-check.html || (echo "audio-check.html 過期，請本機跑 build-audio-check.py 後 commit" && exit 1)
       - name: headless console error 檢查
         run: |
           npm i --no-save playwright@1.48.0

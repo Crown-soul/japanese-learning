@@ -26,11 +26,16 @@ SFUNC_RE = re.compile(r'\$\{S\("[^"]*","([^"]*)"(?:,"([^"]*)")?\)\}')
 FURIGANA_RE = re.compile(r"（[ぁ-んァ-ヶ・ーゝゞ〜]+）")
 STORY_BLOCK_RE = re.compile(r"const story\d+\s*=\s*\[(.*?)\n\];", re.DOTALL)
 TARGET_RE = re.compile(r"\{\{[^{}|]+\|([^{}|]+)(?:\|[^{}]*)?\}\}")
+# 引擎課的文法點標記，只影響畫面，音檔 key 不含它
+# （generate-audio.py 的 clean_story_json、validate-lessons.py 的 plain、
+#   assets/lesson-engine.js 的 parsePara 也都要一起剝掉，四邊必須一致）
+GRAM_RE = re.compile(r"\[\[g\d+\]\]|\[\[/g\]\]")
 
 
 def clean(raw: str) -> str:
     t = SFUNC_RE.sub(lambda m: m.group(1), raw)
     t = TARGET_RE.sub(lambda m: m.group(1), t)
+    t = GRAM_RE.sub("", t)
     return FURIGANA_RE.sub("", t).strip()
 
 
@@ -38,10 +43,12 @@ def annotated(raw: str) -> str:
     # 目標單字 -> label（reading）；漢字（かな） 保留
     t = SFUNC_RE.sub(lambda m: m.group(1) + (f"（{m.group(2)}）" if m.group(2) else ""), raw)
     t = TARGET_RE.sub(lambda m: m.group(1), t)
-    return t.strip()
+    return GRAM_RE.sub("", t).strip()
 
 
 def main():
+    if not MANIFEST.exists():
+        raise SystemExit(f"找不到 {MANIFEST}，請先執行 generate-audio.py 產生音檔。")
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     vocab = json.loads(VOCAB_JSON.read_text(encoding="utf-8"))
 

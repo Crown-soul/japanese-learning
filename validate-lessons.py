@@ -388,10 +388,17 @@ def check_audio_coverage(files, vocab):
     man_path = ROOT / "audio" / "manifest.json"
     if not man_path.exists():
         return
-    man = json.loads(man_path.read_text(encoding="utf-8"))
+    try:
+        man = json.loads(man_path.read_text(encoding="utf-8"))
+    except Exception as e:
+        warn("-", f"audio/manifest.json 讀不起來，略過音檔覆蓋率檢查：{e}")
+        return
     for path in files:
         lid = path.stem
-        data = json.loads(path.read_text(encoding="utf-8"))
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue   # JSON 壞掉，check_lesson 已經報過了，這裡不要再炸一次
         keys = set()
         for w in vocab:
             if lid in (w.get("lessons") or []):

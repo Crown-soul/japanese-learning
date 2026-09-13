@@ -42,6 +42,19 @@ SPEAKING_RATE = 0.9
 
 API_URL = "https://texttospeech.googleapis.com/v1/text:synthesize"
 
+# 刪除舊音檔的安全閥：超過這個比例且超過這個檔數就停手（見 main() 結尾）
+PRUNE_MAX_RATIO = 0.3
+PRUNE_MIN_FILES = 5
+
+
+def prune_blocked(stale_n: int, total_n: int) -> bool:
+    """要刪的比例是不是高到該停手（資料可能被改壞）。設 AUDIO_PRUNE_FORCE=1 可強制刪。"""
+    if os.environ.get("AUDIO_PRUNE_FORCE"):
+        return False
+    if not total_n or stale_n <= PRUNE_MIN_FILES:
+        return False
+    return stale_n / total_n > PRUNE_MAX_RATIO
+
 # ---------- 發音修正表 ----------
 # Google TTS 偶爾會把漢字拆開讀，或選錯讀音（例：大分 讀成「大／分」或地名「おおいた」，
 # 其實課文要的是副詞「だいぶ」）。在送去合成之前，把左邊的寫法換成右邊的假名。
@@ -243,15 +256,26 @@ def main():
     )
 
     # 清掉不再被 manifest 引用的舊檔（例如發音修正後換了檔名的那幾個）
+    # 安全閥：資料被改壞時 manifest 會突然變很小，若照刪就會清空整個 audio/，
+    # 重產要花 API 額度與時間。刪除比例過高就停手，請人確認。
     keep = set(manifest.values())
-    removed = 0
-    for mp3 in AUDIO_DIR.glob("*.mp3"):
-        if mp3.name not in keep:
+    existing = sorted(AUDIO_DIR.glob("*.mp3"))
+    stale = [m for m in existing if m.name not in keep]
+    ratio = len(stale) / len(existing) if existing else 0
+    if prune_blocked(len(stale), len(existing)):
+        print(
+            f"\n⚠ 本次要刪 {len(stale)} / {len(existing)} 個音檔（{ratio:.0%}），比例異常高，已停手沒有刪。"
+            f"\n  manifest 只剩 {len(manifest)} 筆——先確認 data/vocab.json 與 data/lessons/*.json 沒有被改壞。"
+            f"\n  確定要刪就重跑一次並加上環境變數：AUDIO_PRUNE_FORCE=1"
+        )
+    else:
+        removed = 0
+        for mp3 in stale:
             mp3.unlink()
             removed += 1
             print(f"刪除舊檔 {mp3.name}")
-    if removed:
-        print(f"清掉 {removed} 個沒用到的舊音檔。")
+        if removed:
+            print(f"清掉 {removed} 個沒用到的舊音檔。")
 
     print(
         f"\n完成：新產生 {made} 個、跳過 {skipped} 個。"

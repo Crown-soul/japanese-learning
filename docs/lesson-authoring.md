@@ -54,7 +54,11 @@
 - `課文形` = 該處實際出現的形（`倒れて`、`予約`…），**純文字不再加注音**。
 - `讀音` = 對整個「課文形」的假名（會變 ruby 顯示在課文形上方）。
 - 引擎解析順序：先抽 `{{…}}` 換佔位符登記，再把其餘 `漢字（かな）` 變 `<ruby>`。所以目標單字的注音走 `讀音` 欄，不走 `（かな）`。
-- 音檔 key（`play()` 查的）= 段落去掉 `（かな）`、`{{}}` 取課文形、`[[g#]]`/`[[/g]]` 標記本身。skill 不用自己算，`generate-audio.py` / 引擎的 `parsePara()` / `validate-lessons.py` 的 `plain()` 三邊都一致處理，改動析法時三個要一起改。
+- 音檔 key（`play()` 查的）= 段落去掉 `（かな）`、`{{}}` 取課文形、`[[g#]]`/`[[/g]]` 標記本身。skill 不用自己算。**下列四個地方必須一致處理，改析法時四個要一起改**（漏改會讓段落對不到音檔 key）：
+  1. `generate-audio.py` 的 `clean_story_json()` —— 決定音檔 key 與檔名
+  2. `build-audio-check.py` 的 `clean()` 與 `annotated()` —— 決定語音檢查表列不列得出這段
+  3. `validate-lessons.py` 的 `plain()` —— 決定 `reading[].ref` 與音檔覆蓋率檢查
+  4. `assets/lesson-engine.js` 的 `parsePara()` —— 決定網頁上按播放時查哪個 key
 
 ## `data/vocab.json` 新字
 
