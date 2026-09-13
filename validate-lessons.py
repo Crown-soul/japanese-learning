@@ -14,8 +14,10 @@
   9. vocab 新字：reading 全假名、必要欄位齊、lessons 非空
  10. 段落裡的 [[g#]]/[[/g]]（文法點點擊標記）數量成對、# 是 grammar[] 的合法索引
  11. 每篇故事都至少有一個 [[g#]] 標記；每個 grammar[] 文法點至少被標記一次
- 12. [[g#]] 包起來的文字裡真的看得到該文法的字樣（活用形類無字樣可比，跳過並提醒人工看）
- 13. 每篇故事都有 translation，長度跟 paragraphs 一樣、每段非空
+ 12. [[g#]] 包起來的文字裡真的看得到該文法的字樣（活用形類無字樣可比，跳過並提醒人工看）；
+     字樣撞到別的條目時，能用接續判的就判（～そうだ 樣態／傳聞），判不了的指名位置請人工看
+ 13. grammar[].example 本身也要看得到該文法的字樣；同一課不可放兩個字樣一樣的文法點
+ 14. 每篇故事都有 translation，長度跟 paragraphs 一樣、每段非空
 
 用法：
     python3 validate-lessons.py            # 驗全部
@@ -96,12 +98,53 @@ def story_paras(s):
     return (s.get("paragraphs") or []) if isinstance(s, dict) else []
 
 
+def n4_headings():
+    """docs/n4-grammar.md 的 ### 標題（可當 point 用的），排除註明「不列為」的條目。"""
+    if not N4.exists():
+        return []
+    txt = N4.read_text(encoding="utf-8")
+    return [h for h in re.findall(r"^###\s+(.+?)\s*$", txt, re.M) if "不列為" not in h]
+
+
+def stem_families():
+    """字樣一模一樣、只能靠語意分辨的文法點家族：{字樣: {標題, ...}}。"""
+    idx = {}
+    for h in n4_headings():
+        for v in point_stems(h):
+            idx.setdefault(tuple(v), set()).add(h)
+    return {k: v for k, v in idx.items() if len(v) > 1}
+
+
+# ── ～そうだ 樣態／傳聞：接續完全不重疊，可以自動分辨 ──
+# 傳聞接普通形（降る そう／おいしい そう／だ そう／た そう）
+SOU_PLAIN_TAIL = set("たいだ") | set("うくぐすつぬぶむる")
+
+
+def can_disambiguate(point):
+    """這個文法點能不能靠接續規則自動分辨（撞名時用來決定要不要放行）。"""
+    return "そうだ" in point and ("様態" in point or "傳聞" in point)
+
+
+def disambiguate(point, span):
+    """同字樣的文法點，用接續再判一次。
+
+    回傳 True=接續對得上、False=接續對不上（標錯條目）、None=無法判斷（交給人工）。
+    """
+    if "そうだ" in point and ("様態" in point or "傳聞" in point):
+        i = span.find("そう")
+        if i <= 0:
+            return None
+        looks_plain = span[i - 1] in SOU_PLAIN_TAIL
+        return looks_plain if "傳聞" in point else (not looks_plain)
+    return None
+
+
 def n4_points():
     if not N4.exists():
         return None
     txt = N4.read_text(encoding="utf-8")
     # 標題 (### ～てしまう／～ちゃう) 或表格首欄 (| すると |)
-    raw = set(re.findall(r"^###\s+(.+?)\s*$", txt, re.M))
+    raw = set(n4_headings())
     raw |= set(re.findall(r"^\|\s*([^|｜\s][^|]*?)\s*\|", txt, re.M))
     norm = set()
     for p in raw:
@@ -193,10 +236,31 @@ def check_lesson(path, vocab, n4):
         pt = (g.get("point") or "").strip()
         if n4 is not None and pt and pt not in n4 and re.sub(r"（.*?）", "", pt).strip() not in n4:
             err(lid, f"grammar[{gi}] 的 point「{pt}」在 docs/n4-grammar.md 找不到")
+        # 例句本身要看得到這個文法的字樣
+        stems = point_stems(pt)
+        ex = plain(g.get("example") or "")
+        if stems and ex and not any(all(part in ex for part in v) for v in stems):
+            want = "／".join("＋".join(v) for v in stems)
+            err(lid, f"grammar[{gi}] 的 example「{ex}」裡找不到「{pt}」的字樣（{want}）")
+
+    # 同一課出現字樣一模一樣的兩個文法點 → 標記無法驗證，也容易混
+    for a in range(len(grammar)):
+        for b in range(a + 1, len(grammar)):
+            pa = (grammar[a].get("point") or "").strip()
+            pb = (grammar[b].get("point") or "").strip()
+            sa = {tuple(v) for v in point_stems(pa)}
+            sb = {tuple(v) for v in point_stems(pb)}
+            same = sa & sb
+            if same and not (can_disambiguate(pa) and can_disambiguate(pb)):
+                shared = "／".join("＋".join(v) for v in sorted(same))
+                err(lid, f"grammar[{a}]「{pa}」和 grammar[{b}]「{pb}」字樣一樣（{shared}），"
+                         f"驗證器分不出標記指的是哪一個——請換掉其中一個，或拆到不同課")
 
     # 故事裡的文法標記 [[g#]]…[[/g]]
     marked_all = set()
     unverifiable = set()
+    ambiguous = {}          # (索引, point) -> [出現位置, ...]
+    families = stem_families()
     for si, s in enumerate(stories, 1):
         marked_here = set()
         for p in story_paras(s):
@@ -225,6 +289,19 @@ def check_lesson(path, vocab, n4):
                     want = "／".join("＋".join(v) for v in stems)
                     err(lid, f"stories[{si}] 的 [[g{gi_n}]]「{span}」裡找不到"
                              f"「{pt}」的字樣（{want}）——標記範圍可能包錯位置或索引指錯文法")
+                    continue
+                # 字樣對得上，但這個字樣可能對應到文件裡的另一個條目
+                kin = set()
+                for v in stems:
+                    kin |= {h for h in families.get(tuple(v), set()) if h != pt}
+                if not kin:
+                    continue
+                verdict = disambiguate(pt, span)
+                if verdict is False:
+                    err(lid, f"stories[{si}] 的 [[g{gi_n}]]「{span}」接續對不上「{pt}」"
+                             f"——看起來是「{'、'.join(sorted(kin))}」，索引可能指錯條目")
+                elif verdict is None:
+                    ambiguous.setdefault((gi_n, pt), []).append(f"篇{si}「{span}」")
         if grammar and not marked_here:
             err(lid, f"stories[{si}] 整篇沒有任何 [[g#]] 文法標記"
                      f"（每篇故事都要標，不是只標第一篇）")
@@ -237,6 +314,12 @@ def check_lesson(path, vocab, n4):
     if unverifiable:
         listed = "、".join(f"g{gi}（{pt}）" for gi, pt in sorted(unverifiable))
         warn(lid, f"這些文法點無法自動比對標記位置（活用形／佔位符號類），請人工確認：{listed}")
+    for (gi_n, pt), where in sorted(ambiguous.items()):
+        kin = set()
+        for v in point_stems(pt):
+            kin |= {h for h in families.get(tuple(v), set()) if h != pt}
+        warn(lid, f"g{gi_n}（{pt}）跟「{'、'.join(sorted(kin))}」字樣一樣，只能靠語意分辨，"
+                  f"請人工確認這 {len(where)} 處標對條目沒有：{'、'.join(where)}")
 
     # grammarQuiz
     for qi, q in enumerate(data.get("grammarQuiz") or []):
