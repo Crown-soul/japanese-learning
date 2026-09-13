@@ -51,6 +51,7 @@
 | TTS 金鑰、發音修正機制、已知誤讀 | `docs/tts-notes.md` |
 | 任務中途交接（範本；實際交接文件不進 repo） | `docs/handoff-template.md` |
 | 過去做了什麼（人看的，AI 不用載入） | `docs/changelog.md` |
+| 模考產生器（跨課複習考卷）的設計與分階段 | `docs/mock-exam-plan.md`（規劃中，未動工） |
 | 生成新課的完整步驟 | `.claude/skills/new-lesson/SKILL.md` |
 
 ## 驗證與 Hook
