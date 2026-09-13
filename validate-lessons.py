@@ -28,6 +28,7 @@
 import json
 import re
 import sys
+from functools import lru_cache
 from pathlib import Path
 
 ROOT = Path(__file__).parent
@@ -69,11 +70,13 @@ PLACEHOLDER = ("形", "疑問詞", "＋", "特殊", "動詞", "名詞", "vs")
 CONJ_TAIL = "うくぐすつぬぶむるだい"
 
 
+@lru_cache(maxsize=None)
 def point_stems(point):
     """把 grammar[].point 轉成「課文裡至少要出現其中一個」的字樣清單。
 
-    回傳 [] 代表這個文法點無法用字面比對（例：受身形、使役形、疑問詞＋か），
+    回傳空 tuple 代表這個文法點無法用字面比對（例：受身形、使役形、疑問詞＋か），
     這種只能人工看，呼叫端要跳過而不是報錯。
+    每個元素是一組「全部都要出現」的字樣（多格式文法如 ～ば～ほど）。
     """
     stems = []
     for variant in re.split(r"[／/]", point or ""):
@@ -89,8 +92,13 @@ def point_stems(point):
                 part = part[:-1]          # 砍語尾，容許活用（ておく→てお、そうだ→そう）
             cooked.append(part)
         if cooked:
-            stems.append(cooked)
-    return stems
+            stems.append(tuple(cooked))
+    return tuple(stems)
+
+
+def stems_too_weak(stems):
+    """字樣短到幾乎每句都會命中（～と／～ば／～の／～間／お…），比對等於沒比對。"""
+    return bool(stems) and all(sum(len(part) for part in v) < 2 for v in stems)
 
 
 def story_paras(s):
@@ -98,16 +106,21 @@ def story_paras(s):
     return (s.get("paragraphs") or []) if isinstance(s, dict) else []
 
 
+@lru_cache(maxsize=1)
 def n4_headings():
     """docs/n4-grammar.md 的 ### 標題（可當 point 用的），排除註明「不列為」的條目。"""
     if not N4.exists():
-        return []
+        return ()
     txt = N4.read_text(encoding="utf-8")
-    return [h for h in re.findall(r"^###\s+(.+?)\s*$", txt, re.M) if "不列為" not in h]
+    return tuple(h for h in re.findall(r"^###\s+(.+?)\s*$", txt, re.M) if "不列為" not in h)
 
 
+@lru_cache(maxsize=1)
 def stem_families():
-    """字樣一模一樣、只能靠語意分辨的文法點家族：{字樣: {標題, ...}}。"""
+    """字樣一模一樣、只能靠語意分辨的文法點家族：{字樣: {標題, ...}}。
+
+    只跟 docs/n4-grammar.md 有關，跟課程無關，所以整支腳本算一次就好。
+    """
     idx = {}
     for h in n4_headings():
         for v in point_stems(h):
@@ -281,8 +294,9 @@ def check_lesson(path, vocab, n4):
                     continue
                 pt = (grammar[gi_n].get("point") or "").strip()
                 stems = point_stems(pt)
-                if not stems:
-                    unverifiable.add((gi_n, pt))   # 活用形之類，只能人工看
+                if not stems or stems_too_weak(stems):
+                    # 活用形之類沒字樣可比，或字樣短到每句都命中（～と／～の…）
+                    unverifiable.add((gi_n, pt))
                     continue
                 span = plain(inner)
                 if not any(all(part in span for part in variant) for variant in stems):
