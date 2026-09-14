@@ -57,6 +57,11 @@ def warn(lid, msg):
     warns.append(f"[{lid}] {msg}")
 
 
+SENT_END_RE = re.compile(r"[。！？!?]")
+# 常見翻譯腔（中文不會這樣講）；只提醒不擋
+STIFF_ZH = ("在了", "而居", "進行了", "作出了", "是…的", "所謂的")
+
+
 def plain(raw):
     t = TARGET_RE.sub(lambda m: m.group(2), raw)
     t = GRAM_OPEN_RE.sub("", t)
@@ -227,6 +232,24 @@ def check_lesson(path, vocab, n4):
                      f"（paragraphs {len(paras)} 段，translation {len(tr)} 段）")
         elif any(not isinstance(t, str) or not t.strip() for t in tr):
             err(lid, f"stories[{si}].translation 有空白段落，每一段都要翻譯")
+        else:
+            # 翻譯完整度：日文一句對中文一句（可以合併一句，不能漏）；字數比太低＝只翻了開頭
+            for pi, (para, t) in enumerate(zip(paras, tr), 1):
+                ja = plain(para)
+                nj = len(SENT_END_RE.findall(ja)) or 1
+                nz = len(SENT_END_RE.findall(t)) or 1
+                ratio = len(t) / max(1, len(ja))
+                where = f"stories[{si}] 段{pi}"
+                if ratio < 0.45 or nz < nj - 1:
+                    err(lid, f"{where} 的翻譯明顯不完整（日文 {nj} 句／{len(ja)} 字，中文 {nz} 句／{len(t)} 字）——"
+                             f"每一句都要翻，不是只翻第一句")
+                elif nz != nj:
+                    warn(lid, f"{where} 日文 {nj} 句、中文 {nz} 句，請確認沒有漏句（合併或拆句可以，漏掉不行）")
+                if ratio > 1.4:
+                    warn(lid, f"{where} 中文比日文長很多（{ratio:.2f} 倍），可能加了原文沒有的內容")
+                for bad in STIFF_ZH:
+                    if bad in t:
+                        warn(lid, f"{where} 翻譯出現「{bad}」，讀起來像翻譯腔，請改成台灣口語的說法")
 
     # 這課的目標單字
     lesson_words = {w["key"] for w in vocab if lid in (w.get("lessons") or [])}
