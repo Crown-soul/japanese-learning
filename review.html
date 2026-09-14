@@ -132,7 +132,7 @@
 
   /* ---------- 單字 ---------- */
   var quizKeys = [], qi = 0, quizDir = "jpzh", quizFilter = "due", answerShown = false;
-  function learned() { return Object.keys(vocab).filter(function (k) { return S.getVocab(k); }); }
+  function learned() { return Object.keys(vocab).filter(function (k) { var r = S.getVocab(k); return r && r.seen; }); }
   function pool() {
     if (quizFilter === "due") return S.dueVocab(Object.keys(vocab));
     if (quizFilter === "weak") return learned().filter(function (k) { return (S.getVocab(k).box | 0) <= 1; });

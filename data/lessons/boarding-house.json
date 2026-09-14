@@ -49,85 +49,168 @@
       "point": "～ために（目的）",
       "example": "大学に通うために、生まれた町を出て",
       "meaning": "為了…（目的；前後同一主語、前句用意志動詞）",
-      "n4ref": "みん日II L42 / JLPT Sensei"
+      "n4ref": "みん日II L42 / JLPT Sensei",
+      "chunks": [
+        "大学に",
+        "通うために、",
+        "生まれた町を",
+        "出て"
+      ]
     },
     {
       "point": "～てくれる",
       "example": "大家さんは玄関の暗号を教えてくれた",
       "meaning": "別人為我（方）做…（恩惠朝向我）",
-      "n4ref": "みん日II L24 / JLPT Sensei"
+      "n4ref": "みん日II L24 / JLPT Sensei",
+      "chunks": [
+        "大家さんは",
+        "玄関の",
+        "暗号を",
+        "教えてくれた"
+      ]
     },
     {
       "point": "～ておく",
       "example": "私はすぐ手帳にメモしておいた",
       "meaning": "事先做好／做完就那樣放著",
-      "n4ref": "みん日II L30 / JLPT Sensei"
+      "n4ref": "みん日II L30 / JLPT Sensei",
+      "chunks": [
+        "私は",
+        "すぐ",
+        "手帳に",
+        "メモしておいた"
+      ]
     },
     {
       "point": "～まま",
       "example": "窓を開けたまま寝てしまった",
       "meaning": "保持…的狀態不變",
-      "n4ref": "みん日II L43 / TRY!N4"
+      "n4ref": "みん日II L43 / TRY!N4",
+      "chunks": [
+        "窓を",
+        "開けた",
+        "まま",
+        "寝てしまった"
+      ]
     },
     {
       "point": "～てしまう",
       "example": "棚の本が落ちて、電気も消えてしまった",
       "meaning": "做完／不小心…了（帶遺憾、意外）",
-      "n4ref": "みん日II L29 / JLPT Sensei"
+      "n4ref": "みん日II L29 / JLPT Sensei",
+      "chunks": [
+        "棚の本が",
+        "落ちて、",
+        "電気も",
+        "消えてしまった"
+      ]
     },
     {
       "point": "～たら（過去的發現）",
       "example": "玄関のドアを開けたら、大家さんが外に立っていた",
       "meaning": "做了A之後（意外地）發現B已經發生",
-      "n4ref": "みん日II L25 應用 / TRY!N4"
+      "n4ref": "みん日II L25 應用 / TRY!N4",
+      "chunks": [
+        "玄関のドアを",
+        "開けたら、",
+        "大家さんが",
+        "外に立っていた"
+      ]
     },
     {
       "point": "～ながら（同時進行）",
       "example": "音楽を聞きながら料理をしていたら",
       "meaning": "一邊…一邊…（同一主語）",
-      "n4ref": "みん日II L28 / JLPT Sensei"
+      "n4ref": "みん日II L28 / JLPT Sensei",
+      "chunks": [
+        "音楽を",
+        "聞きながら",
+        "料理を",
+        "していたら"
+      ]
     },
     {
       "point": "～てもらう",
       "example": "野菜の炒め方を教えてもらった",
       "meaning": "（我方）請別人做…、得到別人做…的恩惠",
-      "n4ref": "みん日II L24 / JLPT Sensei"
+      "n4ref": "みん日II L24 / JLPT Sensei",
+      "chunks": [
+        "野菜の",
+        "炒め方を",
+        "教えて",
+        "もらった"
+      ]
     },
     {
       "point": "受身形（被動）",
       "example": "「よく眠れた？」と笑って聞かれ",
       "meaning": "被…（動作由別人施加在我身上）",
-      "n4ref": "みん日II L37 / JLPT Sensei"
+      "n4ref": "みん日II L37 / JLPT Sensei",
+      "chunks": [
+        "「よく眠れた？」と",
+        "笑って",
+        "聞かれ"
+      ]
     },
     {
       "point": "～のに（逆接）",
       "example": "静かな町がいいと言ったのに、一番うるさいのは私だ",
       "meaning": "雖然…卻…（既成事實的逆接，帶意外或不滿）",
-      "n4ref": "みん日II L45 / JLPT Sensei"
+      "n4ref": "みん日II L45 / JLPT Sensei",
+      "chunks": [
+        "静かな町が",
+        "いいと言ったのに、",
+        "一番うるさいのは",
+        "私だ"
+      ]
     },
     {
       "point": "～ようになる",
       "example": "今は一人で作れるようになった",
       "meaning": "（能力、習慣）變得會…（漸進的自然變化）",
-      "n4ref": "みん日II L36 / JLPT Sensei"
+      "n4ref": "みん日II L36 / JLPT Sensei",
+      "chunks": [
+        "今は",
+        "一人で",
+        "作れる",
+        "ようになった"
+      ]
     },
     {
       "point": "～ても",
       "example": "いくら安くても栄養が足りない",
       "meaning": "即使…也…（逆接假定；常搭配 いくら／どんなに）",
-      "n4ref": "みん日II L25 / JLPT Sensei"
+      "n4ref": "みん日II L25 / JLPT Sensei",
+      "chunks": [
+        "いくら",
+        "安くても",
+        "栄養が",
+        "足りない"
+      ]
     },
     {
       "point": "～そうだ（様態）",
       "example": "母は電話で今にも泣きそうな声を出し",
       "meaning": "看起來快要…／看起來很…（憑外觀判斷）",
-      "n4ref": "みん日II L43 / JLPT Sensei"
+      "n4ref": "みん日II L43 / JLPT Sensei",
+      "chunks": [
+        "母は電話で",
+        "今にも",
+        "泣きそうな",
+        "声を出し"
+      ]
     },
     {
       "point": "～たびに",
       "example": "この写真を見るたびに、この町を思い出すだろう",
       "meaning": "每次…就…",
-      "n4ref": "JLPT Sensei / TRY!N4"
+      "n4ref": "JLPT Sensei / TRY!N4",
+      "chunks": [
+        "この写真を",
+        "見るたびに、",
+        "この町を",
+        "思い出すだろう"
+      ]
     }
   ],
   "grammarQuiz": [

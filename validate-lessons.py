@@ -261,6 +261,13 @@ def check_lesson(path, vocab, n4):
             err(lid, f"grammar[{gi}] 的 point「{pt}」在 docs/n4-grammar.md 已標「停用」，請改用替代條目")
         elif n4 is not None and pt and pt not in n4 and re.sub(r"（.*?）", "", pt).strip() not in n4:
             err(lid, f"grammar[{gi}] 的 point「{pt}」在 docs/n4-grammar.md 找不到")
+        # 並べ替え用的分段（選填）：接起來要剛好等於 example，至少 3 段
+        ch = g.get("chunks")
+        if ch is not None:
+            if not isinstance(ch, list) or len(ch) < 3 or any(not isinstance(x, str) or not x for x in ch):
+                err(lid, f"grammar[{gi}].chunks 要是至少 3 段的非空字串陣列")
+            elif "".join(ch) != (g.get("example") or ""):
+                err(lid, f"grammar[{gi}].chunks 接起來（{''.join(ch)}）不等於 example（{g.get('example')}）")
         # 例句本身要看得到這個文法的字樣
         stems = point_stems(pt)
         ex = plain(g.get("example") or "")

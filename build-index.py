@@ -163,8 +163,10 @@ footer{{margin-top:28px;color:var(--muted);font-size:12px}}
   <ul>
 {rows}
   </ul>
+  <h2>工具</h2>
   <div class="tools">
     <a href="review.html">跨課複習中心</a>
+{tools}
   </div>
   <footer>此頁由 build-index.py 自動產生，請勿手動編輯。</footer>
 </div>
@@ -219,8 +221,12 @@ ROW = '''    <li><a class="card" href="{href}" data-id="{id}">
 
 def main():
     items = collect()
-    rows = []
+    rows, tools = [], []
     for it in items:
+        # 沒有單字資料的頁面是工具（單字總表、動詞工具、文法查詢），不是課程
+        if not it["meta"] and not it["words"]:
+            tools.append(f'    <a href="{html.escape(it["href"])}">{html.escape(it["title"])}</a>')
+            continue
         meta = ""
         if it["meta"]:
             m = it["meta"]
@@ -238,6 +244,7 @@ def main():
         count=len(items),
         updated=(max(it["date"] for it in items) if items else datetime.date.today()).isoformat(),
         rows="\n".join(rows),
+        tools="\n".join(tools),
     )
     OUTPUT.write_text(page, encoding="utf-8")
     print(f"已產生 {OUTPUT}（{len(items)} 份檔案）")

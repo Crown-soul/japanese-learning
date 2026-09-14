@@ -34,6 +34,10 @@ jobs:
         run: |
           python3 build-index.py
           git diff --exit-code index.html || (echo "index.html 過期，請本機跑 build-index.py 後 commit" && exit 1)
+      - name: 文法查詢資料與現況一致（build-grammar 無 diff）
+        run: |
+          python3 build-grammar.py
+          git diff --exit-code data/grammar.json || (echo "data/grammar.json 過期，請本機跑 build-grammar.py 後 commit" && exit 1)
       - name: 語音檢查表與現況一致（build-audio-check 無 diff）
         run: |
           python3 build-audio-check.py

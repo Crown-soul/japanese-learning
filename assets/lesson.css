@@ -167,6 +167,18 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 .gq-explain.show{display:block}
 .gq-explain b{font-size:15px}
 
+/* ── 並べ替え ── */
+.so-answer{min-height:52px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;padding:10px;border:2px dashed var(--line);border-radius:12px;margin:10px 0 12px;font-size:1.1rem;line-height:1.6}
+.so-answer.so-ok{border-color:#3aa564;background:var(--good)}
+.so-answer.so-ng{border-color:#d06666;background:var(--bad)}
+.so-slot{color:var(--muted);font-size:14px}
+.so-chip{background:var(--soft);border-radius:8px;padding:2px 8px}
+.so-pool{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.so-pool button{font-size:1.05rem;line-height:1.5}
+.so-pool button:disabled{opacity:.25}
+.note{width:100%;font:inherit;font-size:15px;line-height:1.6;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--text);resize:vertical;margin-top:6px}
+.note:focus-visible{outline:3px solid var(--muted);outline-offset:2px}
+
 .playall{font-size:12px;font-weight:500;padding:5px 10px;min-height:30px;border-radius:999px}
 .playall.playing{background:var(--accent);color:var(--bg);border-color:var(--accent)}
 .bigplay{font-size:1.1rem;padding:14px 22px;border-radius:14px}

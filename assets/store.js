@@ -89,7 +89,7 @@
 
   /* ---------- SRS ---------- */
   function applyRating(rec, rating) {
-    var box = rec && rec.box | 0;
+    var box = (rec ? rec.box : 0) | 0;
     if (rating === "good") box = Math.min(MAX_BOX, box + 1);
     else if (rating === "mid") box = Math.max(1, box);
     else box = box >= MASTER_BOX ? 3 : 0;
@@ -125,7 +125,7 @@
     var s = { total: keys.length, master: 0, learning: 0, fresh: 0, due: 0, graduated: 0 };
     keys.forEach(function (k) {
       var r = b[k];
-      if (!r) { s.fresh++; return; }
+      if (!r || !r.seen) { s.fresh++; return; }   // 只寫了筆記、還沒練過的也算未學
       if (r.box >= GRADUATE_BOX) { s.graduated++; s.master++; return; }
       if (r.box >= MASTER_BOX) s.master++; else s.learning++;
       if (r.due && r.due <= t) s.due++;

@@ -1,0 +1,156 @@
+<!DOCTYPE html><html lang="zh-Hant"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%E6%96%87%3C/text%3E%3C/svg%3E">
+<title>N4 文法查詢</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<style>
+  .app{padding-bottom:40px}
+  .search{width:100%;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);margin:0 0 10px}
+  .secnav{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+  .secnav button{min-height:32px;padding:4px 10px;font-size:13px;border-radius:999px}
+  h2.sec{font-size:1rem;margin:22px 0 8px;color:var(--gram);display:flex;align-items:baseline;gap:8px}
+  h2.sec small{color:var(--muted);font-weight:400;font-size:12px}
+  .secnote{background:var(--gram-soft);border-radius:10px;padding:10px 12px;font-size:13.5px;color:var(--text);margin:0 0 10px;white-space:pre-line;line-height:1.7}
+  details.pt{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:0 0 8px;padding:0}
+  details.pt summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px;min-height:48px}
+  details.pt summary::-webkit-details-marker{display:none}
+  details.pt summary .t{font-weight:700;flex:1;min-width:0}
+  details.pt summary .m{color:var(--muted);font-size:13px;flex:1.4;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  details.pt[open] summary .m{white-space:normal}
+  .pill{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted);white-space:nowrap}
+  .pill.due{background:var(--warn)}.pill.ok{background:var(--good)}
+  .pill.retired{background:var(--bad)}
+  .body{padding:0 14px 14px;font-size:14.5px}
+  .body .kv{margin-top:8px;padding-top:8px}
+  .body .kv strong{display:block;font-size:12px;color:var(--muted);letter-spacing:.04em;margin-bottom:2px}
+  .body .kv div{white-space:pre-line;line-height:1.7}
+  .taught a{color:var(--gram);text-decoration:none;margin-right:10px}
+  .conj table{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .conj th,.conj td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  .conj th{font-size:12px;color:var(--muted);font-weight:500;background:var(--soft)}
+  .empty{color:var(--muted);padding:20px 0;text-align:center}
+  mark{background:var(--warn);color:inherit;border-radius:3px;padding:0 1px}
+</style>
+</head><body>
+<div class="app" id="app">
+  <header>
+    <div class="hrow"><a class="backlink" href="../">← 回目錄</a><button class="gear" id="gearBtn" aria-label="設定">⚙︎</button></div>
+    <h1>N4 文法查詢 <span class="small" id="count"></span></h1>
+    <input class="search" id="q" type="search" placeholder="搜尋：たら、ば、被動、為了…" aria-label="搜尋文法">
+  </header>
+  <div class="secnav" id="secnav"></div>
+  <div id="list"><p class="empty">載入中…（需用本機伺服器或線上版開啟）</p></div>
+</div>
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+<script src="../assets/store.js"></script>
+<script>
+(function () {
+  "use strict";
+  var S = window.JLStore;
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function applyTheme() { if (!S) return; var t = S.getSettings().theme; if (t === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", t); }
+  function applyFont() { if (!S) return; document.documentElement.style.setProperty("--fs", (S.getSettings().fs || 18) + "px"); }
+  applyTheme(); applyFont();
+
+  var DATA = null, sec = "all", query = "";
+  function hl(s) {
+    s = esc(s);
+    if (!query) return s;
+    var q = esc(query).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return s.replace(new RegExp(q, "gi"), function (m) { return "<mark>" + m + "</mark>"; });
+  }
+  function status(p) {
+    if (p.retired) return '<span class="pill retired">停用</span>';
+    var r = S && S.getGrammar(p.title);
+    if (!r) return "";
+    if (S.isDue(r)) return '<span class="pill due">今日到期</span>';
+    return '<span class="pill ok">' + esc(S.boxLabel(r).split("（")[0].split(" ·")[0]) + "</span>";
+  }
+  function matches(p) {
+    if (sec !== "all" && p.section !== sec) return false;
+    if (!query) return true;
+    var q = query.toLowerCase();
+    var hay = [p.title].concat(Object.keys(p.fields).map(function (k) { return p.fields[k]; })).concat(p.extra).join("\n").toLowerCase();
+    return hay.indexOf(q) >= 0;
+  }
+  var FIELD_ORDER = ["接續", "意思", "例", "誤區", "對比", "來源"];
+  function pointHTML(p) {
+    var body = FIELD_ORDER.filter(function (k) { return p.fields[k]; }).map(function (k) {
+      return '<div class="kv"><strong>' + esc(k) + '</strong><div' + (k === "例" || k === "接續" ? ' lang="ja"' : "") + ">" + hl(p.fields[k]) + "</div></div>";
+    }).join("");
+    Object.keys(p.fields).forEach(function (k) { if (FIELD_ORDER.indexOf(k) < 0) body += '<div class="kv"><strong>' + esc(k) + "</strong><div>" + hl(p.fields[k]) + "</div></div>"; });
+    if (p.extra.length) body += '<div class="kv"><strong>補充</strong><div>' + p.extra.map(hl).join("\n") + "</div></div>";
+    if (p.retiredNote) body += '<div class="kv"><strong>停用</strong><div>' + esc(p.retiredNote) + "</div></div>";
+    body += '<div class="kv taught"><strong>教過的課</strong><div>' + (p.lessons.length
+      ? p.lessons.map(function (l) { return '<a href="' + esc(l.id) + '.html">' + esc(l.title) + "</a>"; }).join("")
+      : '<span class="small">還沒有課教到這條</span>') + "</div></div>";
+    return '<details class="pt"><summary><span class="t" lang="ja">' + hl(p.title) + '</span><span class="m">' + hl(p.fields["意思"] || "") + "</span>" + status(p) + "</summary>" +
+      '<div class="body">' + body + "</div></details>";
+  }
+  function render() {
+    var host = $("list");
+    if (!DATA) return;
+    var shown = 0, out = "";
+    DATA.sections.forEach(function (s) {
+      var pts = DATA.points.filter(function (p) { return p.section === s.id && matches(p); });
+      if (query) {
+        var q = query.toLowerCase();
+        pts.sort(function (a, b) { return (b.title.toLowerCase().indexOf(q) >= 0) - (a.title.toLowerCase().indexOf(q) >= 0); });
+      }
+      var isConj = /接續詞/.test(s.title);
+      if (!pts.length && !(isConj && (sec === "all" || sec === s.id))) return;
+      out += '<h2 class="sec">' + esc(s.id) + ". " + esc(s.title) + (pts.length ? "<small>" + pts.length + " 條</small>" : "") + "</h2>";
+      if (s.note && !query) out += '<div class="secnote">' + esc(s.note) + "</div>";
+      out += pts.map(function (p) { shown++; return pointHTML(p); }).join("");
+      if (isConj) {
+        var rows = DATA.conjunctions.filter(function (c) { return !query || (c.word + c.meaning + c.example).toLowerCase().indexOf(query.toLowerCase()) >= 0; });
+        if (rows.length) {
+          shown += rows.length;
+          out += '<div class="conj"><table><thead><tr><th>接續詞</th><th>意思</th><th>例</th></tr></thead><tbody>' +
+            rows.map(function (c) { return '<tr><td lang="ja"><b>' + hl(c.word) + "</b></td><td>" + hl(c.meaning) + '</td><td lang="ja">' + hl(c.example) + "</td></tr>"; }).join("") +
+            "</tbody></table></div>";
+        }
+      }
+    });
+    host.innerHTML = out || '<p class="empty">沒有符合「' + esc(query) + "」的文法點。</p>";
+    $("count").textContent = shown + " 條";
+    if (query) host.querySelectorAll("details.pt").forEach(function (d) { d.open = true; });
+  }
+  $("q").addEventListener("input", function (e) { query = e.target.value.trim(); render(); });
+
+  var modal = $("modal"), sheet = $("sheet");
+  $("gearBtn").onclick = function () {
+    if (!S) return;
+    var cfg = S.getSettings(), act = function (v, cur) { return String(v) === String(cur) ? " active" : ""; };
+    sheet.innerHTML = '<button class="sheet-close" data-act="close">關閉</button><h3>設定</h3>' +
+      '<div class="setrow"><span class="lab">深色模式</span>' + ["auto:跟系統", "light:淺色", "dark:深色"].map(function (x) { var p = x.split(":"); return '<button data-set="theme" data-val="' + p[0] + '" class="' + act(p[0], cfg.theme) + '">' + p[1] + "</button>"; }).join("") + "</div>" +
+      '<div class="setrow"><span class="lab">字級</span>' + ["16:小", "18:中", "20:大", "23:特大"].map(function (x) { var p = x.split(":"); return '<button data-set="fs" data-val="' + p[0] + '" class="' + act(p[0], cfg.fs) + '">' + p[1] + "</button>"; }).join("") + "</div>";
+    modal.classList.add("show");
+  };
+  modal.addEventListener("click", function (e) { if (e.target === modal) modal.classList.remove("show"); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") modal.classList.remove("show"); });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-act],[data-set]"); if (!b) return;
+    if (b.dataset.act === "close") modal.classList.remove("show");
+    else if (b.dataset.set === "theme") { S.saveSettings({ theme: b.dataset.val }); applyTheme(); $("gearBtn").onclick(); }
+    else if (b.dataset.set === "fs") { S.saveSettings({ fs: +b.dataset.val }); applyFont(); $("gearBtn").onclick(); }
+  });
+
+  fetch("../data/grammar.json").then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(function (d) {
+    DATA = d;
+    var nav = $("secnav");
+    nav.innerHTML = '<button class="active" data-sec="all">全部</button>' + d.sections.map(function (s) { return '<button data-sec="' + esc(s.id) + '">' + esc(s.id) + " " + esc(s.title) + "</button>"; }).join("");
+    nav.addEventListener("click", function (e) {
+      var b = e.target.closest("button[data-sec]"); if (!b) return;
+      sec = b.dataset.sec; nav.querySelectorAll("button").forEach(function (x) { x.classList.toggle("active", x === b); }); render();
+    });
+    render();
+  }).catch(function (e) {
+    console.error(e);
+    $("list").innerHTML = '<p class="empty">文法資料載入失敗。請用本機伺服器（python3 -m http.server）或線上版開啟，並確認已跑過 build-grammar.py。</p>';
+  });
+})();
+</script>
+</body></html>
