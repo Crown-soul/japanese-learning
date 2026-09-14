@@ -1,7 +1,7 @@
 /* ============================================================
    課程共用樣式（引擎版）
    由 lessons/<id>.html 薄殼 <link>，配合 assets/lesson-engine.js。
-   從 lessons/日文70單字學習器.html 的內嵌 <style> 移植而來。
+   手機優先：分頁列固定在底部（拇指區），header 只留標題與注音控制。
    ============================================================ */
 :root{
   --bg:#f7f7f8; --card:#fff; --text:#1f2328; --muted:#6b7280; --line:#e5e7eb;
@@ -9,6 +9,7 @@
   --good:#eaf7ef; --warn:#fff7e6; --bad:#fff0f0;
   --gram:#7a4a8f; --gram-soft:#f5eef8;
   --fs:18px;
+  --tabs-h:56px;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
@@ -28,25 +29,39 @@
 [hidden]{display:none!important}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Noto Sans JP",sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
 :lang(ja){font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic","Segoe UI",sans-serif}
-.app{max-width:880px;margin:0 auto;padding:0 14px 100px}
+.app{max-width:880px;margin:0 auto;padding:0 14px calc(var(--tabs-h) + 24px + env(safe-area-inset-bottom))}
 
-/* 只把「標題 + 控制鈕」釘在頂端，其餘隨頁面捲動 */
-header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);padding:calc(8px + env(safe-area-inset-top)) 0 8px;margin-bottom:10px}
-.backlink{display:inline-block;font-size:12px;line-height:1.3;color:var(--muted);text-decoration:none;padding:0 0 3px}
+/* ── 頂部：只釘標題與注音控制 ── */
+header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);padding:calc(6px + env(safe-area-inset-top)) 0 6px;margin-bottom:10px}
+.hrow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.backlink{display:inline-block;font-size:12px;line-height:1.3;color:var(--muted);text-decoration:none;padding:4px 0}
 .backlink:hover{color:var(--text)}
-h1{font-size:1.1rem;margin:0 0 8px;display:flex;align-items:center;gap:8px}
-.gear{margin-left:auto;font-size:16px;padding:6px 10px;min-height:0;line-height:1}
-.ctl-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
-.ctl-row:last-child{margin-bottom:0}
-.ctl-label{font-size:12px;color:var(--muted);flex:0 0 2.2em}
+h1{font-size:1.05rem;margin:0 0 6px;line-height:1.3}
+.gear{font-size:16px;padding:4px 10px;min-height:32px;line-height:1}
+.ctl-row{display:flex;gap:6px;align-items:center}
 .ctl-row .grp{display:flex;gap:6px;flex:1;min-width:0}
-.ctl-row .grp button{flex:1;padding:7px 4px;min-height:38px;font-size:13px}
+.ctl-row .grp button{flex:1;padding:6px 2px;min-height:36px;font-size:12.5px;white-space:nowrap}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap}
-button,.btn{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:11px 13px;min-height:44px;font-size:15px;cursor:pointer;touch-action:manipulation}
-button:focus-visible,.word:focus-visible,.gram:focus-visible{outline:3px solid var(--muted);outline-offset:2px}
+button,.btn{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:11px 13px;min-height:44px;font-size:15px;cursor:pointer;touch-action:manipulation;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;line-height:1.2;font-family:inherit}
+button:focus-visible,.btn:focus-visible,.word:focus-visible,.gram:focus-visible,tr[tabindex]:focus-visible{outline:3px solid var(--muted);outline-offset:2px}
 button.active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600}
+button.danger{color:#b42318}
 button:disabled{opacity:.45}
 
+/* ── 底部分頁列 ── */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;background:var(--card);border-top:1px solid var(--line);padding:0 0 env(safe-area-inset-bottom);height:calc(var(--tabs-h) + env(safe-area-inset-bottom))}
+.tabs button{flex:1;border:0;border-radius:0;background:transparent;color:var(--muted);font-size:14px;min-height:var(--tabs-h);padding:0 4px}
+.tabs button.active{background:transparent;color:var(--text);font-weight:700;box-shadow:inset 0 3px 0 var(--accent)}
+
+/* ── 二級切換：一條細的，不是卡片 ── */
+.subtabs{display:flex;gap:6px;margin:0 0 12px}
+.subtabs button{min-height:38px;padding:6px 14px;font-size:14px;border-radius:999px}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
+.filter-row button{min-height:36px;padding:6px 12px;font-size:13.5px;border-radius:999px}
+.filter-row .small{margin-left:auto}
+
+/* ── 進度 ── */
 .hud{margin-bottom:14px}
 .progressbar{height:8px;background:var(--line);border-radius:999px;overflow:hidden}
 .progressbar>div{height:100%;background:var(--accent);width:0;transition:width .3s}
@@ -55,13 +70,26 @@ button:disabled{opacity:.45}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 4px;text-align:center}
 .stat b{display:block;font-size:15px}.stat span{font-size:11px;color:var(--muted)}
 
-.tabs{display:flex;gap:8px;margin:0 0 16px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
 .section{display:none}.section.active{display:block}
-.story-card,.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
-.story-card h2{margin-top:0;font-size:1.15rem}
+.story-card,.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px}
+.story-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:10px}
+.story-head h2{margin:0;font-size:1.1rem;flex:1 1 auto;min-width:0}
+.story-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lang-tabs{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.lang-tabs button{min-height:30px;padding:4px 10px;font-size:12.5px;border:0;border-radius:0}
 .story-text{font-size:var(--fs);line-height:2}
-.story-text p{margin:0 0 1em;text-indent:0}
+.para{margin:0 0 1em}
+.para p{margin:0;text-indent:0}
+.para .zh{display:none;color:var(--muted);font-size:calc(var(--fs) - 3px);line-height:1.7;margin-top:2px;padding-left:30px}
+.story-text[data-lang="zh"] .ja{display:none}
+.story-text[data-lang="zh"] .zh,.story-text[data-lang="both"] .zh{display:block}
+.story-text[data-lang="zh"] .zh{padding-left:0;color:var(--text);font-size:calc(var(--fs) - 1px)}
 body.fg-none .story-text{line-height:1.75}
+@media (min-width:1000px){
+  .app{max-width:1100px}
+  .story-text[data-lang="both"] .para{display:grid;grid-template-columns:1.1fr .9fr;gap:0 24px;align-items:start}
+  .story-text[data-lang="both"] .zh{padding-left:0;margin-top:.35em}
+}
 
 /* ── 注音 ruby ── */
 ruby{ruby-align:center}
@@ -72,21 +100,25 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 
 /* ── 目標單字 ── */
 .word{font-weight:700;border-bottom:2px dotted var(--muted);cursor:pointer;padding:0 1px;border-radius:4px}
-.word:hover{background:var(--hl)}
+@media (hover:hover){.word:hover{background:var(--hl)}}
 .word.blank{display:inline-block;min-width:3.2em;text-align:center;background:var(--soft);border-radius:6px;border-bottom:0;padding:0 6px}
 .word.blank ruby{display:none}
 .word.blank::after{content:"＿＿";color:var(--muted)}
 
-/* ── 文法點（點整段淡色範圍都可點開，角標只是視覺提示，不是唯一熱區）── */
+/* ── 文法點（點整段淡色範圍都可點開，角標只是視覺提示）── */
 .gram{background:var(--gram-soft);border-radius:4px;padding:.15em .1em;margin:-.15em -.1em;cursor:pointer}
 .gram-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;min-height:20px;
   font-size:10px;font-weight:800;color:#fff;background:var(--gram);border-radius:5px;padding:2px 5px;
   margin-left:3px;line-height:1;vertical-align:2px}
-.story-card .lang-tabs{margin:0 0 12px}
 
 .play{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;min-height:0;padding:0;border-radius:50%;font-size:11px;vertical-align:middle;margin-right:6px;flex:none}
 .legend{font-size:13px;color:var(--muted);margin-bottom:10px}
-.tip{background:var(--soft);border-left:4px solid var(--muted);padding:10px 12px;border-radius:8px;margin:12px 0;font-size:14px}
+.tip{background:var(--soft);border-radius:10px;padding:8px 12px;margin:0 0 12px;font-size:13.5px;color:var(--muted)}
+.tip summary{cursor:pointer;font-weight:600;color:var(--text);list-style:none;display:flex;align-items:center;gap:6px;min-height:28px}
+.tip summary::-webkit-details-marker{display:none}
+.tip summary::before{content:"▸";font-size:12px}
+.tip[open] summary::before{content:"▾"}
+.tip>div{margin-top:6px;line-height:1.7}
 
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;z-index:30}
 .modal.show{display:flex}
@@ -101,23 +133,33 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 .status-btn.bad.active{background:var(--bad)}
 .sheet-close{float:right;min-height:0;padding:6px 10px}
 
-.quiz-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;text-align:center}
-.quiz-q{font-size:1.5rem;font-weight:700;margin:8px 0 16px}
-.quiz-hint{color:var(--muted);min-height:28px}
-.quiz-answer{display:none;margin-top:14px;padding:14px;border-radius:12px;background:var(--soft)}
+/* ── 測驗卡 ── */
+.quiz-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 16px;text-align:center}
+.quiz-q{font-size:1.6rem;font-weight:700;margin:8px 0 12px;line-height:1.4}
+.quiz-hint{color:var(--muted);min-height:32px;font-size:14px}
+.hintbtn{min-height:32px;padding:4px 12px;font-size:13px;border-radius:999px;color:var(--muted)}
+.quiz-answer{display:none;margin-top:12px;padding:14px;border-radius:12px;background:var(--soft);text-align:left}
 .quiz-answer.show{display:block}
+.quiz-answer strong{display:block;font-size:1.25rem;margin:2px 0}
+.quiz-answer>span{color:var(--muted)}
 .quiz-controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.quiz-controls .primary{flex:1 1 160px}
+/* 評分鈕固定在底部分頁列上方（拇指區），只在顯示答案後出現 */
+.quiz-dock{position:fixed;left:0;right:0;bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom));z-index:19;display:flex;gap:8px;padding:10px 14px;background:var(--bg);border-top:1px solid var(--line)}
+.quiz-dock button{flex:1;min-height:52px;flex-direction:column;gap:0;font-weight:600}
+.quiz-dock button small{font-size:11px;color:var(--muted);font-weight:400}
+.quiz-dock .good{background:var(--good)}.quiz-dock .mid{background:var(--warn)}.quiz-dock .bad{background:var(--bad)}
 .grammar table{width:100%;border-collapse:collapse;font-size:14px}
 .grammar th,.grammar td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;vertical-align:top}
+.grammar tr.grow{cursor:pointer}
+@media (hover:hover){.grammar tr.grow:hover td{background:var(--hl)}}
 .small{font-size:13px;color:var(--muted)}
-.reset{margin-top:14px}
-.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 
-/* ── 文法克漏字 ── */
+/* ── 文法克漏字 / 讀解 ── */
 .gq-sentence{font-size:1.15rem;font-weight:600;line-height:1.9;margin:6px 0 16px}
 .gq-blank{display:inline-block;min-width:3em;border-bottom:2px solid var(--muted);text-align:center}
 .gq-opts{display:flex;flex-direction:column;gap:8px;margin-top:8px}
-.gq-opts button{text-align:left;font-size:15px;line-height:1.5;white-space:normal}
+.gq-opts button{text-align:left;font-size:15px;line-height:1.5;white-space:normal;justify-content:flex-start}
 .gq-opts button.correct{background:var(--good);border-color:#3aa564}
 .gq-opts button.wrong{background:var(--bad);border-color:#d06666}
 .gq-opts button:disabled{opacity:1}
@@ -125,7 +167,7 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 .gq-explain.show{display:block}
 .gq-explain b{font-size:15px}
 
-.playall{font-size:12px;font-weight:500;padding:5px 10px;min-height:0;border-radius:999px;vertical-align:middle}
+.playall{font-size:12px;font-weight:500;padding:5px 10px;min-height:30px;border-radius:999px}
 .playall.playing{background:var(--accent);color:var(--bg);border-color:var(--accent)}
 .bigplay{font-size:1.1rem;padding:14px 22px;border-radius:14px}
 .setrow{display:flex;align-items:center;gap:8px;margin:14px 0;flex-wrap:wrap}
@@ -136,17 +178,22 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 @media (min-width:600px){
   .ctl-row .grp{flex:0 1 auto}
-  .ctl-row .grp button{flex:0 0 auto;padding:7px 14px}
+  .ctl-row .grp button{flex:0 0 auto;padding:6px 14px}
 }
 @media (min-width:700px){
   .app{padding-top:8px}
   .sheet{border-radius:20px;margin-bottom:20px}
   .modal{align-items:center}
-  h1{max-width:620px}
+  .tabs{position:sticky;top:auto;bottom:0;max-width:880px;margin:24px auto 0;border:1px solid var(--line);border-radius:14px 14px 0 0}
+  .quiz-dock{max-width:880px;margin:0 auto}
+}
+@media (min-width:1000px){
+  .tabs,.quiz-dock{max-width:1100px}
 }
 @media print{
-  header,.hud,.tabs,.toolbar,.filter-row,.quiz-card,.reset,.play,.playall{display:none!important}
+  header,.hud,.tabs,.subtabs,.toolbar,.filter-row,.quiz-card,.quiz-dock,.play,.playall,.tip,.lang-tabs{display:none!important}
   .section{display:block!important}
+  .para .zh{display:block!important}
   body{background:#fff;color:#000;line-height:1.5}
   .story-card,.panel{border:1px solid #999;break-inside:avoid}
   ruby rt{color:#444!important;visibility:visible!important;font-size:.52em!important}
