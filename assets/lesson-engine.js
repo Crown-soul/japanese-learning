@@ -86,7 +86,7 @@
     if (!("speechSynthesis" in window)) { if (onDone) onDone(); return; }
     speechSynthesis.cancel();
     var u = new SpeechSynthesisUtterance(text);
-    u.lang = "ja-JP"; u.rate = 0.85;
+    u.lang = "ja-JP"; u.rate = 0.85 * (setting("audioRate") || 1);
     var ja = voicesCache.find(function (v) { return /^ja(-|_)/i.test(v.lang); });
     if (ja) u.voice = ja;
     if (onDone) u.onend = u.onerror = function () { onDone(); };
@@ -100,6 +100,7 @@
         if (curAudio) { curAudio.pause(); curAudio = null; }
         if ("speechSynthesis" in window) speechSynthesis.cancel();
         curAudio = new Audio("../audio/" + file);
+        curAudio.playbackRate = setting("audioRate") || 1;
         if (onDone) curAudio.onended = function () { onDone(); };
         curAudio.play().catch(function () { speak(text, onDone); });
         return;
@@ -116,6 +117,48 @@
       if (seqStop || i >= texts.length) { btn.classList.remove("playing"); btn.textContent = "▶ 全篇"; return; }
       play(texts[i++], step);
     })();
+  }
+
+  /* ---------- 錄音回放（跟讀用；只留在記憶體，不評分、不上傳）---------- */
+  var rec = null, recChunks = [], recUrl = null, recTarget = "";
+  function recSupported() { return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder); }
+  function recorderHTML(text) {
+    if (!recSupported()) return "";
+    return '<div class="recbar" data-rectext="' + esc(text) + '">' +
+      '<button data-rec="start">● 錄音</button>' +
+      '<button data-rec="stop" hidden>■ 停止</button>' +
+      '<button data-rec="mine" disabled>▶ 我的</button>' +
+      '<button data-rec="orig">▶ 原音</button>' +
+      '<span class="small recstate">跟著念一次，再比對原音</span></div>';
+  }
+  function recAction(act, btn) {
+    var bar = btn.closest(".recbar"); if (!bar) return;
+    var state = bar.querySelector(".recstate");
+    var text = bar.dataset.rectext || "";
+    if (act === "orig") { play(text); return; }
+    if (act === "mine") { if (recUrl && recTarget === text) { stopAudio(); curAudio = new Audio(recUrl); curAudio.play().catch(function () {}); } return; }
+    if (act === "start") {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+        recChunks = []; recTarget = text;
+        rec = new MediaRecorder(stream);
+        rec.ondataavailable = function (e) { if (e.data && e.data.size) recChunks.push(e.data); };
+        rec.onstop = function () {
+          stream.getTracks().forEach(function (t) { t.stop(); });
+          if (recUrl) URL.revokeObjectURL(recUrl);
+          recUrl = URL.createObjectURL(new Blob(recChunks, { type: rec.mimeType || "audio/webm" }));
+          bar.querySelector('[data-rec="start"]').hidden = false;
+          bar.querySelector('[data-rec="stop"]').hidden = true;
+          bar.querySelector('[data-rec="mine"]').disabled = false;
+          state.textContent = "錄好了。先聽自己的，再聽原音比對。";
+        };
+        rec.start();
+        bar.querySelector('[data-rec="start"]').hidden = true;
+        bar.querySelector('[data-rec="stop"]').hidden = false;
+        state.textContent = "錄音中…念完按停止";
+      }).catch(function () { state.textContent = "沒辦法使用麥克風（瀏覽器沒有允許）"; });
+      return;
+    }
+    if (act === "stop" && rec && rec.state !== "inactive") rec.stop();
   }
 
   /* ---------- 主題 / 字級 ---------- */
@@ -185,12 +228,14 @@
           '<h2 lang="ja">' + esc(s.title || ("篇" + (i + 1))) + '</h2>' +
           '<span class="story-tools">' +
             '<button class="playall" data-story="' + i + '">▶ 全篇</button>' +
+            (recSupported() ? '<button class="playall recopen" data-recstory="' + i + '">跟讀錄音</button>' : "") +
             (hasTr ? '<span class="lang-tabs" role="group" aria-label="語言切換">' +
               '<button class="active" data-lang="ja">日文</button>' +
               '<button data-lang="both">對照</button>' +
               '<button data-lang="zh">中文</button></span>' : '') +
           '</span>' +
         '</div>' +
+        '<div class="recwrap" id="rec' + i + '" hidden></div>' +
         '<div class="story-text" id="story' + i + '" data-lang="ja"></div>' +
         '</article>';
     }).join("");
@@ -230,6 +275,7 @@
         '<button class="active" data-qdir="jpzh">日→中</button>' +
         '<button data-qdir="zhjp">中→日</button>' +
         '<button data-qdir="listen">聽力</button>' +
+        '<button data-qdir="listenex">例句聽力</button>' +
         '<button data-qdir="yomi">漢字読み</button>' +
         '<button data-qdir="hyoki">表記</button></div>' +
       '<div class="filter-row" aria-label="測驗篩選">' +
@@ -359,6 +405,7 @@
         '<button data-act="play-dict">▶ 單字</button>' +
         '<button data-act="play-ex">▶ 例句</button>' +
         '<a class="btn" target="_blank" rel="noopener" href="https://jisho.org/search/' + encodeURIComponent(v.dict) + '">查 Jisho ↗</a></div>' +
+      recorderHTML(v.ex) +
       '<div class="kv"><strong>我的筆記</strong><textarea class="note" data-note="vocab" data-key="' + esc(key) + '" rows="2" placeholder="自己的記法、聯想、常搞混的字…">' + esc(S.getNote("vocab", key)) + "</textarea></div>" +
       '<div class="kv"><strong>複習</strong><div class="small" style="margin-top:4px">' + boxTxt + "</div>" +
         '<div class="actions">' +
@@ -475,6 +522,11 @@
       q.lang = ""; q.textContent = v.zh.split("、")[0];
       $("quizHint").textContent = "先想日文怎麼說，再顯示答案";
       ans.innerHTML = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div class="example" lang="ja">' + esc(v.ex) + "</div>";
+    } else if (quizDir === "listenex") {
+      q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
+      $("quizHint").textContent = "聽整句，想這句在說什麼、關鍵字是哪個";
+      ans.innerHTML = '<div class="example" lang="ja">' + esc(v.ex) + '</div><strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + "</span><div>" + esc(v.zh) + "</div>";
+      play(v.ex);
     } else {
       q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
       $("quizHint").textContent = "聽日文發音，想中文意思";
@@ -655,6 +707,8 @@
       else if (b.dataset.act === "import") $("importFile").click();
       else if (b.dataset.set === "theme") { setSetting("theme", b.dataset.val); applyTheme(); openSettings(); }
       else if (b.dataset.set === "fs") { setSetting("fs", +b.dataset.val); applyFont(); openSettings(); }
+      else if (b.dataset.set === "rate") { setSetting("audioRate", +b.dataset.val); openSettings(); }
+      else if (b.dataset.rec) recAction(b.dataset.rec, b);
     });
 
     $("gearBtn").onclick = openSettings;
@@ -696,6 +750,18 @@
 
     // delegated: play / word / playall / lang
     document.addEventListener("click", function (e) {
+      var ro = e.target.closest(".recopen");
+      if (ro) {
+        var wrap = $("rec" + ro.dataset.recstory);
+        if (wrap.hidden) {
+          var texts = [].slice.call($("story" + ro.dataset.recstory).querySelectorAll(".play")).map(function (x) { return x.dataset.audio; });
+          wrap.innerHTML = recorderHTML(texts[0] || "") + '<div class="small">錄第一段就好；原音也是第一段。想錄別段，按那一段的 ▶ 聽完再自己念。</div>';
+        }
+        wrap.hidden = !wrap.hidden;
+        return;
+      }
+      var rb = e.target.closest("[data-rec]");
+      if (rb && rb.closest("#storyRead")) { recAction(rb.dataset.rec, rb); return; }
       var pa = e.target.closest(".playall");
       if (pa) {
         if (pa.classList.contains("playing")) stopAudio();
@@ -763,7 +829,7 @@
     $("nextQuiz").onclick = function () { if (quizKeys.length) { qi = (qi + 1) % quizKeys.length; renderQuiz(); } };
     document.querySelectorAll("[data-qdir]").forEach(function (b) { b.onclick = function () { setQuizDir(b.dataset.qdir); }; });
     $("quizQuestion").addEventListener("click", function (e) {
-      if (e.target.closest("#listenPlay") && quizKeys.length) play(vocab[quizKeys[qi]].dict);
+      if (e.target.closest("#listenPlay") && quizKeys.length) play(quizDir === "listenex" ? vocab[quizKeys[qi]].ex : vocab[quizKeys[qi]].dict);
     });
     // 漢字読み／表記：選了就評分（對＝記得、錯＝不記得），看完答案自己按下一題
     $("quizChoices").addEventListener("click", function (e) {
@@ -779,7 +845,7 @@
       play(v.dict);
     });
     $("choiceNext").onclick = function () { afterQuizRate(); };
-    $("speakQuiz").onclick = function () { if (quizKeys.length) play(vocab[quizKeys[qi]].dict); };
+    $("speakQuiz").onclick = function () { if (quizKeys.length) play(quizDir === "listenex" ? vocab[quizKeys[qi]].ex : vocab[quizKeys[qi]].dict); };
     document.querySelectorAll("[data-qfilter]").forEach(function (b) {
       b.onclick = function () {
         quizFilter = b.dataset.qfilter;
@@ -895,6 +961,9 @@
         '<button data-set="fs" data-val="18" class="' + act("18", fs) + '">中</button>' +
         '<button data-set="fs" data-val="20" class="' + act("20", fs) + '">大</button>' +
         '<button data-set="fs" data-val="23" class="' + act("23", fs) + '">特大</button></div>' +
+      '<div class="setrow"><span class="lab">語速（預錄語音與瀏覽器語音都適用）</span>' +
+        '<button data-set="rate" data-val="0.75" class="' + act("0.75", String(cfg.audioRate || 1)) + '">慢 0.75x</button>' +
+        '<button data-set="rate" data-val="1" class="' + act("1", String(cfg.audioRate || 1)) + '">正常 1x</button></div>' +
       '<div class="setrow"><span class="lab">練習</span>' +
         '<button data-act="shuffle">重新洗牌所有題目</button>' +
         '<button data-act="reset" class="danger">清除這一課的紀錄</button></div>' +

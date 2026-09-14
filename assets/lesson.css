@@ -179,6 +179,11 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 .note{width:100%;font:inherit;font-size:15px;line-height:1.6;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--text);resize:vertical;margin-top:6px}
 .note:focus-visible{outline:3px solid var(--muted);outline-offset:2px}
 
+.recbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px;padding:10px;border:1px dashed var(--line);border-radius:12px}
+.recbar button{min-height:36px;padding:6px 12px;font-size:13.5px;border-radius:999px}
+.recbar .recstate{flex:1 1 100%}
+.recwrap{margin:0 0 10px}
+
 .playall{font-size:12px;font-weight:500;padding:5px 10px;min-height:30px;border-radius:999px}
 .playall.playing{background:var(--accent);color:var(--bg);border-color:var(--accent)}
 .bigplay{font-size:1.1rem;padding:14px 22px;border-radius:14px}

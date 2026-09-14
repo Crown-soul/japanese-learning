@@ -162,6 +162,69 @@
                 document.body.removeChild(link);
             };
 
+            // ---- 從本站 data/vocab.json 匯入動詞（自動變成 ます形／て形，格式同 CSV 範本）----
+            // 讀音對齊：把辭書形裡的漢字段換成 (.+?)，跟完整假名比對，得到每段漢字的讀音
+            const KANJI_RE = /[一-鿿々〆ヶ]+/g;
+            const alignReading = (dict, reading) => {
+                const parts = []; let re = "^"; let last = 0; let m;
+                while ((m = KANJI_RE.exec(dict)) !== null) {
+                    re += dict.slice(last, m.index).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(.+?)";
+                    parts.push({ kanji: m[0], start: m.index, end: m.index + m[0].length });
+                    last = m.index + m[0].length;
+                }
+                re += dict.slice(last).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$";
+                const hit = new RegExp(re).exec(reading);
+                if (!hit) return null;
+                let out = "", pos = 0;
+                parts.forEach((pt, i) => { out += dict.slice(pos, pt.start) + pt.kanji + "（" + hit[i + 1] + "）"; pos = pt.end; });
+                return out + dict.slice(pos);
+            };
+            // 常見「看起來像一段動詞、其實是五段」的字（辭書形）
+            const GODAN_EXCEPTIONS = new Set(["帰る","走る","入る","知る","切る","要る","減る","喋る","限る","蹴る","焦る","握る","混じる","参る","滑る","散る","嘲る","照る","練る","湿る","茂る","陥る","罵る","遮る","翻る","滅入る","捻る","覆る","炒る","煎る","漲る","脂ぎる","競る","耽る","罵る","返る","帰る","蘇る","甦る","嘲る","篭る","籠る","陰る","曇る"]);
+            const I_ROW = "いきしちにひみりぎじぢびぴ", E_ROW = "えけせてねへめれげぜでべぺ";
+            const verbGroup = (dict, reading) => {
+                if (/する$/.test(dict)) return "suru";
+                if (dict === "来る" || reading === "くる") return "kuru";
+                if (!/る$/.test(reading)) return "godan";
+                if (GODAN_EXCEPTIONS.has(dict)) return "godan";
+                const pre = reading.slice(-2, -1);
+                return (I_ROW + E_ROW).includes(pre) ? "ichidan" : "godan";
+            };
+            const conjugate = (dict, reading) => {
+                const g = verbGroup(dict, reading);
+                const stemD = dict.slice(0, -1), stemR = reading.slice(0, -1);
+                const lastR = reading.slice(-1);
+                if (g === "suru") return { masu: [dict.slice(0, -2) + "します", reading.slice(0, -2) + "します"], te: [dict.slice(0, -2) + "して", reading.slice(0, -2) + "して"] };
+                if (g === "kuru") return { masu: ["来ます", "きます"], te: ["来て", "きて"] };
+                if (g === "ichidan") return { masu: [stemD + "ます", stemR + "ます"], te: [stemD + "て", stemR + "て"] };
+                const masuMap = { う:"い", く:"き", ぐ:"ぎ", す:"し", つ:"ち", ぬ:"に", ぶ:"び", む:"み", る:"り" };
+                const teMap = { う:"って", つ:"って", る:"って", む:"んで", ぶ:"んで", ぬ:"んで", く:"いて", ぐ:"いで", す:"して" };
+                if (!masuMap[lastR]) return null;
+                const te = (dict === "行く" || reading === "いく") ? "って" : teMap[lastR];
+                return { masu: [stemD + masuMap[lastR] + "ます", stemR + masuMap[lastR] + "ます"], te: [stemD + te, stemR + te] };
+            };
+            const importFromSite = () => {
+                fetch("../data/vocab.json").then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(list => {
+                    const existing = new Set(words.map(w => stripFurigana(w.jp)));
+                    const newWords = [];
+                    (list || []).forEach(w => {
+                        if (!/動詞/.test(w.pos || "") || !w.dict || !w.reading) return;
+                        const c = conjugate(w.dict, w.reading); if (!c) return;
+                        const jp = alignReading(c.masu[0], c.masu[1]) || c.masu[0];
+                        const te = alignReading(c.te[0], c.te[1]) || c.te[0];
+                        if (existing.has(stripFurigana(jp))) return;
+                        newWords.push({ id: Date.now() + Math.random(), cn: (w.zh || "").split("、")[0], jp, te, type: "verb", wrongCount: 0 });
+                    });
+                    if (!newWords.length) { setConfirmModal({ show: true, title: "本站單字庫的動詞都已經在清單裡了。", action: () => setConfirmModal({ show: false, title: '', action: null }) }); return; }
+                    setConfirmModal({
+                        show: true,
+                        title: `從本站單字庫找到 ${newWords.length} 個動詞（已自動變成ます形／て形，一段／五段用規則判斷，匯入後請掃一眼）。要如何處理？`,
+                        action: () => { setWords(prev => [...prev, ...newWords]); setConfirmModal({ show: false, title: '', action: null }); },
+                        secondaryAction: () => { setWords(newWords); setConfirmModal({ show: false, title: '', action: null }); },
+                        secondaryText: "覆蓋現有內容"
+                    });
+                }).catch(() => setConfirmModal({ show: true, title: "讀不到本站單字庫（需用伺服器或線上版開啟）。", action: () => setConfirmModal({ show: false, title: '', action: null }) }));
+            };
             const handleCsvImport = (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -336,6 +399,7 @@
                                         <div className="flex flex-wrap gap-2">
                                             <button onClick={() => fileInputRef.current.click()} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition-all">選擇檔案匯入</button>
                                             <button onClick={downloadTemplate} className="bg-white text-blue-600 border border-blue-200 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-50 transition-all">下載範本</button>
+                                            <button onClick={importFromSite} className="bg-white text-blue-600 border border-blue-200 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-50 transition-all">從本站單字庫匯入動詞</button>
                                             <input type="file" ref={fileInputRef} onChange={handleCsvImport} accept=".csv" className="hidden" />
                                         </div>
                                     </div>
