@@ -112,7 +112,17 @@ def n4_headings():
     if not N4.exists():
         return ()
     txt = N4.read_text(encoding="utf-8")
-    return tuple(h for h in re.findall(r"^###\s+(.+?)\s*$", txt, re.M) if "不列為" not in h)
+    return tuple(h for h in re.findall(r"^###\s+(.+?)\s*$", txt, re.M) if "不列為" not in h and "（停用" not in h)
+
+
+@lru_cache(maxsize=1)
+def n4_retired():
+    """標了「（停用…）」的標題：進度用名稱當 key，舊標題不能改名只能停用，新課也不能再選。"""
+    if not N4.exists():
+        return ()
+    txt = N4.read_text(encoding="utf-8")
+    return tuple(re.sub(r"（停用.*?）", "", h).strip()
+                 for h in re.findall(r"^###\s+(.+?)\s*$", txt, re.M) if "（停用" in h)
 
 
 @lru_cache(maxsize=1)
@@ -247,7 +257,9 @@ def check_lesson(path, vocab, n4):
             if not g.get(f):
                 err(lid, f"grammar[{gi}] 缺 {f}")
         pt = (g.get("point") or "").strip()
-        if n4 is not None and pt and pt not in n4 and re.sub(r"（.*?）", "", pt).strip() not in n4:
+        if pt and pt in n4_retired():
+            err(lid, f"grammar[{gi}] 的 point「{pt}」在 docs/n4-grammar.md 已標「停用」，請改用替代條目")
+        elif n4 is not None and pt and pt not in n4 and re.sub(r"（.*?）", "", pt).strip() not in n4:
             err(lid, f"grammar[{gi}] 的 point「{pt}」在 docs/n4-grammar.md 找不到")
         # 例句本身要看得到這個文法的字樣
         stems = point_stems(pt)
@@ -335,6 +347,17 @@ def check_lesson(path, vocab, n4):
         warn(lid, f"g{gi_n}（{pt}）跟「{'、'.join(sorted(kin))}」字樣一樣，只能靠語意分辨，"
                   f"請人工確認這 {len(where)} 處標對條目沒有：{'、'.join(where)}")
 
+    # 題目 id：進度用 "<課程id>/<題目id>" 當 key，所以每題都要有、不可重複、刪題後編號不重用
+    for kind, arr in (("gq", data.get("grammarQuiz") or []), ("rq", data.get("reading") or [])):
+        seen_ids = set()
+        for qi, q in enumerate(arr):
+            qid = q.get("id")
+            if not isinstance(qid, str) or not re.fullmatch(rf"{kind}-\d{{2,}}", qid):
+                err(lid, f"{'grammarQuiz' if kind == 'gq' else 'reading'}[{qi}] 缺 id 或格式不對（要像 {kind}-01）")
+            elif qid in seen_ids:
+                err(lid, f"{'grammarQuiz' if kind == 'gq' else 'reading'} 的 id「{qid}」重複")
+            seen_ids.add(qid)
+
     # grammarQuiz
     for qi, q in enumerate(data.get("grammarQuiz") or []):
         g = q.get("g")
@@ -382,7 +405,9 @@ def check_vocab(vocab, only):
             if not w.get(f):
                 err(tag, f"缺 {f}")
         if not lessons:
-            err(tag, "lessons 為空")
+            err(tag, "lessons 為空（沒標課程的字會被引擎塞進每一課）")
+        elif not isinstance(w.get("lessons"), list):
+            err(tag, "lessons 必須是陣列")
         if engine and w.get("reading") and not KANA_ONLY.match(w["reading"]):
             err(tag, f"reading「{w['reading']}」不是純假名（引擎課單字卡用它合成）")
 

@@ -105,22 +105,26 @@ button.active{background:var(--accent);color:var(--bg);border-color:var(--accent
 
 <div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
 
+<script src="../assets/store.js"></script>
 <script src="../assets/vocab-table.js"></script>
 <script>
+// 設定全站共用，走 assets/store.js（主題／字級在課程頁調過，這裡直接生效）
+const S=window.JLStore;
+if(S) S.migrateLegacy([]);
 const LS={
-  get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:v;}catch{return d;}},
-  set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}}
+  get:(k,d)=>{ if(!S) return d; const v=S.getSettings()[k]; return v==null?d:String(v); },
+  set:(k,v)=>{ if(S){ const o={}; o[k]=(k==="fs")?+v:v; S.saveSettings(o); } }
 };
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 /* ---------- 主題 / 字級（與課文一致） ---------- */
 function applyTheme(){
-  const t=LS.get("vocabtable-theme","auto");
+  const t=LS.get("theme","auto");
   if(t==="auto") document.documentElement.removeAttribute("data-theme");
   else document.documentElement.setAttribute("data-theme",t);
 }
 function applyFont(){
-  document.documentElement.style.setProperty("--fs",LS.get("vocabtable-fs","18")+"px");
+  document.documentElement.style.setProperty("--fs",LS.get("fs","18")+"px");
 }
 applyTheme(); applyFont();
 
@@ -128,7 +132,7 @@ const modal=document.getElementById("modal"), sheet=document.getElementById("she
 modal.addEventListener("click",e=>{ if(e.target===modal) modal.classList.remove("show"); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") modal.classList.remove("show"); });
 document.getElementById("gearBtn").onclick=()=>{
-  const t=LS.get("vocabtable-theme","auto"), fs=LS.get("vocabtable-fs","18");
+  const t=LS.get("theme","auto"), fs=LS.get("fs","18");
   sheet.innerHTML=`
     <button class="sheet-close" data-act="close">關閉</button>
     <h3>設定</h3>
@@ -148,13 +152,13 @@ document.getElementById("gearBtn").onclick=()=>{
 sheet.addEventListener("click",e=>{
   const b=e.target.closest("[data-act],[data-set]"); if(!b) return;
   if(b.dataset.act==="close"){ modal.classList.remove("show"); return; }
-  if(b.dataset.set==="theme"){ LS.set("vocabtable-theme",b.dataset.val); applyTheme(); }
-  else if(b.dataset.set==="fs"){ LS.set("vocabtable-fs",b.dataset.val); applyFont(); }
+  if(b.dataset.set==="theme"){ LS.set("theme",b.dataset.val); applyTheme(); }
+  else if(b.dataset.set==="fs"){ LS.set("fs",b.dataset.val); applyFont(); }
   document.getElementById("gearBtn").onclick();
 });
 
 /* ---------- 注音顯示（沿用 body.fg-* class，與課文一致） ---------- */
-let fgOn=LS.get("vocabtable-fg","on")!=="off";
+let fgOn=LS.get("reading","all")==="all";
 const fgBtn=document.getElementById("fgBtn");
 function applyFg(){
   document.body.classList.toggle("fg-all",fgOn);
@@ -163,7 +167,7 @@ function applyFg(){
   fgBtn.setAttribute("aria-pressed",String(fgOn));
   fgBtn.textContent=fgOn?"注音":"注音｜關";
 }
-fgBtn.onclick=()=>{ fgOn=!fgOn; LS.set("vocabtable-fg",fgOn?"on":"off"); applyFg(); };
+fgBtn.onclick=()=>{ fgOn=!fgOn; LS.set("reading",fgOn?"all":"none"); applyFg(); };
 applyFg();
 document.getElementById("printBtn").onclick=()=>window.print();
 

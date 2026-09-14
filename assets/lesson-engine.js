@@ -12,22 +12,20 @@
          ../audio/manifest.json（乾淨文字 -> mp3 檔名）
 
    行為移植自 lessons/日文70單字學習器.html（v4）。
-   localStorage 全部以 "<id>:" 前綴，各課進度獨立。
+   進度與設定全部透過 assets/store.js（window.JLStore）存取，跨課共用、不綁課程。
    ============================================================ */
 (function () {
   "use strict";
   var app = document.getElementById("app");
   var LESSON_ID = app && app.dataset.lesson;
   if (!app || !LESSON_ID) { console.error("缺少 #app[data-lesson]"); return; }
-  var NS = LESSON_ID + ":";
   var TITLE = document.title || LESSON_ID;
+  var S = window.JLStore;
+  if (!S) { console.error("缺少 assets/store.js（要放在 lesson-engine.js 之前）"); }
 
   /* ---------- 小工具 ---------- */
-  var LS = {
-    get: function (k, d) { try { var v = localStorage.getItem(NS + k); return v == null ? d : v; } catch (e) { return d; } },
-    set: function (k, v) { try { localStorage.setItem(NS + k, v); } catch (e) {} },
-    del: function (k) { try { localStorage.removeItem(NS + k); } catch (e) {} }
-  };
+  function setting(k) { return S ? S.getSettings()[k] : undefined; }
+  function setSetting(k, v) { if (S) { var o = {}; o[k] = v; S.saveSettings(o); } }
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
@@ -122,22 +120,16 @@
 
   /* ---------- 主題 / 字級 ---------- */
   function applyTheme() {
-    var t = LS.get("theme", "auto");
+    var t = setting("theme") || "auto";
     if (t === "auto") document.documentElement.removeAttribute("data-theme");
     else document.documentElement.setAttribute("data-theme", t);
   }
   function applyFont() {
-    document.documentElement.style.setProperty("--fs", LS.get("fs", "18") + "px");
+    document.documentElement.style.setProperty("--fs", (setting("fs") || 18) + "px");
   }
 
-  /* ---------- SRS（Leitner 精簡版）---------- */
-  var SRS_INTERVAL = [0, 1, 3, 7, 16];
-  function ymd(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
-  function today() { return ymd(new Date()); }
-  function addDays(n) { var d = new Date(); d.setDate(d.getDate() + n); return ymd(d); }
-  function fmtDate(s) { return s ? s.slice(5).replace("-", "/") : "-"; }
-  function srsData() { try { return JSON.parse(LS.get("srs", "{}")); } catch (e) { return {}; } }
-  function saveSrs(d) { LS.set("srs", JSON.stringify(d)); updateProgress(); }
+  /* ---------- SRS：規則在 store.js ---------- */
+  function qid(kind, item, idx) { return LESSON_ID + "/" + (item.id || (kind + "-" + String(idx + 1).padStart(2, "0"))); }
 
   /* ---------- 資料容器 ---------- */
   var DATA = null;                 // 課程 JSON
@@ -312,7 +304,7 @@
   }
 
   /* ---------- 注音四態：all / target / none / mask ---------- */
-  var readingMode = LS.get("reading", "all");
+  var readingMode = setting("reading") || "all";
   if (["all", "target", "none", "mask"].indexOf(readingMode) < 0) readingMode = "all";
   function applyReading() {
     var fg = readingMode === "mask" ? "all" : readingMode;
@@ -338,11 +330,7 @@
     var v = vocab[key];
     if (!v) return;
     currentCardKey = key;
-    var rec = srsData()[key];
-    var boxTxt = !rec ? "尚未練習"
-      : rec.box >= 4 ? "熟練 · 下次 " + fmtDate(rec.due)
-      : rec.box >= 1 ? "學習中（box " + rec.box + "）· 下次 " + fmtDate(rec.due)
-      : "要加強 · 今日到期";
+    var boxTxt = S.boxLabel(S.getVocab(key));
     sheet.innerHTML =
       '<button class="sheet-close" data-act="close">關閉</button>' +
       '<h3 lang="ja">' + esc(v.dict) + "</h3>" +
@@ -374,36 +362,23 @@
     modal.classList.add("show");
   }
   function rateSrs(key, rating) {
-    var d = srsData(), cur = d[key] || { box: 0 }, t = today();
-    var box = cur.box | 0;
-    if (rating === "good") box = Math.min(4, box + 1);
-    else if (rating === "mid") box = Math.max(1, box);
-    else box = 0;
-    var days = rating === "bad" ? 0 : SRS_INTERVAL[box];
-    d[key] = { box: box, due: addDays(days), seen: t };
-    saveSrs(d);
+    S.rateVocab(key, rating);
+    updateProgress();
     if (modal.classList.contains("show")) openCard(key);
   }
 
   function keysAll() { return Object.keys(vocab); }
-  function dueKeys() { var d = srsData(), t = today(); return keysAll().filter(function (k) { return d[k] && d[k].due <= t; }); }
-  function newKeys() { var d = srsData(); return keysAll().filter(function (k) { return !d[k]; }); }
+  function dueKeys() { return S.dueVocab(keysAll()); }
+  function newKeys() { return keysAll().filter(function (k) { return !S.getVocab(k); }); }
   function updateProgress() {
-    var d = srsData(), keys = keysAll(), t = today();
-    var master = 0, learning = 0, fresh = 0, due = 0;
-    keys.forEach(function (k) {
-      var r = d[k];
-      if (!r) { fresh++; return; }
-      if (r.box >= 4) master++; else learning++;
-      if (r.due <= t) due++;
-    });
+    var st = S.stats("vocab", keysAll());
     $("progressText").textContent =
-      "熟練 " + master + " / " + keys.length + (due ? " · 今日複習 " + due : "");
-    $("progressFill").style.width = (keys.length ? master / keys.length * 100 : 0) + "%";
-    $("statMaster").textContent = master;
-    $("statLearning").textContent = learning;
-    $("statDue").textContent = due;
-    $("statNew").textContent = fresh;
+      "熟練 " + st.master + " / " + st.total + (st.due ? " · 今日複習 " + st.due : "");
+    $("progressFill").style.width = (st.total ? st.master / st.total * 100 : 0) + "%";
+    $("statMaster").textContent = st.master;
+    $("statLearning").textContent = st.learning;
+    $("statDue").textContent = st.due;
+    $("statNew").textContent = st.fresh;
   }
 
   /* ---------- 單字測驗（Anki 流程：看題 → 顯示答案 → 評分 → 自動下一題）---------- */
@@ -460,7 +435,7 @@
     else {
       var k = quizKeys[qi];
       quizKeys.splice(qi, 1);
-      var rec = srsData()[k];
+      var rec = S.getVocab(k);
       if (quizFilter === "due" && rec && rec.box === 0) quizKeys.push(k);
       if (qi >= quizKeys.length) qi = 0;
     }
@@ -473,19 +448,17 @@
   }
 
   /* ---------- 文法克漏字 ---------- */
-  function gqData() { try { return JSON.parse(LS.get("gquiz", "{}")); } catch (e) { return {}; } }
-  function gqSave(d) { LS.set("gquiz", JSON.stringify(d)); }
   var gqOrder = [], gqi = 0, gqFilter = "all", gqAnswered = false;
   function gqAll() { return DATA.grammarQuiz || []; }
+  function gqWrong() { return gqAll().filter(function (q, i) { var r = S.getQuiz(qid("gq", q, i)); return r && r.r === "ng"; }).length; }
   function gqPool() {
     var idx = gqAll().map(function (_, i) { return i; });
-    if (gqFilter === "ng") { var d = gqData(); return idx.filter(function (i) { return d[i] === "ng"; }); }
+    if (gqFilter === "ng") return idx.filter(function (i) { var r = S.getQuiz(qid("gq", gqAll()[i], i)); return r && r.r === "ng"; });
     return idx;
   }
   function gqShuffle() { gqOrder = gqPool().slice().sort(function () { return Math.random() - 0.5; }); gqi = 0; gqRender(); }
   function gqInfo() {
-    var wrong = Object.values(gqData()).filter(function (x) { return x === "ng"; }).length;
-    $("gqInfo").textContent = "共 " + gqAll().length + " 題 · 答錯待複習 " + wrong;
+    $("gqInfo").textContent = "共 " + gqAll().length + " 題 · 答錯待複習 " + gqWrong();
   }
   function gqRender() {
     gqInfo();
@@ -505,20 +478,19 @@
   }
 
   /* ---------- 讀解測驗 ---------- */
-  function rqData() { try { return JSON.parse(LS.get("rquiz", "{}")); } catch (e) { return {}; } }
-  function rqSave(d) { LS.set("rquiz", JSON.stringify(d)); }
   var rqOrder = [], rqi = 0, rqFilter = "all", rqAnswered = false;
   function rqAll() { return DATA.reading || []; }
+  function rqIsWrong(i) { var r = S.getQuiz(qid("rq", rqAll()[i], i)); return r && r.r === "ng"; }
   function rqPool() {
-    var idx = rqAll().map(function (_, i) { return i; }), d = rqData();
+    var idx = rqAll().map(function (_, i) { return i; });
     var m = /^s(\d+)$/.exec(rqFilter);
     if (m) return idx.filter(function (i) { return rqAll()[i].st === +m[1]; });
-    if (rqFilter === "ng") return idx.filter(function (i) { return d[i] === "ng"; });
+    if (rqFilter === "ng") return idx.filter(rqIsWrong);
     return idx;
   }
   function rqShuffle() { rqOrder = rqPool().slice().sort(function () { return Math.random() - 0.5; }); rqi = 0; rqRender(); }
   function rqInfo() {
-    var wrong = Object.values(rqData()).filter(function (x) { return x === "ng"; }).length;
+    var wrong = rqAll().filter(function (_, i) { return rqIsWrong(i); }).length;
     $("rqInfo").textContent = "共 " + rqAll().length + " 題 · 答錯待複習 " + wrong;
   }
   function rqRender() {
@@ -543,7 +515,7 @@
   function setTab(name) {
     if (!$(name)) name = "stories";
     curTab = name;
-    LS.set("tab", name);
+    setSetting("lastTab", name);
     document.querySelectorAll(".tabs button").forEach(function (x) { x.classList.toggle("active", x.dataset.tab === name); });
     document.querySelectorAll(".section").forEach(function (x) { x.classList.toggle("active", x.id === name); });
     $("hud").hidden = !(name === "vocabtable" || name === "quiz");
@@ -565,6 +537,9 @@
     sheet = $("sheet");
     modal.addEventListener("click", function (e) { if (e.target === modal) modal.classList.remove("show"); });
 
+    sheet.addEventListener("change", function (e) {
+      if (e.target.id === "importFile" && e.target.files && e.target.files[0]) importProgress(e.target.files[0]);
+    });
     sheet.addEventListener("click", function (e) {
       var b = e.target.closest("[data-act],[data-set]"); if (!b) return;
       if (b.dataset.act === "close") { modal.classList.remove("show"); return; }
@@ -574,26 +549,28 @@
       else if (b.dataset.act === "goto-grammar") { modal.classList.remove("show"); setTab("grammar"); }
       else if (b.dataset.act === "shuffle") { modal.classList.remove("show"); shuffle(); gqShuffle(); rqShuffle(); }
       else if (b.dataset.act === "reset") {
-        if (confirm("確定要清除這一課的單字、文法、讀解練習紀錄嗎？")) {
-          ["srs", "gquiz", "rquiz"].forEach(function (k) { LS.del(k); });
+        if (confirm("確定要清除這一課的單字、文法、讀解練習紀錄嗎？（其他課不受影響）")) {
+          S.resetProgress({ vocabKeys: keysAll(), grammarPoints: (DATA.grammar || []).map(function (g) { return g.point; }), quizPrefix: LESSON_ID + "/" });
           updateProgress(); shuffle(); gqShuffle(); rqShuffle(); modal.classList.remove("show");
         }
       }
-      else if (b.dataset.set === "theme") { LS.set("theme", b.dataset.val); applyTheme(); openSettings(); }
-      else if (b.dataset.set === "fs") { LS.set("fs", b.dataset.val); applyFont(); openSettings(); }
+      else if (b.dataset.act === "export") exportProgress();
+      else if (b.dataset.act === "import") $("importFile").click();
+      else if (b.dataset.set === "theme") { setSetting("theme", b.dataset.val); applyTheme(); openSettings(); }
+      else if (b.dataset.set === "fs") { setSetting("fs", +b.dataset.val); applyFont(); openSettings(); }
     });
 
     $("gearBtn").onclick = openSettings;
 
     document.querySelectorAll("[data-rd]").forEach(function (b) {
-      b.onclick = function () { readingMode = b.dataset.rd; LS.set("reading", readingMode); applyReading(); };
+      b.onclick = function () { readingMode = b.dataset.rd; setSetting("reading", readingMode); applyReading(); };
     });
 
     // tabs
     document.querySelectorAll(".tabs button").forEach(function (b) {
       b.onclick = function () { stopAudio(); setTab(b.dataset.tab); };
     });
-    $("tip").addEventListener("toggle", function () { LS.set("tipOpen", $("tip").open ? "1" : "0"); });
+    $("tip").addEventListener("toggle", function () { setSetting("tipOpen", $("tip").open); });
 
     // story view toggle
     document.querySelectorAll("[data-sview]").forEach(function (b) {
@@ -714,7 +691,7 @@
       if (g) expl.innerHTML = '<b lang="ja">' + esc(g.point) + "</b>　" + esc(g.meaning) +
         '<div class="small" style="margin-top:6px" lang="ja">例：' + esc(g.example) + "</div>";
       expl.classList.add("show");
-      var d = gqData(); d[gqOrder[gqi]] = ok ? "ok" : "ng"; gqSave(d); gqInfo();
+      S.markQuiz(qid("gq", item, gqOrder[gqi]), ok); gqInfo();
     });
     $("gqNext").onclick = function () { if (gqOrder.length) { gqi = (gqi + 1) % gqOrder.length; gqRender(); } };
     document.querySelectorAll("[data-gqfilter]").forEach(function (b) {
@@ -738,7 +715,7 @@
       expl.innerHTML = (ok ? "正確" : "正解：" + esc(item.o[item.a])) +
         '<div class="small" style="margin-top:6px" lang="ja">文章：「' + esc(item.ref) + "」</div>";
       expl.classList.add("show");
-      var d = rqData(); d[rqOrder[rqi]] = ok ? "ok" : "ng"; rqSave(d); rqInfo();
+      S.markQuiz(qid("rq", item, rqOrder[rqi]), ok); rqInfo();
     });
     $("rqNext").onclick = function () { if (rqOrder.length) { rqi = (rqi + 1) % rqOrder.length; rqRender(); } };
     document.querySelectorAll("[data-rqfilter]").forEach(function (b) {
@@ -750,8 +727,31 @@
     });
   }
 
+  function exportProgress() {
+    var blob = new Blob([S.exportAll()], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "jl-progress-" + S.today().replace(/-/g, "") + ".json";
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  function importProgress(file) {
+    var fr = new FileReader();
+    fr.onload = function () {
+      try {
+        var d = JSON.parse(fr.result);
+        var n = d && d.progress && d.progress.vocab ? Object.keys(d.progress.vocab).length : 0;
+        if (!confirm("這個檔案有 " + n + " 個單字的紀錄。要合併進目前的進度嗎？（較新的會蓋過較舊的）")) return;
+        S.importAll(d);
+        applyTheme(); applyFont(); updateProgress(); shuffle(); gqShuffle(); rqShuffle();
+        alert("匯入完成。");
+        openSettings();
+      } catch (e) { alert("匯入失敗：" + e.message); }
+    };
+    fr.readAsText(file);
+  }
   function openSettings() {
-    var t = LS.get("theme", "auto"), fs = LS.get("fs", "18");
+    var cfg = S.getSettings(), t = cfg.theme, fs = String(cfg.fs);
     currentCardKey = null;
     function act(v, cur) { return v === cur ? " active" : ""; }
     sheet.innerHTML =
@@ -768,6 +768,10 @@
       '<div class="setrow"><span class="lab">練習</span>' +
         '<button data-act="shuffle">重新洗牌所有題目</button>' +
         '<button data-act="reset" class="danger">清除這一課的紀錄</button></div>' +
+      '<div class="setrow"><span class="lab">備份（進度存在這個瀏覽器裡，換手機前先匯出）</span>' +
+        '<button data-act="export">匯出進度檔</button>' +
+        '<button data-act="import">匯入進度檔</button>' +
+        '<input type="file" id="importFile" accept="application/json,.json" hidden></div>' +
       '<div class="small" id="audioState" style="margin-top:8px"></div>' +
       '<div class="small">鍵盤：空白＝顯示答案、1/2/3＝評分、→＝略過、P＝播放、Esc＝關閉</div>';
     $("audioState").textContent = Object.keys(AUDIO).length
@@ -786,11 +790,11 @@
     renderStories();
     renderGrammarTable();
     renderVocabTab();
-    $("tip").open = LS.get("tipOpen", "1") === "1";
+    $("tip").open = setting("tipOpen") !== false;
     applyReading();
     updateProgress();
     shuffle(); gqShuffle(); rqShuffle();
-    setTab(LS.get("tab", "stories"));
+    setTab(setting("lastTab") || "stories");
     fetch("../audio/manifest.json").then(function (r) { return r.ok ? r.json() : {}; })
       .then(function (m) { AUDIO = m || {}; }).catch(function () {});
   }
@@ -810,7 +814,7 @@
       if (!w.lessons || w.lessons.indexOf(LESSON_ID) >= 0) vocab[w.key] = w;
     });
     if (!DATA || !Array.isArray(DATA.stories) || !DATA.stories.length) throw new Error("lesson JSON 缺 stories");
-    try { boot(); }
+    try { if (S) S.migrateLegacy([LESSON_ID]); boot(); }
     catch (e) { console.error(e); fail("課程渲染失敗（" + e.message + "）。請把這段訊息回報。"); }
   }).catch(function (e) {
     console.error(e);
