@@ -8,25 +8,31 @@
 
 ```
 japanese-learning/
-├── index.html                 生成物：首頁目錄。掃 lessons/*.html 讀 <title>。勿手改
+├── index.html                 生成物：首頁目錄（今天要複習 N／課程卡／工具）。勿手改
+├── review.html                跨課複習中心：今天到期的單字與文法點，混合所有課
 ├── lessons/
-│   ├── <id>.html              引擎課：~15 行薄殼（見下）
-│   ├── 日文70單字學習器.html    舊課：1000+ 行、CSS/JS/資料全內嵌（不遷移）
+│   ├── <id>.html              引擎課：~16 行薄殼（見下）
+│   ├── grammar-index.html     N4 文法查詢頁（讀 data/grammar.json）
+│   ├── 日文70單字學習器.html    舊課：1000+ 行、CSS/JS/資料全內嵌（不遷移；進度只單向搬一次）
 │   ├── 日文單字總表.html        跨課單字總表（讀整份 vocab.json）
-│   └── 日語動詞變化練習工具.html  React/Babel 單頁，獨立
+│   └── 日語動詞變化練習工具.html  React/Babel 單頁，獨立（可從 vocab.json 匯入動詞）
 ├── data/
 │   ├── vocab.json             共用單字庫（陣列，每筆標 lessons:[...]）
-│   └── lessons/<id>.json      引擎課的內容：stories / grammar / grammarQuiz / reading
+│   ├── grammar.json           生成物：docs/n4-grammar.md 轉成的 JSON（build-grammar.py）
+│   └── lessons/<id>.json      引擎課的內容：stories / grammar(+chunks) / grammarQuiz(+id) / reading(+id)
 ├── assets/
-│   ├── lesson.css             引擎課共用樣式（真實 .css）
+│   ├── store.js               全站進度／設定存取層（window.JLStore）——唯一碰 localStorage 的地方
+│   ├── lesson.css             引擎課共用樣式（review.html、grammar-index.html 也用）
 │   ├── lesson-engine.js       引擎課共用行為（讀 JSON → 建 DOM → 綁事件）
 │   └── vocab-table.js         共用「單字表」元件（window.vocabTableHTML）
 ├── audio/
 │   ├── <sha1>.mp3             預錄語音，檔名 = 合成文字的雜湊
-│   └── manifest.json          乾淨文字 → 檔名
-├── audio-check.html           生成物：發音人工快篩頁
+│   ├── manifest.json          乾淨文字 → 檔名
+│   └── last-run.json          generate-audio.py 本次新產的段落清單（audio-check 只列這批）
+├── audio-check.html           生成物：發音人工快篩頁（預設只列本次新增）
 ├── generate-audio.py          Google TTS 產語音 + prune 舊檔（需 tts-key.txt）
 ├── build-audio-check.py       產 audio-check.html
+├── build-grammar.py           產 data/grammar.json
 ├── build-index.py             產 index.html
 ├── validate-lessons.py        驗 data/lessons/*.json 與 vocab.json 一致性
 ├── .github/workflows/validate.yml  push/PR 時跑驗證（含 check-console.mjs headless 檢查）
@@ -45,27 +51,44 @@ japanese-learning/
    ```html
    <link rel="stylesheet" href="../assets/lesson.css">
    <div class="app" id="app" data-lesson="<id>"></div>
+   <script src="../assets/store.js"></script>
    <script src="../assets/vocab-table.js"></script>
    <script src="../assets/lesson-engine.js"></script>
    ```
 2. `data/lessons/<id>.json`（見 `docs/lesson-authoring.md` 的 schema）
 3. `data/vocab.json` 裡 `lessons` 含 `<id>` 的字
 
-引擎 `boot()`：讀 `#app[data-lesson]` → `fetch ../data/lessons/<id>.json` + `../data/vocab.json` → 建 header/hud/tabs/四個 section → 綁事件 → `fetch ../audio/manifest.json`。
+引擎 `boot()`：讀 `#app[data-lesson]` → `fetch ../data/lessons/<id>.json` + `../data/vocab.json` → `JLStore.migrateLegacy([id])` → 建 header/hud/四個 section/底部分頁列 → 綁事件 → `fetch ../audio/manifest.json`。
+
+## 進度與設定（assets/store.js）
+
+全站只有 `store.js` 會碰 localStorage，兩包資料：
+
+| key | 內容 |
+|---|---|
+| `jl.settings.v1` | `{v, theme, fs, reading, lastTab, audioRate, tipOpen}`，跟課程無關 |
+| `jl.progress.v1` | `vocab{辭書形: {box,due,seen,note?}}`、`grammar{文法點標題: {...}}`、`quiz{"<課程id>/<題目id>": {r,at}}`、`events[[日期,類型,key,結果]]`（最近 20,000 筆）、`daily{日期:{n,ok}}`、`migrated[]` |
+
+SRS：箱 0–6，間隔 `[0,1,3,7,16,30,60]` 天，box 6 畢業（答錯退回 3）。單字 key 是辭書形、文法 key 是 `docs/n4-grammar.md` 的標題，所以跨課共用。
+舊格式（`jp70-srs`、`<id>:srs/gquiz/rquiz`、三套設定 key）第一次啟動時由 `migrateLegacy()` 單向搬進來，只複製不刪。
+匯出／匯入在課程頁的設定裡（`exportAll()`／`importAll()`）。將來上資料庫：只改 `store.js` 內部。
 
 ## 資料流
 
 | 動作 | 讀 | 寫 |
 |---|---|---|
-| 開課程頁 | `data/lessons/<id>.json`、`data/vocab.json`、`audio/manifest.json` | localStorage（`<id>:` 前綴） |
-| `generate-audio.py` | `data/vocab.json`、`lessons/*.html`（舊課故事）、`data/lessons/*.json`（引擎課故事）、`tts-key.txt` | `audio/*.mp3`、`audio/manifest.json` |
-| `build-index.py` | `lessons/*.html` 的 `<title>` + mtime | `index.html` |
-| `build-audio-check.py` | `data/vocab.json`、`lessons/*.html`、`data/lessons/*.json`、`audio/manifest.json` | `audio-check.html` |
-| `publish.sh` | 全部 | commit + push（Pages 1–2 分鐘後更新） |
+| 開課程頁 | `data/lessons/<id>.json`、`data/vocab.json`、`audio/manifest.json` | localStorage（只透過 store.js：`jl.settings.v1`／`jl.progress.v1`） |
+| 開 `review.html`／`index.html` | `data/vocab.json`、所有 `data/lessons/*.json`（標題、克漏字） | 同上 |
+| 開 `lessons/grammar-index.html` | `data/grammar.json` | 同上（只讀設定與複習狀態） |
+| `build-grammar.py` | `docs/n4-grammar.md`、`data/lessons/*.json`（教過的課） | `data/grammar.json` |
+| `generate-audio.py` | `data/vocab.json`、`lessons/*.html`（舊課故事）、`data/lessons/*.json`（引擎課故事）、`tts-key.txt` | `audio/*.mp3`、`audio/manifest.json`、`audio/last-run.json` |
+| `build-index.py` | `lessons/*.html` 的 `<title>` + commit 日、`data/lessons/*.json`（字數／文法點數／篇數）、`data/vocab.json` | `index.html` |
+| `build-audio-check.py` | `data/vocab.json`、`lessons/*.html`、`data/lessons/*.json`、`audio/manifest.json`、`audio/last-run.json` | `audio-check.html` |
+| `publish.sh` | 全部（先跑 build-index、build-grammar） | commit + push（Pages 1–2 分鐘後更新） |
 
 ## 生成物 vs 手寫
 
-- **生成物（勿手改）**：`index.html`、`audio-check.html`、`audio/*`、引擎課薄殼（由 skill 產）
+- **生成物（勿手改）**：`index.html`、`audio-check.html`、`audio/*`、`data/grammar.json`、引擎課薄殼（由 skill 產）
 - **手寫／AI 寫**：`data/lessons/*.json`、`data/vocab.json`、`assets/*`、`docs/*`、`CLAUDE.md`
 - **不遷移**：`lessons/日文70單字學習器.html`（舊課，自成一格）
 

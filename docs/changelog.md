@@ -62,6 +62,17 @@
   - 單字 9 筆：`いくら`／`迷惑する` 的長字義拆到 `form`（中→日測驗只取第一個字義）、`満足` 補サ變、例句助詞與時間軸對齊。
 - **單字總表顯示課程標題**：`assets/vocab-table.js` 加 `opts.lessonTitles`；`日文單字總表.html` 讀 `data/lessons/<id>.json` 的 `title`，篩選鈕與分組標題不再顯示英文 id（只對英數 id 發 fetch，避免舊課 404 被 CI 當 console error）。
 
+## 2026-09-14
+
+- **優化規劃書**（`docs/roadmap.md`）：先做功能與 UX 分析（實測手機版面數字、評分鈕吃掉答案、進度綁課、三套 localStorage 命名），再自我審核修正七項，定出十項設計決策與五個階段。
+- **第 1 階段 引擎修正**：單字測驗改 Anki 流程（顯示答案 → 評分鈕才出現、固定底部 → 自動下一題）；日→中讀音改按了才看；逐段中文對照（手機疊放／電腦雙欄），語言三態放篇名列；分頁列固定底部；header 只留標題與注音四態（合併遮字）；統計只在單字表／單字測驗；二級切換改細條；提示可收合；記住分頁與注音；「重設」移進設定；N4 依據移進文法卡；單字卡加 Jisho；鍵盤操作。實測 390×844：header 164→109px、第一段日文 Y 738→419、克漏字選項全在第一屏。
+- **第 2 階段 資料層**：`assets/store.js`（`window.JLStore`）：`jl.settings.v1`／`jl.progress.v1`，單字用辭書形、文法用標題、題目用 `<課程id>/<題目id>`，事件流＋每日彙總、筆記欄、版本號；SRS 加 30／60 天與畢業；引擎與總表改走 store；舊資料（`jp70-srs`、`<id>:*`、`vocabtable-*`）單向搬、不刪；`boarding-house` 每題補 `id`；驗證器加 id／lessons／停用檢查；`n4-grammar.md` 加標題凍結規則；匯出／匯入。
+- **第 3 階段 複習中心**：`review.html`（今天到期的單字與文法，混合所有課，顯示出自哪課）；首頁「今天要複習 N」、課程卡顯示字數／文法點數／篇數與學習狀態、課程與工具分開列；`generate-audio.py` 寫 `audio/last-run.json`，`build-audio-check.py` 預設只列本次新增；單字篩選加「已畢業」；CI console 檢查加 `review.html`。
+- **第 4 階段 題型與文法**：單字測驗加「漢字読み」「表記」四選一（干擾項取同課讀音長度相近的字）；克漏字接文法 SRS、篩選加今日到期；「排序」練習（`grammar[].chunks`，`boarding-house` 14 點補齊，驗證器比對接起來＝example）；`build-grammar.py` → `data/grammar.json` + `lessons/grammar-index.html`（搜尋、分章、教過的課、複習狀態；CI 無 diff 檢查）；單字卡與文法卡「我的筆記」。修 store 第一次評分 box 變 NaN。
+- **第 5 階段 聲音與周邊**：語速 0.75x／1x；例句聽力模式；跟讀錄音（MediaRecorder，只在記憶體）；動詞工具「從本站單字庫匯入動詞」（一段／五段／サ變規則自動變 ます形／て形，讀音對齊成 漢字（かな），46 個動詞核對過）。
+- **文件與 skill 同步**：`SKILL.md`（point 照抄標題、chunks、題目 id、薄殼加 store.js、只聽新增音檔、build-grammar、自檢清單）、`CLAUDE.md`（store.js 硬性規定、標題凍結、題目 id、舊課只搬一次、SOP 與連動更新）、`architecture.md`、`lesson-authoring.md`、`README.md`、`publish.sh`（多跑 build-grammar）。
+- 未做：句子級音檔（要重產全部語音，另開規劃）；`vocab.json` 拆檔（gzip 後 30 課內不需要）。
+
 ## 2026-09-13
 
 - **翻譯與文法標記改成逐篇強制**（29597fe）：`boarding-house` 昨天只有第一篇標了文法，三層檢查都沒擋下來——`validate-lessons.py` 的 `translation` 寫成「有填才驗長度」、整篇沒填不報錯；`[[g#]]` 只驗成對與索引合法，不管有幾篇沒標。`docs/lesson-authoring.md` 又把 `translation` 標成「選填」、驗收標準完全沒列這兩項，跟 `SKILL.md` 互相矛盾。改成三條硬性檢查：每篇必須有 `translation`（長度等於 `paragraphs`、每段非空）、每篇至少一個 `[[g#]]`、每個 `grammar[]` 文法點至少被標記一次。`SKILL.md` 步驟 4 加「每一篇都要做的兩件事」與當場自檢指令。同時補齊 `boarding-house` 篇二篇三的標記，14 個文法點全部涵蓋（`[[g#]]` 會被 `plain()` 剝除，音檔 key 未變，不需重產語音）。
@@ -83,6 +94,5 @@
 
 ## 已擱置
 
-- 進度匯出／匯入
 - JLPT 等級標籤
 - Phase 2（hook/CI 強制檢查、CLAUDE.md 深度稽核、handoff 實際套用）

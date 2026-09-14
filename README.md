@@ -8,20 +8,24 @@
 
 ```
 japanese-learning/
-├── index.html          首頁目錄（自動產生，勿手改）
+├── index.html          首頁目錄（自動產生，勿手改；最上面是「今天要複習」）
+├── review.html         跨課複習中心（今天到期的單字與文法，混合所有課）
 ├── lessons/            每一份學習檔案
 │   ├── <id>.html        引擎課（薄殼，內容在 data/lessons/<id>.json）
+│   ├── grammar-index.html N4 文法查詢
 │   └── …
 ├── data/
 │   ├── vocab.json       共用單字庫
+│   ├── grammar.json     文法查詢資料（自動產生，勿手改）
 │   └── lessons/<id>.json 每一課的故事／文法／測驗內容
-├── assets/             共用樣式與程式（lesson.css / lesson-engine.js / vocab-table.js）
+├── assets/             共用樣式與程式（store.js / lesson.css / lesson-engine.js / vocab-table.js）
 ├── audio/              預錄語音 MP3 + manifest.json
 ├── docs/               架構與規範說明
 ├── CLAUDE.md           AI 協作設定
 ├── build-index.py      重建 index.html
 ├── generate-audio.py   用 Google TTS 產語音（需 tts-key.txt）
 ├── build-audio-check.py 產發音快篩頁
+├── build-grammar.py    產 data/grammar.json
 └── publish.sh          一鍵：重建目錄 + commit + push
 ```
 
@@ -43,3 +47,4 @@ skill（`.claude/skills/new-lesson/`）會帶著跑完整流程：確認字表 �
 - `tts-key.txt` 是 Google API 金鑰，已被 `.gitignore` 排除，**絕不要 commit**。
 - 語音產生完後可以到 Google Cloud Console 停用那把金鑰，網站運作不需要它。
 - 課程頁需要本機伺服器（`python3 -m http.server 4173`）或線上版才能開，不能雙擊 `file://`。
+- 學習進度存在瀏覽器裡。換手機或清資料前，先到任一課程頁的設定按「匯出進度檔」，新裝置再「匯入」。

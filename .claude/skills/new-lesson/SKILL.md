@@ -35,9 +35,12 @@ description: >-
 ## 步驟 3 — 挑 N4 文法點
 
 - 從 `docs/n4-grammar.md` 挑 **至少 8 個** 能自然融入這批單字情境的文法點。
-- 不在那份清單的文法**不要用**（要用就先問使用者要不要補進清單）。
+- 不在那份清單的文法**不要用**（要用就先問使用者要不要補進清單）。標了「（停用…）」的條目也不能用，改用它指向的新條目。
+- `point` 要**照抄清單的標題**（進度資料用標題當跨課共用的 key，寫法不同就對不到）。
 - 每個記下 `point` / `meaning` / 對應的 `n4ref`（至少一個來源，如 `みん日II L29`）。
 - `example` 要**真的用到那個文法**（驗證器會比對字樣，填一句不相干的會報錯）。
+- 每個文法點加 **`chunks`**：把 `example` 切成 **3–5 段**（依文節切，含標點），接起來要**剛好等於** `example`。
+  這是「排序」練習（JLPT 文の組み立て）的題目。例：`"chunks": ["窓を","開けた","まま","寝てしまった"]`。
 - **同一課不要同時挑字樣一樣的兩個條目**（`～のに` 逆接＋目的、`～たら` 假定＋過去的發現、
   `～ように` 目的＋希望、`～てくる／ていく` ①＋②）——驗證器分不出標記指的是哪一個，會報錯。
   要兩個都教就拆到不同課。（`～そうだ` 樣態＋傳聞是例外，接續不重疊，驗證器分得出來。）
@@ -87,6 +90,8 @@ EOF
 
 ## 步驟 5 — 出測驗
 
+- **每一題都要有 `id`**：克漏字 `gq-01`、`gq-02`…，讀解 `rq-01`…，照順序編、兩位數。進度用 `<課程id>/<題目id>` 當 key，
+  所以**日後修題目文字不要改 id、刪題後編號不重用**（驗證器會擋重複與缺 id）。
 - **文法克漏字**：每個文法點 2 題。`s` 含 `（　）`，`o` 四選項，`a` 正解索引，`g` 指到 `grammar[]`。
   干擾項：該文法點在 `docs/n4-grammar.md` 有「對比：」欄 → 優先從對比欄所列文法挑（たら 的干擾放 と／ば／なら）；沒有 → 用「同類但語意不合」的（てしまう 的干擾放 ておく／てみる／ていく）。干擾項本身也必須是清單內或第 0 章 N5 白名單的文法，不得為湊選項用清單外文法。
 - **讀解理解題**：每篇故事 5–7 題。`st` = 篇序號，`ref` 必須是該篇故事裡真的有的句子。
@@ -104,10 +109,12 @@ EOF
   <link rel="stylesheet" href="../assets/lesson.css">
   </head><body>
   <div class="app" id="app" data-lesson="【id】"></div>
+  <script src="../assets/store.js"></script>
   <script src="../assets/vocab-table.js"></script>
   <script src="../assets/lesson-engine.js"></script>
   </body></html>
   ```
+  （`store.js` 一定要在 `lesson-engine.js` 前面，引擎靠它讀寫進度與設定。）
 
 ## 步驟 7 — 加字進 `data/vocab.json`
 
@@ -132,18 +139,19 @@ printf '%s' '你的金鑰' > tts-key.txt
 （`.claude/hooks/require-tts-key.sh` 也會在沒金鑰時擋下 `generate-audio.py` 並提醒。）
 
 ```bash
-python3 generate-audio.py      # 只會產這課的新段落
-python3 build-audio-check.py
+python3 generate-audio.py      # 只會產這課的新段落，並把清單寫到 audio/last-run.json
+python3 build-audio-check.py   # 預設只列「本次新增」那批
 ```
 - 若回 `BILLING_DISABLED` → 停下來，請使用者到 Google Cloud 啟用帳單（見 `docs/tts-notes.md`）。
-- 產完**請使用者開 audio-check.html 聽一輪**，把 ✗ 的字回報 → 補修正表 → 重跑。
+- 產完**請使用者開 audio-check.html 聽「本次新增」那批**（舊的之前已經聽過，不用重聽），把 ✗ 的字回報 → 補修正表 → 重跑。
 
 ## 步驟 10 — 重建目錄
 
 ```bash
 python3 build-index.py
+python3 build-grammar.py     # 文法查詢頁的「教過的課」會多出這一課
 ```
-確認新課以 `title` 出現在 `index.html`。
+確認新課以 `title` 出現在 `index.html`（卡片會顯示 字數／文法點數／篇數）。
 
 ## 步驟 11 — 自我檢核
 
@@ -161,6 +169,7 @@ python3 validate-lessons.py <id>
 - [ ] ≥8 個文法點，**每個都能在 `docs/n4-grammar.md` 找到**（逐一 grep 確認）
 - [ ] 克漏字每點 2 題、讀解每篇 5–7 題；每個 `reading[].ref` 真的在對應故事裡
 - [ ] 每個 `grammarQuiz[].g` 指到正確的 `grammar[]` 項目（答完顯示的說明對得上題目）
+- [ ] 每題都有 `id`（`gq-NN`／`rq-NN`）且不重複；每個 `grammar[]` 都有 `chunks`，接起來等於 `example`
 - [ ] `data/vocab.json` 每個新字 `reading` = `dict` 完整假名
 - [ ] **每一篇**故事都有 `translation`，長度跟 `paragraphs` 一樣、每段非空、翻譯通順
 - [ ] **每一篇**故事都至少標到一個 `[[g#]]…[[/g]]`；`grammar[]` 每個文法點都至少被標記一次，`#` 對到正確索引
@@ -171,11 +180,13 @@ python3 validate-lessons.py <id>
 檔案／技術：
 - [ ] `<id>` 英數連字號；薄殼有 `<title>` 與（引擎會自動加的）`← 回目錄`
 - [ ] `python3 -c "import json; json.load(open('data/lessons/<id>.json'))"` 通過
-- [ ] 本機 `http.server`，開 `/lessons/<id>.html`：四分頁都在、故事注音正確、目標字可點開詳解、單字表 two-row、三種測驗可作答、設定可換主題/字級
-- [ ] 故事卡的「日文／中文翻譯」可切換、文法角標點得開（內容對得上 `grammar[]`）
+- [ ] 本機 `http.server`，開 `/lessons/<id>.html`：底部四分頁都在、故事注音正確、目標字可點開詳解、單字表 two-row、
+      單字測驗六種模式（日→中／中→日／聽力／例句聽力／漢字読み／表記）可作答、文法三分頁（對照表／克漏字／排序）可用、設定可換主題/字級/語速
+- [ ] 故事卡的「日文／對照／中文」可切換、文法角標點得開（內容對得上 `grammar[]`）
+- [ ] 首頁「今天要複習」與 `review.html` 看得到這一課的字（練過幾個字後到期就會出現）
 - [ ] `read_console_messages` 無 error
 - [ ] `resize_window` 375px：手機版 OK
-- [ ] localStorage key 都是 `<id>:` 前綴
+- [ ] 進度與設定只寫在 `jl.progress.v1`／`jl.settings.v1`（透過 `assets/store.js`），沒有其他 localStorage key
 - [ ] audio-check 聽過、無誤讀
 
 ## 步驟 12 — 發佈
@@ -193,4 +204,5 @@ python3 validate-lessons.py <id>
 - **不要動 `lessons/日文70單字學習器.html`**（舊課不遷移）。
 - 樣式／RWD／分頁內容**全部走引擎**，薄殼與 JSON 不放任何自訂 CSS/JS。要調外觀改 `assets/`（且要回歸測試每一課）。
 - 每次停在步驟 2 等使用者確認字表與主題；產完語音停在步驟 9 等使用者聽 audio-check。
+- **不要自己碰 localStorage**：所有進度／設定都走 `assets/store.js`（`window.JLStore`）。
 - **翻譯與文法標記是每篇都要做的，不是做一篇示範**。`validate-lessons.py` 會逐篇擋下來（缺翻譯、某篇沒文法標記、某個文法點從沒被標到、標記包錯位置，都會報錯），publish hook 也會再驗一次。

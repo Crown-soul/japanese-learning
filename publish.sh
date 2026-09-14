@@ -7,8 +7,9 @@ cd "$(dirname "$0")"
 
 MSG="${1:-更新日文學習檔案}"
 
-echo "==> 重建目錄 index.html"
+echo "==> 重建目錄 index.html 與文法查詢資料 data/grammar.json"
 python3 build-index.py
+python3 build-grammar.py
 
 echo "==> 加入變更"
 git add -A
