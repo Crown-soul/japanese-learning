@@ -143,6 +143,10 @@
     {
      "id": "boarding-house",
      "title": "下宿生活の一年"
+    },
+    {
+     "id": "business-trip",
+     "title": "初めての出張"
     }
    ]
   },
@@ -213,6 +217,10 @@
     {
      "id": "boarding-house",
      "title": "下宿生活の一年"
+    },
+    {
+     "id": "business-trip",
+     "title": "初めての出張"
     }
    ]
   },
@@ -240,6 +248,10 @@
     {
      "id": "boarding-house",
      "title": "下宿生活の一年"
+    },
+    {
+     "id": "business-trip",
+     "title": "初めての出張"
     }
    ]
   },
@@ -364,6 +376,10 @@
     {
      "id": "boarding-house",
      "title": "下宿生活の一年"
+    },
+    {
+     "id": "business-trip",
+     "title": "初めての出張"
     }
    ]
   },
@@ -383,6 +399,10 @@
     {
      "id": "boarding-house",
      "title": "下宿生活の一年"
+    },
+    {
+     "id": "business-trip",
+     "title": "初めての出張"
     }
    ]
   },
@@ -494,6 +514,10 @@
     {
      "id": "boarding-house",
      "title": "下宿生活の一年"
+    },
+    {
+     "id": "business-trip",
+     "title": "初めての出張"
     }
    ]
   },
@@ -699,6 +723,10 @@
     {
      "id": "boarding-house",
      "title": "下宿生活の一年"
+    },
+    {
+     "id": "business-trip",
+     "title": "初めての出張"
     }
    ]
   },
@@ -761,6 +789,10 @@
     {
      "id": "boarding-house",
      "title": "下宿生活の一年"
+    },
+    {
+     "id": "business-trip",
+     "title": "初めての出張"
     }
    ]
   },
@@ -779,6 +811,10 @@
     {
      "id": "boarding-house",
      "title": "下宿生活の一年"
+    },
+    {
+     "id": "business-trip",
+     "title": "初めての出張"
     }
    ]
   },
@@ -797,6 +833,10 @@
     {
      "id": "boarding-house",
      "title": "下宿生活の一年"
+    },
+    {
+     "id": "business-trip",
+     "title": "初めての出張"
     }
    ]
   },
@@ -845,6 +885,10 @@
     {
      "id": "boarding-house",
      "title": "下宿生活の一年"
+    },
+    {
+     "id": "business-trip",
+     "title": "初めての出張"
     }
    ]
   },
@@ -872,7 +916,12 @@
     "來源": "みん日II L17（N5）→ N4 反覆考 / JLPT Sensei"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "business-trip",
+     "title": "初めての出張"
+    }
+   ]
   },
   {
    "title": "～なくてもいい",
@@ -1300,6 +1349,10 @@
     {
      "id": "boarding-house",
      "title": "下宿生活の一年"
+    },
+    {
+     "id": "business-trip",
+     "title": "初めての出張"
     }
    ]
   },
@@ -1392,7 +1445,12 @@
    "extra": [
     "いる・行く・来る → いらっしゃる／おいでになる；言う → おっしゃる；する → なさる；食べる・飲む → 召し上がる；見る → ご覧になる；知っている → ご存じだ；くれる → くださる"
    ],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "business-trip",
+     "title": "初めての出張"
+    }
+   ]
   },
   {
    "title": "お＋Vます＋する（謙讓語）",
@@ -1421,7 +1479,12 @@
    "extra": [
     "いる → おる；行く・来る → まいる；する → いたす；言う → 申す／申し上げる；食べる・飲む・もらう → いただく；見る → 拝見する；聞く・訪ねる → 伺う；会う → お目にかかる；知っている → 存じている"
    ],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "business-trip",
+     "title": "初めての出張"
+    }
+   ]
   },
   {
    "title": "お／ご＋Vます＋ください（尊敬的請求）",
