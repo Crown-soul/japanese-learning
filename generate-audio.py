@@ -34,6 +34,7 @@ ROOT = Path(__file__).parent
 LESSONS_DIR = ROOT / "lessons"
 AUDIO_DIR = ROOT / "audio"
 MANIFEST = AUDIO_DIR / "manifest.json"
+LAST_RUN = AUDIO_DIR / "last-run.json"   # 本次新產的段落清單（給 build-audio-check.py）
 
 # 語音設定：日文男聲 Neural2-D，語速稍慢方便學習
 VOICE = "ja-JP-Neural2-D"
@@ -232,6 +233,7 @@ def main():
     manifest = {}
     made = skipped = 0
     total_chars_billed = 0
+    new_keys = []   # 本次新產的段落，寫進 audio/last-run.json 給 build-audio-check.py 只列新增
 
     for i, (key, synth) in enumerate(pairs, 1):
         fname = filename_for(synth)
@@ -247,6 +249,7 @@ def main():
             sys.exit(1)
         out.write_bytes(audio)
         made += 1
+        new_keys.append(key)
         total_chars_billed += len(synth)
         print(f"[{i}/{len(pairs)}] {fname}  {key[:24]}")
         time.sleep(0.15)  # 客氣一點
@@ -254,6 +257,12 @@ def main():
     MANIFEST.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8"
     )
+    # 只記「這次真的有新產」的那批；沒新產就留上一次的清單（人可能還沒聽完）
+    if new_keys:
+        LAST_RUN.write_text(
+            json.dumps({"at": time.strftime("%Y-%m-%d"), "new": new_keys}, ensure_ascii=False, indent=1),
+            encoding="utf-8",
+        )
 
     # 清掉不再被 manifest 引用的舊檔（例如發音修正後換了檔名的那幾個）
     # 安全閥：資料被改壞時 manifest 會突然變很小，若照刪就會清空整個 audio/，

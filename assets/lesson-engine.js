@@ -234,6 +234,7 @@
         '<button class="active" data-qfilter="all">全部</button>' +
         '<button data-qfilter="due">今日複習</button>' +
         '<button data-qfilter="new">未學過</button>' +
+        '<button data-qfilter="grad">已畢業</button>' +
         '<span class="small" id="filterInfo"></span></div>' +
       '<div class="quiz-card">' +
         '<div class="small" id="quizCount"></div>' +
@@ -386,6 +387,7 @@
   function getFilteredKeys() {
     if (quizFilter === "due") return dueKeys();
     if (quizFilter === "new") return newKeys();
+    if (quizFilter === "grad") return keysAll().filter(function (k) { return S.isGraduated(S.getVocab(k)); });
     return keysAll();
   }
   function shuffle() { quizKeys = getFilteredKeys().slice().sort(function () { return Math.random() - 0.5; }); qi = 0; renderQuiz(); }
@@ -406,7 +408,7 @@
     if (!quizKeys.length) {
       $("quizCount").textContent = "0 / 0";
       var q0 = $("quizQuestion"); q0.lang = ""; q0.textContent = "目前沒有符合條件的單字";
-      $("quizHint").textContent = quizFilter === "due" ? "今天沒有到期的字。" : "所有單字都練過了。";
+      $("quizHint").textContent = quizFilter === "due" ? "今天沒有到期的字。" : quizFilter === "grad" ? "還沒有畢業的字（連續記得到 box 6 就畢業）。" : "所有單字都練過了。";
       ans.innerHTML = "";
       $("quizPre").hidden = true;
       return;

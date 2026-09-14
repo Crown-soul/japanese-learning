@@ -26,7 +26,8 @@ const srv = createServer(async (req, res) => {
 });
 await new Promise((r) => srv.listen(4173, r));
 
-const lessons = (await readdir("lessons")).filter((f) => f.endsWith(".html"));
+const lessons = (await readdir("lessons")).filter((f) => f.endsWith(".html")).map((f) => "lessons/" + f);
+lessons.push("review.html");   // 跨課複習中心（根目錄，不在 lessons/）
 const browser = await chromium.launch();
 let failed = false;
 
@@ -49,7 +50,7 @@ for (const f of lessons) {
     errs.push(m.text());
   });
   page.on("pageerror", (e) => errs.push(String(e)));
-  await page.goto(`http://localhost:4173/lessons/${encodeURIComponent(f)}`, { waitUntil: "load" });
+  await page.goto(`http://localhost:4173/${f.split("/").map(encodeURIComponent).join("/")}`, { waitUntil: "load" });
   await page.waitForTimeout(2000);
   const real = errs.filter((e) => !/\.mp3|manifest\.json/.test(e));
   if (offline.length) {

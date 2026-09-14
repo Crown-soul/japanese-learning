@@ -1,0 +1,322 @@
+<!DOCTYPE html><html lang="zh-Hant"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%E3%81%82%3C/text%3E%3C/svg%3E">
+<title>跨課複習中心</title>
+<link rel="stylesheet" href="assets/lesson.css">
+<style>
+  .app{padding-bottom:calc(var(--tabs-h) + 24px + env(safe-area-inset-bottom))}
+  .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 14px}
+  .summary .stat b{font-size:18px}
+  .empty{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px 16px;text-align:center;color:var(--muted)}
+  .from{font-size:12px;color:var(--muted);margin-top:8px}
+  .lesson-link{color:var(--muted)}
+</style>
+</head><body>
+<div class="app" id="app">
+  <header>
+    <div class="hrow"><a class="backlink" href="./">← 回目錄</a><button class="gear" id="gearBtn" aria-label="設定">⚙︎</button></div>
+    <h1>跨課複習中心</h1>
+  </header>
+  <div class="summary" id="summary">
+    <div class="stat"><b id="sDueV">–</b><span>單字到期</span></div>
+    <div class="stat"><b id="sDueG">–</b><span>文法到期</span></div>
+    <div class="stat"><b id="sTotal">–</b><span>已學單字</span></div>
+  </div>
+  <div class="subtabs" role="group" aria-label="複習類型">
+    <button class="active" data-view="vocab">單字</button>
+    <button data-view="grammar">文法</button>
+  </div>
+
+  <section id="vocab" class="section active">
+    <div class="subtabs" role="group" aria-label="測驗方式">
+      <button class="active" data-qdir="jpzh">日→中</button>
+      <button data-qdir="zhjp">中→日</button>
+      <button data-qdir="listen">聽力</button>
+    </div>
+    <div class="filter-row">
+      <button class="active" data-qfilter="due">今日到期</button>
+      <button data-qfilter="weak">最不熟</button>
+      <button data-qfilter="all">全部已學</button>
+      <span class="small" id="filterInfo"></span>
+    </div>
+    <div class="quiz-card" id="vocabCard">
+      <div class="small" id="quizCount"></div>
+      <div class="quiz-q" id="quizQuestion"></div>
+      <div class="quiz-hint" id="quizHint"></div>
+      <div class="quiz-answer" id="quizAnswer"></div>
+      <div class="from" id="quizFrom"></div>
+      <div class="quiz-controls" id="quizPre">
+        <button id="showAnswer" class="primary">顯示答案</button>
+        <button id="speakQuiz">▶ 播放</button>
+        <button id="nextQuiz">略過</button>
+      </div>
+    </div>
+    <div class="quiz-dock" id="quizDock" hidden>
+      <button class="status-btn bad" data-status="bad">不記得<small>1</small></button>
+      <button class="status-btn mid" data-status="mid">有點模糊<small>2</small></button>
+      <button class="status-btn good" data-status="good">記得<small>3</small></button>
+    </div>
+  </section>
+
+  <section id="grammar" class="section">
+    <div class="filter-row">
+      <button class="active" data-gfilter="due">今日到期</button>
+      <button data-gfilter="all">全部學過的文法點</button>
+      <span class="small" id="gqInfo"></span>
+    </div>
+    <div class="quiz-card">
+      <div class="small" id="gqCount"></div>
+      <div class="gq-sentence" id="gqSentence" lang="ja"></div>
+      <div class="gq-opts" id="gqOpts"></div>
+      <div class="gq-explain" id="gqExplain"></div>
+      <div class="from" id="gqFrom"></div>
+      <div class="quiz-controls"><button id="gqNext">下一題</button></div>
+    </div>
+  </section>
+
+  <nav class="tabs" aria-label="分頁">
+    <a class="btn" href="./" style="flex:1;border:0;border-radius:0;background:transparent;color:var(--muted)">目錄</a>
+    <button class="active" data-view="vocab">複習</button>
+    <a class="btn" href="lessons/%E6%97%A5%E6%96%87%E5%96%AE%E5%AD%97%E7%B8%BD%E8%A1%A8.html" style="flex:1;border:0;border-radius:0;background:transparent;color:var(--muted)">單字總表</a>
+  </nav>
+</div>
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+
+<script src="assets/store.js"></script>
+<script>
+(function () {
+  "use strict";
+  var S = window.JLStore;
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  if (!S) { $("app").innerHTML = '<p class="loaderr">缺少 assets/store.js</p>'; return; }
+
+  /* 主題／字級（全站共用） */
+  function applyTheme() { var t = S.getSettings().theme; if (t === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", t); }
+  function applyFont() { document.documentElement.style.setProperty("--fs", (S.getSettings().fs || 18) + "px"); }
+  applyTheme(); applyFont();
+
+  /* 語音（同引擎） */
+  var AUDIO = {}, voicesCache = [], curAudio = null;
+  function loadVoices() { try { voicesCache = speechSynthesis.getVoices() || []; } catch (e) {} }
+  if ("speechSynthesis" in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+  function speak(text) {
+    if (!("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text); u.lang = "ja-JP"; u.rate = 0.85;
+    var ja = voicesCache.find(function (v) { return /^ja(-|_)/i.test(v.lang); }); if (ja) u.voice = ja;
+    speechSynthesis.speak(u);
+  }
+  function play(text) {
+    if (!text) return;
+    var file = AUDIO[text];
+    if (file && /^[0-9a-f]{8,40}\.mp3$/.test(file)) {
+      try {
+        if (curAudio) { curAudio.pause(); curAudio = null; }
+        if ("speechSynthesis" in window) speechSynthesis.cancel();
+        curAudio = new Audio("audio/" + file);
+        curAudio.playbackRate = S.getSettings().audioRate || 1;
+        curAudio.play().catch(function () { speak(text); });
+        return;
+      } catch (e) {}
+    }
+    speak(text);
+  }
+
+  /* 資料 */
+  var vocab = {}, titles = {}, lessonOf = {}, grammarQuiz = [];   // grammarQuiz: {lesson, item, point, g}
+  var view = "vocab";
+
+  function lessonName(id) { return titles[id] || id; }
+
+  /* ---------- 單字 ---------- */
+  var quizKeys = [], qi = 0, quizDir = "jpzh", quizFilter = "due", answerShown = false;
+  function learned() { return Object.keys(vocab).filter(function (k) { return S.getVocab(k); }); }
+  function pool() {
+    if (quizFilter === "due") return S.dueVocab(Object.keys(vocab));
+    if (quizFilter === "weak") return learned().filter(function (k) { return (S.getVocab(k).box | 0) <= 1; });
+    return learned();
+  }
+  function shuffle() { quizKeys = pool().sort(function () { return Math.random() - 0.5; }); qi = 0; renderQuiz(); }
+  function showAnswer() {
+    if (!quizKeys.length || answerShown) return;
+    answerShown = true; $("quizAnswer").classList.add("show"); $("quizPre").hidden = true; $("quizDock").hidden = false;
+  }
+  function renderQuiz() {
+    var ans = $("quizAnswer"); answerShown = false;
+    $("filterInfo").textContent = "題庫 " + quizKeys.length + " 字";
+    ans.classList.remove("show"); $("quizPre").hidden = false; $("quizDock").hidden = true; $("quizFrom").textContent = "";
+    if (!quizKeys.length) {
+      $("quizCount").textContent = "0 / 0";
+      var q0 = $("quizQuestion"); q0.lang = ""; q0.textContent = quizFilter === "due" ? "今天沒有到期的字" : "還沒有練過的字";
+      $("quizHint").textContent = quizFilter === "due" ? "到各課的「單字測驗」練過的字，到期時會出現在這裡。" : "先到課程裡把單字練過一輪。";
+      ans.innerHTML = ""; $("quizPre").hidden = true; return;
+    }
+    if (qi >= quizKeys.length) qi = 0;
+    var k = quizKeys[qi], v = vocab[k], q = $("quizQuestion");
+    $("quizCount").textContent = (qi + 1) + " / " + quizKeys.length + "　" + S.boxLabel(S.getVocab(k));
+    $("quizFrom").textContent = "出自：" + (lessonOf[k] || []).map(lessonName).join("、");
+    if (quizDir === "jpzh") {
+      q.lang = "ja"; q.textContent = v.dict;
+      $("quizHint").innerHTML = '<button class="hintbtn" id="hintBtn">看讀音提示</button>';
+      ans.innerHTML = '<span lang="ja">' + esc(v.reading) + "</span><strong>" + esc(v.zh) + '</strong><div class="example" lang="ja">' + esc(v.ex) + "</div>";
+    } else if (quizDir === "zhjp") {
+      q.lang = ""; q.textContent = v.zh.split("、")[0];
+      $("quizHint").textContent = "先想日文怎麼說，再顯示答案";
+      ans.innerHTML = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div class="example" lang="ja">' + esc(v.ex) + "</div>";
+    } else {
+      q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
+      $("quizHint").textContent = "聽日文發音，想中文意思";
+      ans.innerHTML = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div>' + esc(v.zh) + '</div><div class="example" lang="ja">' + esc(v.ex) + "</div>";
+      play(v.dict);
+    }
+  }
+  function afterRate() {
+    if (!quizKeys.length) return;
+    var k = quizKeys[qi];
+    if (quizFilter === "all") { qi = (qi + 1) % quizKeys.length; }
+    else {
+      quizKeys.splice(qi, 1);
+      var rec = S.getVocab(k);
+      if (rec && rec.box === 0) quizKeys.push(k);   // 不記得的今天再回來一次
+      if (qi >= quizKeys.length) qi = 0;
+    }
+    updateSummary(); renderQuiz();
+  }
+
+  /* ---------- 文法（跨課克漏字，只出「到期」或「學過」的文法點）---------- */
+  var gqOrder = [], gqi = 0, gqFilter = "due", gqAnswered = false;
+  function gqPool() {
+    var duePts = {};
+    S.dueGrammar().forEach(function (p) { duePts[p] = 1; });
+    return grammarQuiz.map(function (_, i) { return i; }).filter(function (i) {
+      var pt = grammarQuiz[i].point;
+      return gqFilter === "due" ? duePts[pt] : !!S.getGrammar(pt);
+    });
+  }
+  function gqShuffle() { gqOrder = gqPool().sort(function () { return Math.random() - 0.5; }); gqi = 0; gqRender(); }
+  function gqRender() {
+    $("gqInfo").textContent = "題庫 " + gqOrder.length + " 題";
+    var opts = $("gqOpts"), expl = $("gqExplain");
+    $("gqFrom").textContent = "";
+    if (!gqOrder.length) {
+      $("gqCount").textContent = "0 / 0";
+      $("gqSentence").textContent = gqFilter === "due" ? "今天沒有到期的文法點" : "還沒有練過的文法點";
+      opts.innerHTML = ""; expl.classList.remove("show"); return;
+    }
+    if (gqi >= gqOrder.length) gqi = 0;
+    gqAnswered = false;
+    var it = grammarQuiz[gqOrder[gqi]];
+    $("gqCount").textContent = (gqi + 1) + " / " + gqOrder.length + "　" + S.boxLabel(S.getGrammar(it.point));
+    $("gqSentence").innerHTML = esc(it.item.s).replace("（　）", '<span class="gq-blank"></span>');
+    $("gqFrom").textContent = "出自：" + lessonName(it.lesson);
+    expl.classList.remove("show"); expl.innerHTML = "";
+    opts.innerHTML = it.item.o.map(function (o, i) { return '<button data-oi="' + i + '" lang="ja">' + esc(o) + "</button>"; }).join("");
+  }
+
+  function updateSummary() {
+    var dueV = S.dueVocab(Object.keys(vocab)).length, dueG = S.dueGrammar().length;
+    $("sDueV").textContent = dueV; $("sDueG").textContent = dueG; $("sTotal").textContent = learned().length;
+  }
+
+  /* ---------- 設定 ---------- */
+  var modal = $("modal"), sheet = $("sheet");
+  function openSettings() {
+    var cfg = S.getSettings(), act = function (v, cur) { return String(v) === String(cur) ? " active" : ""; };
+    sheet.innerHTML = '<button class="sheet-close" data-act="close">關閉</button><h3>設定</h3>' +
+      '<div class="setrow"><span class="lab">深色模式</span>' +
+        ["auto:跟系統", "light:淺色", "dark:深色"].map(function (x) { var p = x.split(":"); return '<button data-set="theme" data-val="' + p[0] + '" class="' + act(p[0], cfg.theme) + '">' + p[1] + "</button>"; }).join("") + "</div>" +
+      '<div class="setrow"><span class="lab">字級</span>' +
+        ["16:小", "18:中", "20:大", "23:特大"].map(function (x) { var p = x.split(":"); return '<button data-set="fs" data-val="' + p[0] + '" class="' + act(p[0], cfg.fs) + '">' + p[1] + "</button>"; }).join("") + "</div>" +
+      '<div class="small">鍵盤：空白＝顯示答案、1/2/3＝評分、→＝略過、P＝播放</div>';
+    modal.classList.add("show");
+  }
+  $("gearBtn").onclick = openSettings;
+  modal.addEventListener("click", function (e) { if (e.target === modal) modal.classList.remove("show"); });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-act],[data-set]"); if (!b) return;
+    if (b.dataset.act === "close") modal.classList.remove("show");
+    else if (b.dataset.set === "theme") { S.saveSettings({ theme: b.dataset.val }); applyTheme(); openSettings(); }
+    else if (b.dataset.set === "fs") { S.saveSettings({ fs: +b.dataset.val }); applyFont(); openSettings(); }
+  });
+
+  /* ---------- 事件 ---------- */
+  document.querySelectorAll("[data-view]").forEach(function (b) {
+    b.onclick = function () {
+      view = b.dataset.view;
+      document.querySelectorAll(".subtabs [data-view]").forEach(function (x) { x.classList.toggle("active", x.dataset.view === view); });
+      document.querySelectorAll(".section").forEach(function (x) { x.classList.toggle("active", x.id === view); });
+      $("quizDock").hidden = !(view === "vocab" && answerShown && quizKeys.length);
+    };
+  });
+  document.querySelectorAll("[data-qdir]").forEach(function (b) { b.onclick = function () { quizDir = b.dataset.qdir; document.querySelectorAll("[data-qdir]").forEach(function (x) { x.classList.toggle("active", x === b); }); renderQuiz(); }; });
+  document.querySelectorAll("[data-qfilter]").forEach(function (b) { b.onclick = function () { quizFilter = b.dataset.qfilter; document.querySelectorAll("[data-qfilter]").forEach(function (x) { x.classList.toggle("active", x === b); }); shuffle(); }; });
+  document.querySelectorAll("[data-gfilter]").forEach(function (b) { b.onclick = function () { gqFilter = b.dataset.gfilter; document.querySelectorAll("[data-gfilter]").forEach(function (x) { x.classList.toggle("active", x === b); }); gqShuffle(); }; });
+  $("showAnswer").onclick = showAnswer;
+  $("nextQuiz").onclick = function () { if (quizKeys.length) { qi = (qi + 1) % quizKeys.length; renderQuiz(); } };
+  $("speakQuiz").onclick = function () { if (quizKeys.length) play(vocab[quizKeys[qi]].dict); };
+  $("quizQuestion").addEventListener("click", function (e) { if (e.target.closest("#listenPlay") && quizKeys.length) play(vocab[quizKeys[qi]].dict); });
+  $("quizHint").addEventListener("click", function (e) { var h = e.target.closest("#hintBtn"); if (h && quizKeys.length) h.outerHTML = '<span lang="ja">讀音：' + esc(vocab[quizKeys[qi]].reading) + "</span>"; });
+  $("quizDock").addEventListener("click", function (e) {
+    var b = e.target.closest(".status-btn"); if (!b || !quizKeys.length || !answerShown) return;
+    S.rateVocab(quizKeys[qi], b.dataset.status); afterRate();
+  });
+  $("gqOpts").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-oi]"); if (!b || gqAnswered) return;
+    gqAnswered = true;
+    var it = grammarQuiz[gqOrder[gqi]], pick = +b.dataset.oi, ok = pick === it.item.a;
+    $("gqOpts").querySelectorAll("button").forEach(function (x, i) { x.disabled = true; if (i === it.item.a) x.classList.add("correct"); else if (i === pick) x.classList.add("wrong"); });
+    $("gqSentence").innerHTML = esc(it.item.s).replace("（　）", '<span class="gq-blank" style="border:0">' + esc(it.item.o[it.item.a]) + "</span>");
+    var expl = $("gqExplain");
+    expl.innerHTML = '<b lang="ja">' + esc(it.g.point) + "</b>　" + esc(it.g.meaning) + '<div class="small" style="margin-top:6px" lang="ja">例：' + esc(it.g.example) + "</div>";
+    expl.classList.add("show");
+    S.markQuiz(it.lesson + "/" + (it.item.id || ("gq-" + (it.idx + 1))), ok);
+    S.rateGrammar(it.point, ok ? "good" : "bad");
+    updateSummary();
+  });
+  $("gqNext").onclick = function () {
+    if (!gqOrder.length) return;
+    if (gqFilter === "due" && gqAnswered) { gqOrder.splice(gqi, 1); if (gqi >= gqOrder.length) gqi = 0; }
+    else gqi = (gqi + 1) % gqOrder.length;
+    gqRender();
+  };
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { modal.classList.remove("show"); return; }
+    var tag = (e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea" || e.metaKey || e.ctrlKey || e.altKey || view !== "vocab" || modal.classList.contains("show")) return;
+    if (e.key === " ") { if ((tag === "button" || tag === "a") && e.target.id !== "showAnswer") return; e.preventDefault(); showAnswer(); }
+    else if (answerShown && /^[123]$/.test(e.key)) { e.preventDefault(); S.rateVocab(quizKeys[qi], { "1": "bad", "2": "mid", "3": "good" }[e.key]); afterRate(); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); $("nextQuiz").click(); }
+    else if (e.key === "p" || e.key === "P") { $("speakQuiz").click(); }
+  });
+
+  /* ---------- 載入 ---------- */
+  fetch("data/vocab.json").then(function (r) { if (!r.ok) throw new Error("vocab HTTP " + r.status); return r.json(); }).then(function (list) {
+    var ids = {};
+    (list || []).forEach(function (w) {
+      vocab[w.key] = w; lessonOf[w.key] = w.lessons || [];
+      (w.lessons || []).forEach(function (l) { ids[l] = 1; });
+    });
+    var engineIds = Object.keys(ids).filter(function (id) { return /^[a-z0-9-]+$/.test(id); });
+    S.migrateLegacy(engineIds);
+    return Promise.all(engineIds.map(function (id) {
+      return fetch("data/lessons/" + encodeURIComponent(id) + ".json").then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+        if (!d) return;
+        titles[id] = d.title || id;
+        (d.grammarQuiz || []).forEach(function (item, idx) {
+          var g = (d.grammar || [])[item.g]; if (!g) return;
+          grammarQuiz.push({ lesson: id, item: item, idx: idx, g: g, point: (g.point || "").trim() });
+        });
+      }).catch(function () {});
+    }));
+  }).then(function () {
+    updateSummary(); shuffle(); gqShuffle();
+    fetch("audio/manifest.json").then(function (r) { return r.ok ? r.json() : {}; }).then(function (m) { AUDIO = m || {}; }).catch(function () {});
+  }).catch(function (e) {
+    console.error(e);
+    $("app").insertAdjacentHTML("beforeend", '<p class="loaderr">資料載入失敗（' + esc(e.message) + '）。請用本機伺服器或線上版開啟。</p>');
+  });
+})();
+</script>
+</body></html>

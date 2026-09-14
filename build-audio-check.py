@@ -20,6 +20,7 @@ LESSONS_DIR = ROOT / "lessons"
 LESSON_DATA_DIR = ROOT / "data" / "lessons"
 VOCAB_JSON = ROOT / "data" / "vocab.json"
 MANIFEST = ROOT / "audio" / "manifest.json"
+LAST_RUN = ROOT / "audio" / "last-run.json"   # generate-audio.py 寫的「本次新產」清單
 OUT = ROOT / "audio-check.html"
 
 SFUNC_RE = re.compile(r'\$\{S\("[^"]*","([^"]*)"(?:,"([^"]*)")?\)\}')
@@ -51,6 +52,14 @@ def main():
         raise SystemExit(f"找不到 {MANIFEST}，請先執行 generate-audio.py 產生音檔。")
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     vocab = json.loads(VOCAB_JSON.read_text(encoding="utf-8"))
+    new_keys, last_at = set(), ""
+    if LAST_RUN.exists():
+        try:
+            lr = json.loads(LAST_RUN.read_text(encoding="utf-8"))
+            new_keys = set(lr.get("new") or [])
+            last_at = lr.get("at") or ""
+        except Exception:
+            pass
 
     rows = []  # (section, text, hint, file)
 
@@ -86,9 +95,10 @@ def main():
         uniq.append(row)
 
     items_json = json.dumps(
-        [{"sec": s, "text": t, "hint": h, "file": f} for s, t, h, f in uniq],
+        [{"sec": s, "text": t, "hint": h, "file": f, "new": t in new_keys} for s, t, h, f in uniq],
         ensure_ascii=False,
     )
+    n_new = sum(1 for _, t, _, _ in uniq if t in new_keys)
 
     page = """<!doctype html>
 <html lang="zh-Hant">
@@ -114,7 +124,9 @@ def main():
   .grow{flex:1;min-width:0}
 </style>
 <h1>語音檢查表<span id="prog" class="hint"></span></h1>
+<p class="hint" id="newnote"></p>
 <div class="bar">
+  <button data-f="new">只看本次新增</button>
   <button data-f="all">全部</button>
   <button data-f="todo">未檢查</button>
   <button data-f="ng">已標記讀錯</button>
@@ -125,10 +137,15 @@ def main():
 <textarea id="out" readonly></textarea>
 <script>
 const ITEMS = __ITEMS__;
+const N_NEW = __N_NEW__, LAST_AT = "__LAST_AT__";
 const KEY = "audiocheck-v1";
 let state = {};
 try { state = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){}
-let filter = "all";
+// 有「本次新增」就預設只列那批（課多了以後全部一起聽不完），沒有就列全部
+let filter = N_NEW ? "new" : "all";
+document.getElementById("newnote").textContent = N_NEW
+  ? "本次新增 "+N_NEW+" 段（"+LAST_AT+" 產生）。先聽這批就好；其餘的之前已經聽過。"
+  : "沒有「本次新增」清單（generate-audio.py 沒產新檔），顯示全部。";
 let audio = new Audio();
 
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
@@ -141,6 +158,7 @@ function render(){
   ITEMS.forEach((it,i)=>{
     const st = state[it.file];
     if(st==="ok") ok++; if(st==="ng") ng++;
+    if(filter==="new" && !it.new) return;
     if(filter==="todo" && st) return;
     if(filter==="ng" && st!=="ng") return;
     const row = document.createElement("div");
@@ -182,7 +200,7 @@ render();
 </script>
 </html>
 """
-    page = page.replace("__ITEMS__", items_json)
+    page = page.replace("__ITEMS__", items_json).replace("__N_NEW__", str(n_new)).replace("__LAST_AT__", last_at)
     OUT.write_text(page, encoding="utf-8")
     print(f"寫出 {OUT}（{len(uniq)} 個語音檔）")
 

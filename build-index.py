@@ -9,11 +9,15 @@
   3. 有未提交變更／不在 git 裡 → 用檔案 mtime（通常＝今天）
 「最後更新」= 所有課程日期的最大值，不是執行當天。
 
+引擎課（有 data/lessons/<id>.json）的卡片會多顯示「幾個字 · 幾個文法點 · 幾篇」；
+「今天要複習」那塊與各課的學習狀態是前端 JS 讀 assets/store.js 填的，這裡只放骨架。
+
 用法：
     python3 build-index.py
 """
 
 import re
+import json
 import html
 import datetime
 import subprocess
@@ -22,6 +26,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent
 LESSONS_DIR = ROOT / "lessons"
+LESSON_DATA_DIR = ROOT / "data" / "lessons"
+VOCAB_JSON = ROOT / "data" / "vocab.json"
 OUTPUT = ROOT / "index.html"
 
 TITLE_RE = re.compile(r"<title>(.*?)</title>", re.IGNORECASE | re.DOTALL)
@@ -64,14 +70,41 @@ def lesson_date(path: Path) -> datetime.date:
     return datetime.date.fromtimestamp(path.stat().st_mtime)
 
 
+def lesson_meta(stem: str, vocab_counts: dict):
+    """引擎課才有：字數／文法點數／篇數。舊課回 None。"""
+    jf = LESSON_DATA_DIR / f"{stem}.json"
+    if not jf.exists():
+        return None
+    try:
+        d = json.loads(jf.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    return {
+        "words": vocab_counts.get(stem, 0),
+        "grammar": len(d.get("grammar") or []),
+        "stories": len(d.get("stories") or []),
+    }
+
+
 def collect():
+    vocab_counts = {}
+    if VOCAB_JSON.exists():
+        try:
+            for w in json.loads(VOCAB_JSON.read_text(encoding="utf-8")):
+                for l in w.get("lessons") or []:
+                    vocab_counts[l] = vocab_counts.get(l, 0) + 1
+        except Exception:
+            pass
     files = sorted(LESSONS_DIR.glob("*.html"))
     items = []
     for f in files:
         items.append({
+            "id": f.stem,
             "href": "lessons/" + urllib.parse.quote(f.name),
             "title": read_title(f),
             "date": lesson_date(f),
+            "meta": lesson_meta(f.stem, vocab_counts),
+            "words": vocab_counts.get(f.stem, 0),   # 舊課也可能在 vocab.json 有字（lessons 用中文 id）
         })
     # 新的排前面
     items.sort(key=lambda x: x["date"], reverse=True)
@@ -83,20 +116,37 @@ PAGE = """<!DOCTYPE html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
 <title>日文學習檔案目錄</title>
 <style>
-:root{{--bg:#f7f7f8;--card:#fff;--text:#1f2328;--muted:#6b7280;--line:#e5e7eb;--accent:#111827}}
+:root{{--bg:#f7f7f8;--card:#fff;--text:#1f2328;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--soft:#eef2f7;--gram:#7a4a8f}}
+@media (prefers-color-scheme:dark){{
+  :root:not([data-theme="light"]){{--bg:#16181c;--card:#1f2329;--text:#e6e7ea;--muted:#9aa1ab;--line:#333842;--accent:#e6e7ea;--soft:#2a2f37;--gram:#cf9fe6}}
+}}
+:root[data-theme="dark"]{{--bg:#16181c;--card:#1f2329;--text:#e6e7ea;--muted:#9aa1ab;--line:#333842;--accent:#e6e7ea;--soft:#2a2f37;--gram:#cf9fe6}}
 *{{box-sizing:border-box}}
 body{{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Noto Sans JP",sans-serif;background:var(--bg);color:var(--text);line-height:1.7}}
 .app{{max-width:720px;margin:0 auto;padding:28px 16px 80px}}
 h1{{font-size:1.4rem;margin:0 0 4px}}
-.sub{{color:var(--muted);font-size:14px;margin-bottom:22px}}
+.sub{{color:var(--muted);font-size:14px;margin-bottom:18px}}
+.review{{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:22px;text-decoration:none;color:inherit}}
+.review b{{font-size:1.6rem;line-height:1;font-variant-numeric:tabular-nums}}
+.review .l{{flex:1;min-width:0}}
+.review .l span{{display:block;color:var(--muted);font-size:13px}}
+.review .go{{border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:14px;white-space:nowrap;background:var(--accent);color:var(--bg)}}
+.review.quiet .go{{background:transparent;color:var(--text)}}
+h2{{font-size:.85rem;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:0 0 10px}}
 ul{{list-style:none;margin:0;padding:0}}
 li{{margin-bottom:12px}}
 a.card{{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit}}
 a.card:hover{{border-color:#9ca3af}}
 .t{{font-weight:700;font-size:1.05rem}}
-.d{{color:var(--muted);font-size:13px;margin-top:4px}}
+.d{{color:var(--muted);font-size:13px;margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 12px}}
+.st{{margin-top:8px;height:6px;background:var(--line);border-radius:999px;overflow:hidden;display:none}}
+.st>i{{display:block;height:100%;background:var(--accent);width:0}}
+.stt{{font-size:12px;color:var(--muted);margin-top:4px;display:none}}
+.tools{{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}}
+.tools a{{border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;text-decoration:none;color:var(--text);background:var(--card)}}
 footer{{margin-top:28px;color:var(--muted);font-size:12px}}
 </style>
 </head>
@@ -104,35 +154,90 @@ footer{{margin-top:28px;color:var(--muted);font-size:12px}}
 <div class="app">
   <h1>日文學習檔案目錄</h1>
   <div class="sub">共 {count} 份 · 最後更新 {updated}</div>
+  <a class="review quiet" id="reviewBox" href="review.html">
+    <b id="dueN">–</b>
+    <div class="l">今天要複習<span id="dueSub">讀取中…</span></div>
+    <span class="go">開始複習</span>
+  </a>
+  <h2>課程</h2>
   <ul>
 {rows}
   </ul>
+  <div class="tools">
+    <a href="review.html">跨課複習中心</a>
+  </div>
   <footer>此頁由 build-index.py 自動產生，請勿手動編輯。</footer>
 </div>
+<script src="assets/store.js"></script>
+<script>
+(function(){{
+  var S = window.JLStore; if (!S) return;
+  try {{
+    var t = S.getSettings().theme;
+    if (t === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", t);
+  }} catch (e) {{}}
+  fetch("data/vocab.json").then(function (r) {{ return r.ok ? r.json() : []; }}).then(function (list) {{
+    var ids = [];
+    document.querySelectorAll("a.card[data-id]").forEach(function (a) {{ ids.push(a.dataset.id); }});
+    S.migrateLegacy(ids.filter(function (id) {{ return /^[a-z0-9-]+$/.test(id); }}));
+    var byLesson = {{}}, all = [];
+    (list || []).forEach(function (w) {{
+      all.push(w.key);
+      (w.lessons || []).forEach(function (l) {{ (byLesson[l] = byLesson[l] || []).push(w.key); }});
+    }});
+    var dueV = S.dueVocab(all).length, dueG = S.dueGrammar().length;
+    var box = document.getElementById("reviewBox");
+    document.getElementById("dueN").textContent = dueV + dueG;
+    document.getElementById("dueSub").textContent = (dueV || dueG)
+      ? "單字 " + dueV + " · 文法 " + dueG + " · 混合所有課程"
+      : "今天沒有到期的。想多練可以直接進課程。";
+    box.classList.toggle("quiet", !(dueV || dueG));
+    document.querySelectorAll("a.card[data-id]").forEach(function (a) {{
+      var keys = byLesson[a.dataset.id]; if (!keys || !keys.length) return;
+      var st = S.stats("vocab", keys);
+      var bar = a.querySelector(".st"), txt = a.querySelector(".stt");
+      if (!st.master && !st.learning) {{ txt.style.display = "block"; txt.textContent = "還沒開始"; return; }}
+      bar.style.display = "block"; bar.firstElementChild.style.width = (st.master / st.total * 100) + "%";
+      txt.style.display = "block";
+      txt.textContent = "熟練 " + st.master + " / " + st.total + (st.due ? " · 今日到期 " + st.due : "") + (st.graduated ? " · 畢業 " + st.graduated : "");
+    }});
+  }}).catch(function () {{
+    document.getElementById("dueSub").textContent = "需要用伺服器或線上版開啟才能算";
+  }});
+}})();
+</script>
 </body>
 </html>
 """
 
-ROW = '''    <li><a class="card" href="{href}">
+ROW = '''    <li><a class="card" href="{href}" data-id="{id}">
       <div class="t">{title}</div>
-      <div class="d">{date}</div>
+      <div class="d"><span>{date}</span>{meta}</div>
+      <div class="st"><i></i></div><div class="stt"></div>
     </a></li>'''
 
 
 def main():
     items = collect()
-    rows = "\n".join(
-        ROW.format(
+    rows = []
+    for it in items:
+        meta = ""
+        if it["meta"]:
+            m = it["meta"]
+            meta = f'<span>{m["words"]} 字</span><span>{m["grammar"]} 個文法點</span><span>{m["stories"]} 篇</span>'
+        elif it["words"]:
+            meta = f'<span>{it["words"]} 字</span>'
+        rows.append(ROW.format(
             href=html.escape(it["href"]),
+            id=html.escape(it["id"]),
             title=html.escape(it["title"]),
             date=it["date"].isoformat(),
-        )
-        for it in items
-    )
+            meta=meta,
+        ))
     page = PAGE.format(
         count=len(items),
         updated=(max(it["date"] for it in items) if items else datetime.date.today()).isoformat(),
-        rows=rows,
+        rows="\n".join(rows),
     )
     OUTPUT.write_text(page, encoding="utf-8")
     print(f"已產生 {OUTPUT}（{len(items)} 份檔案）")
