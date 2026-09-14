@@ -63,7 +63,9 @@
   }
   function status(p) {
     if (p.retired) return '<span class="pill retired">停用</span>';
-    var r = S && S.getGrammar(p.title);
+    // 進度的 key 是課程寫的 point，可能只是「A／B」標題裡的其中一個
+    var r = null;
+    if (S) [p.title].concat(p.title.split(/[／/]/)).some(function (t) { r = S.getGrammar(t.trim()); return !!r; });
     if (!r) return "";
     if (S.isDue(r)) return '<span class="pill due">今日到期</span>';
     return '<span class="pill ok">' + esc(S.boxLabel(r).split("（")[0].split(" ·")[0]) + "</span>";

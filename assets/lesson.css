@@ -198,7 +198,7 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
   .ctl-row .grp button{flex:0 0 auto;padding:6px 14px}
 }
 @media (min-width:700px){
-  .app{padding-top:8px}
+  .app{padding-top:8px;padding-bottom:24px}
   .sheet{border-radius:20px;margin-bottom:20px}
   .modal{align-items:center}
   .tabs{position:sticky;top:auto;bottom:0;max-width:880px;margin:24px auto 0;border:1px solid var(--line);border-radius:14px 14px 0 0}

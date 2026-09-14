@@ -492,6 +492,7 @@
     ans.classList.remove("show");
     $("quizPre").hidden = false;
     $("quizDock").hidden = true;
+    $("quizChoices").hidden = true; $("quizChoiceNext").hidden = true;
     if (!quizKeys.length) {
       $("quizCount").textContent = "0 / 0";
       var q0 = $("quizQuestion"); q0.lang = ""; q0.textContent = "目前沒有符合條件的單字";
@@ -503,7 +504,6 @@
     if (qi >= quizKeys.length) qi = 0;
     var k = quizKeys[qi], v = vocab[k], q = $("quizQuestion");
     $("quizCount").textContent = (qi + 1) + " / " + quizKeys.length;
-    $("quizChoices").hidden = true; $("quizChoiceNext").hidden = true;
     if (isChoiceDir()) {
       var field = quizDir === "yomi" ? "reading" : "dict";
       var opts = distractors(k, field).concat([v[field]]).sort(function () { return Math.random() - 0.5; });
@@ -663,7 +663,7 @@
     document.querySelectorAll(".section").forEach(function (x) { x.classList.toggle("active", x.id === name); });
     $("hud").hidden = !(name === "vocabtable" || name === "quiz");
     $("readingRow").hidden = !(name === "stories" && !$("storyRead").hidden);
-    if (name === "quiz") { $("quizDock").hidden = !answerShown || !quizKeys.length; }
+    if (name === "quiz") { $("quizDock").hidden = !answerShown || !quizKeys.length || isChoiceDir(); }
     else $("quizDock").hidden = true;
     window.scrollTo(0, 0);
     try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
@@ -690,7 +690,7 @@
       noteTimer = setTimeout(function () { S.setNote(t.dataset.note, t.dataset.key, t.value); }, 400);
     });
     sheet.addEventListener("click", function (e) {
-      var b = e.target.closest("[data-act],[data-set]"); if (!b) return;
+      var b = e.target.closest("[data-act],[data-set],[data-rec]"); if (!b) return;
       if (b.dataset.act === "close") { modal.classList.remove("show"); return; }
       if (b.dataset.act === "play-dict") play(currentCardKey && vocab[currentCardKey].dict);
       else if (b.dataset.act === "play-ex") play(currentCardKey && vocab[currentCardKey].ex);

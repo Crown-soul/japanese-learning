@@ -62,7 +62,7 @@
 
 ## 驗證與 Hook
 
-- **`python3 validate-lessons.py [<id>]`**：驗引擎課 JSON —— 合法性、欄位、`grammar.point` 在 `docs/n4-grammar.md`（且未停用）、`grammar.chunks` 接起來＝`example`、題目 `id` 必填唯一、`grammarQuiz.g` 索引、`reading.ref` 是內文子字串、目標單字都有出現在故事、薄殼 `<title>`/`data-lesson` 一致、vocab `reading` 全假名、`lessons` 非空陣列、**所有 `lessons/*.html` 有 `← 回目錄`**、音檔是否已產（warn）。**新課 publish 前一定要過。**
+- **`python3 validate-lessons.py [<id>]`**：驗引擎課 JSON —— 合法性、欄位、`grammar.point` 在 `docs/n4-grammar.md`（停用條目列 ⚠）、`grammar.chunks` 接起來＝`example`、題目 `id` 必填唯一、`grammarQuiz.g` 索引、`reading.ref` 是內文子字串、目標單字都有出現在故事、薄殼 `<title>`/`data-lesson` 一致、vocab `reading` 全假名、`lessons` 非空陣列、**所有 `lessons/*.html` 有 `← 回目錄`**、音檔是否已產（warn）。**新課 publish 前一定要過。**
 - `.claude/hooks/require-tts-key.sh`（PreToolUse/Bash）：偵測到**執行** `python3 generate-audio.py` 但沒金鑰 → 擋下 + 提醒（cat/grep/sed 它不會觸發）。
 - `.claude/hooks/validate-on-publish.sh`（PreToolUse/Bash）：偵測到**執行** `./publish.sh` → 先跑 `validate-lessons.py`，有錯就擋下並列出。
 - `.claude/hooks/check-backlinks.sh`（Stop）：Claude 回完話後掃 `lessons/*.html` 有沒有漏 `← 回目錄`（只提醒；引擎課薄殼由引擎注入，視為已有）。

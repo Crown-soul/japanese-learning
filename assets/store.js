@@ -24,8 +24,8 @@
   var MAX_BOX = INTERVALS.length - 1;
   var GRADUATE_BOX = MAX_BOX;
   var MASTER_BOX = 4;            // 統計裡算「熟練」的門檻
-  var EVENT_CAP = 20000;
-  var EVENT_FOLD = 5000;         // 超過上限時，把最舊的這麼多筆折成每日彙總
+  var EVENT_CAP = 10000;         // 每次評分都會整包序列化，上限太高手機會卡；10,000 筆約 450KB
+  var EVENT_FOLD = 3000;         // 超過上限時，把最舊的這麼多筆折成每日彙總
 
   var DEFAULT_SETTINGS = { v: 1, theme: "auto", fs: 18, reading: "all", lastTab: "stories", audioRate: 1, tipOpen: true };
 
@@ -63,9 +63,26 @@
     ["vocab", "grammar", "quiz", "daily"].forEach(function (k) { if (!p[k] || typeof p[k] !== "object" || Array.isArray(p[k])) p[k] = {}; });
     if (!Array.isArray(p.events)) p.events = [];
     if (!Array.isArray(p.migrated)) p.migrated = [];
+    // 清掉壞掉的紀錄（box 不是數字、due 不是日期），不然到期比對會整個失效
+    ["vocab", "grammar"].forEach(function (b) {
+      Object.keys(p[b]).forEach(function (k) {
+        var r = p[b][k];
+        if (!r || typeof r !== "object") { delete p[b][k]; return; }
+        if (typeof r.box !== "number" || !isFinite(r.box)) r.box = 0;   // isFinite(null) 是 true，要先看型別
+        if (r.due != null && !/^\d{4}-\d{2}-\d{2}$/.test(String(r.due))) r.due = today();
+      });
+    });
     p.v = 1;
     return p;
   }
+  // 另一個分頁（例如同時開課程頁和複習中心）寫入時，這邊的快取作廢，下次讀寫重新載入，
+  // 不然後寫的會把先寫的整包蓋掉
+  try {
+    window.addEventListener("storage", function (e) {
+      if (e.key === PROGRESS_KEY) progressCache = null;
+      else if (e.key === SETTINGS_KEY) settingsCache = null;
+    });
+  } catch (e) {}
   function progress() {
     if (!progressCache) progressCache = normalize(parse(raw(PROGRESS_KEY), null));
     return progressCache;
