@@ -221,6 +221,10 @@
     {
      "id": "business-trip",
      "title": "初めての出張"
+    },
+    {
+     "id": "graduation",
+     "title": "いよいよ卒業式"
     }
    ]
   },
@@ -252,6 +256,10 @@
     {
      "id": "business-trip",
      "title": "初めての出張"
+    },
+    {
+     "id": "graduation",
+     "title": "いよいよ卒業式"
     }
    ]
   },
@@ -380,6 +388,10 @@
     {
      "id": "business-trip",
      "title": "初めての出張"
+    },
+    {
+     "id": "graduation",
+     "title": "いよいよ卒業式"
     }
    ]
   },
@@ -403,6 +415,10 @@
     {
      "id": "business-trip",
      "title": "初めての出張"
+    },
+    {
+     "id": "graduation",
+     "title": "いよいよ卒業式"
     }
    ]
   },
@@ -518,6 +534,10 @@
     {
      "id": "business-trip",
      "title": "初めての出張"
+    },
+    {
+     "id": "graduation",
+     "title": "いよいよ卒業式"
     }
    ]
   },
@@ -727,6 +747,10 @@
     {
      "id": "business-trip",
      "title": "初めての出張"
+    },
+    {
+     "id": "graduation",
+     "title": "いよいよ卒業式"
     }
    ]
   },
@@ -793,6 +817,10 @@
     {
      "id": "business-trip",
      "title": "初めての出張"
+    },
+    {
+     "id": "graduation",
+     "title": "いよいよ卒業式"
     }
    ]
   },
@@ -815,6 +843,10 @@
     {
      "id": "business-trip",
      "title": "初めての出張"
+    },
+    {
+     "id": "graduation",
+     "title": "いよいよ卒業式"
     }
    ]
   },
@@ -837,6 +869,10 @@
     {
      "id": "business-trip",
      "title": "初めての出張"
+    },
+    {
+     "id": "graduation",
+     "title": "いよいよ卒業式"
     }
    ]
   },
@@ -920,6 +956,10 @@
     {
      "id": "business-trip",
      "title": "初めての出張"
+    },
+    {
+     "id": "graduation",
+     "title": "いよいよ卒業式"
     }
    ]
   },
@@ -1216,6 +1256,10 @@
     {
      "id": "boarding-house",
      "title": "下宿生活の一年"
+    },
+    {
+     "id": "graduation",
+     "title": "いよいよ卒業式"
     }
    ]
   },
@@ -1271,7 +1315,12 @@
     "來源": "JLPT Sensei / Bunpro"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "graduation",
+     "title": "いよいよ卒業式"
+    }
+   ]
   },
   {
    "title": "～だけ／～しか～ない",
@@ -1353,6 +1402,10 @@
     {
      "id": "business-trip",
      "title": "初めての出張"
+    },
+    {
+     "id": "graduation",
+     "title": "いよいよ卒業式"
     }
    ]
   },
@@ -1513,7 +1566,12 @@
     "誤區": "瞬間動詞（死ぬ・着く…）多半不接 終わる／続ける"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "graduation",
+     "title": "いよいよ卒業式"
+    }
+   ]
   },
   {
    "title": "～出す（突然開始）",

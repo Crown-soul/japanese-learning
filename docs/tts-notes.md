@@ -45,6 +45,21 @@
 | 餌 | えさ | じ | READING_FIXES |
 | 連れて行って | つれていって | おこなって | READING_FIXES |
 | なさる方だ | なさるかただ | なさるほうだ | READING_FIXES |
+| 解けば解くほど | とけばとくほど | 「解」→かい | READING_FIXES |
+| 離して / 離しました / 離してしまい | はなして / はなしました / はなしてしまい | 「離」→り | READING_FIXES |
+| あの日の光 | あのひのひかり | 「光」→こう | READING_FIXES |
+| 一人ずつ | ひとりずつ | いちにん― | READING_FIXES |
+| 二人で | ふたりで | ににん― | READING_FIXES |
+| 見直した | みなおした | 「直」→ちょく | READING_FIXES |
+| 南の窓 | みなみのまど | 「南」→なん | READING_FIXES |
+| 撒く / 撒きました | まく / まきました | 「撒」罕用漢字→さん | READING_FIXES |
+| 目方 | めかた | 「方」→ほう | READING_FIXES |
+| 夕方 | ゆうがた | 「方」→ほう | READING_FIXES |
+| 日程 | にってい | 「日」→ひ／にち | READING_FIXES |
+| 朝日 | あさひ | ちょうにち | READING_FIXES |
+| までの間に / 夏休みの間に | までのあいだに / なつやすみのあいだに | 「間」→かん／ま。**不可寫成通用的「の間に」**，會誤傷 boarding-house 的「いつの間に＝いつのまに」 | READING_FIXES |
+| 皆で | みなで | みんなで | READING_FIXES |
+| 先に | さきに | 「先」→せん | READING_FIXES |
 
 ## 生成新課時的預防步驟（skill 第 8 步）
 
