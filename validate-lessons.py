@@ -19,6 +19,7 @@
  13. grammar[].example 本身也要看得到該文法的字樣；同一課不可放兩個字樣一樣的文法點
  14. 每篇故事都有 translation，長度跟 paragraphs 一樣、每段非空
  15. （提醒）難度：每篇新單字 >14、每篇 >400 字、篇數遠少於 單字數÷12 → 只提醒不擋
+ 16. （提醒）故事用了清單外句型「〜んです／〜のです」→ 只提醒不擋
 
 用法：
     python3 validate-lessons.py            # 驗全部
@@ -283,6 +284,11 @@ def check_lesson(path, vocab, n4):
             warn(lid, f"篇{si} 一次出現 {len(new_here)} 個新單字（建議 10–13，難度偏高，考慮拆篇）")
         if n_chars > 400:
             warn(lid, f"篇{si} 有 {n_chars} 字（建議 250–350、上限 400）")
+    # 清單外句型（只提醒不擋）：〜んです／〜のです 不在 docs/n4-grammar.md 與 N5 白名單裡
+    for si, sp in enumerate(story_plain, 1):
+        hits = [w for w in ("んです", "のです") if w in sp]
+        if hits:
+            warn(lid, f"篇{si} 用了清單外句型「{'、'.join(hits)}」（只用 docs/n4-grammar.md 與 N5 白名單內的文法）")
     if len(lesson_words) >= 40 and 0 < len(stories) < round(len(lesson_words) / 12) - 1:
         warn(lid, f"{len(lesson_words)} 個單字只有 {len(stories)} 篇故事（建議約 {round(len(lesson_words) / 12)} 篇，每篇約 12 個新單字）")
 
