@@ -994,7 +994,7 @@
     updateProgress();
     shuffle(); gqShuffle(); rqShuffle(); soShuffle();
     setTab(setting("lastTab") || "stories");
-    fetch("../audio/manifest.json").then(function (r) { return r.ok ? r.json() : {}; })
+    fetch("../audio/manifest.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : {}; })
       .then(function (m) { AUDIO = m || {}; }).catch(function () {});
   }
   function fail(msg) {

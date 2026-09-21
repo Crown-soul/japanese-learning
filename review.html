@@ -312,7 +312,7 @@
     }));
   }).then(function () {
     updateSummary(); shuffle(); gqShuffle();
-    fetch("audio/manifest.json").then(function (r) { return r.ok ? r.json() : {}; }).then(function (m) { AUDIO = m || {}; }).catch(function () {});
+    fetch("audio/manifest.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (m) { AUDIO = m || {}; }).catch(function () {});
   }).catch(function (e) {
     console.error(e);
     $("app").insertAdjacentHTML("beforeend", '<p class="loaderr">資料載入失敗（' + esc(e.message) + '）。請用本機伺服器或線上版開啟。</p>');

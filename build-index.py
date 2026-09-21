@@ -9,9 +9,9 @@
   3. 有未提交變更／不在 git 裡 → 用檔案 mtime（通常＝今天）
 「最後更新」= 所有課程日期的最大值，不是執行當天。
 
-排序 = 課程順序（先做的在前、新課排最後），不是更新順序：
-  依「該檔第一次被 commit 的時間」由早到晚；還沒 commit 的新檔排最後。
-  之後修改舊課不會讓它跳到前面。（要改成新的在上面，把 collect() 結尾的 sort 加 reverse=True）
+排序 = 課程順序、新到舊（最新的課在最上面），不是更新順序：
+  依「該檔第一次被 commit 的時間」由新到舊；還沒 commit 的新檔排最上面。
+  之後修改舊課不會讓它跳到前面。（要改成舊到新，把 collect() 結尾的 sort 拿掉 reverse=True）
 
 引擎課（有 data/lessons/<id>.json）的卡片會多顯示「幾個字 · 幾個文法點 · 幾篇」；
 「今天要複習」那塊與各課的學習狀態是前端 JS 讀 assets/store.js 填的，這裡只放骨架。
@@ -126,8 +126,8 @@ def collect():
             "meta": lesson_meta(f.stem, vocab_counts),
             "words": vocab_counts.get(f.stem, 0),   # 舊課也可能在 vocab.json 有字（lessons 用中文 id）
         })
-    # 課程順序：先做的在前（見檔頭說明）；同時間再依檔名，讓結果固定
-    items.sort(key=lambda x: (x["order"], x["id"]))
+    # 課程順序、新到舊（見檔頭說明）；同時間再依檔名，讓結果固定
+    items.sort(key=lambda x: (x["order"], x["id"]), reverse=True)
     return items
 
 

@@ -175,7 +175,7 @@ document.getElementById("printBtn").onclick=()=>window.print();
 let AUDIO={}, voicesCache=[];
 function loadVoices(){ try{voicesCache=speechSynthesis.getVoices()||[];}catch{} }
 if("speechSynthesis" in window){ loadVoices(); speechSynthesis.onvoiceschanged=loadVoices; }
-fetch("../audio/manifest.json").then(r=>r.ok?r.json():{}).then(m=>{AUDIO=m||{};}).catch(()=>{});
+fetch("../audio/manifest.json",{cache:"no-cache"}).then(r=>r.ok?r.json():{}).then(m=>{AUDIO=m||{};}).catch(()=>{});
 let curAudio=null;
 function speak(text){
   if(!("speechSynthesis" in window)) return;
