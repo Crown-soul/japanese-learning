@@ -18,6 +18,7 @@
      字樣撞到別的條目時，能用接續判的就判（～そうだ 樣態／傳聞），判不了的指名位置請人工看
  13. grammar[].example 本身也要看得到該文法的字樣；同一課不可放兩個字樣一樣的文法點
  14. 每篇故事都有 translation，長度跟 paragraphs 一樣、每段非空
+ 15. （提醒）難度：每篇新單字 >14、每篇 >400 字、篇數遠少於 單字數÷12 → 只提醒不擋
 
 用法：
     python3 validate-lessons.py            # 驗全部
@@ -270,6 +271,20 @@ def check_lesson(path, vocab, n4):
     missing = lesson_words - used
     if missing:
         err(lid, f"這些目標單字沒在故事出現：{'、'.join(sorted(missing))}")
+
+    # 難度（只提醒不擋；標準見 docs/lesson-authoring.md「難度控制」）：篇數 ≈ 單字數 ÷ 12、每篇新單字 10–13、每篇 ≤400 字
+    seen_keys = set()
+    for si, s in enumerate(stories, 1):
+        keys = [k.strip() for k, _, _ in TARGET_RE.findall("".join(story_paras(s)))]
+        new_here = [k for k in dict.fromkeys(keys) if k not in seen_keys]
+        seen_keys.update(keys)
+        n_chars = len(story_plain[si - 1]) if si - 1 < len(story_plain) else 0
+        if len(new_here) > 14:
+            warn(lid, f"篇{si} 一次出現 {len(new_here)} 個新單字（建議 10–13，難度偏高，考慮拆篇）")
+        if n_chars > 400:
+            warn(lid, f"篇{si} 有 {n_chars} 字（建議 250–350、上限 400）")
+    if len(lesson_words) >= 40 and 0 < len(stories) < round(len(lesson_words) / 12) - 1:
+        warn(lid, f"{len(lesson_words)} 個單字只有 {len(stories)} 篇故事（建議約 {round(len(lesson_words) / 12)} 篇，每篇約 12 個新單字）")
 
     # grammar
     grammar = data.get("grammar") or []

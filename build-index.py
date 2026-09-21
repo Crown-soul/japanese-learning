@@ -9,6 +9,10 @@
   3. 有未提交變更／不在 git 裡 → 用檔案 mtime（通常＝今天）
 「最後更新」= 所有課程日期的最大值，不是執行當天。
 
+排序 = 課程順序（先做的在前、新課排最後），不是更新順序：
+  依「該檔第一次被 commit 的時間」由早到晚；還沒 commit 的新檔排最後。
+  之後修改舊課不會讓它跳到前面。（要改成新的在上面，把 collect() 結尾的 sort 加 reverse=True）
+
 引擎課（有 data/lessons/<id>.json）的卡片會多顯示「幾個字 · 幾個文法點 · 幾篇」；
 「今天要複習」那塊與各課的學習狀態是前端 JS 讀 assets/store.js 填的，這裡只放骨架。
 
@@ -70,6 +74,21 @@ def lesson_date(path: Path) -> datetime.date:
     return datetime.date.fromtimestamp(path.stat().st_mtime)
 
 
+def first_added_ts(path: Path) -> float:
+    """檔案第一次被 commit 的時間（unix 秒）＝課程順序。修改不會改變它。
+    還沒 commit（新課）／不在 git 裡 → 用 mtime（比所有已 commit 的都晚，所以排最後）。
+    這裡刻意不加 --follow：薄殼內容幾乎一樣，會被誤判成複製而算成別課的日期。"""
+    try:
+        rel = str(path.relative_to(ROOT))
+        out = subprocess.run(["git", "log", "--diff-filter=A", "--format=%ct", "--", rel],
+                             cwd=ROOT, capture_output=True, text=True, timeout=10).stdout.split()
+        if out:
+            return float(out[-1])
+    except Exception:
+        pass
+    return path.stat().st_mtime
+
+
 def lesson_meta(stem: str, vocab_counts: dict):
     """引擎課才有：字數／文法點數／篇數。舊課回 None。"""
     jf = LESSON_DATA_DIR / f"{stem}.json"
@@ -103,11 +122,12 @@ def collect():
             "href": "lessons/" + urllib.parse.quote(f.name),
             "title": read_title(f),
             "date": lesson_date(f),
+            "order": first_added_ts(f),
             "meta": lesson_meta(f.stem, vocab_counts),
             "words": vocab_counts.get(f.stem, 0),   # 舊課也可能在 vocab.json 有字（lessons 用中文 id）
         })
-    # 新的排前面
-    items.sort(key=lambda x: x["date"], reverse=True)
+    # 課程順序：先做的在前（見檔頭說明）；同時間再依檔名，讓結果固定
+    items.sort(key=lambda x: (x["order"], x["id"]))
     return items
 
 
