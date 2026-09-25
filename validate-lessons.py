@@ -292,7 +292,9 @@ def check_lesson(path, vocab, n4):
             warn(lid, f"篇{si} 有 {n_chars} 字（建議 250–350、上限 400）")
     # 清單外句型（只提醒不擋）：不在 docs/n4-grammar.md 與 N5 白名單裡、最常溜進故事的幾個
     for si, sp in enumerate(story_plain, 1):
-        hits = [w for w in ("んです", "のです", "なんて", "おかげで", "ずつ") if w in sp]
+        # 「〜のおかげです」是名詞述語，不算清單外的「〜おかげで」
+        hits = [w for w in ("んです", "のです", "なんて", "おかげで", "ずつ")
+                if re.search(w + ("(?!す)" if w == "おかげで" else ""), sp)]
         if hits:
             warn(lid, f"篇{si} 用了清單外句型「{'、'.join(hits)}」（只用 docs/n4-grammar.md 與 N5 白名單內的文法）")
     # 文體與一句一新（只提醒不擋；規則見 new-lesson SKILL.md 步驟 4 第 3、6 條）
