@@ -19,7 +19,9 @@
  13. grammar[].example 本身也要看得到該文法的字樣；同一課不可放兩個字樣一樣的文法點
  14. 每篇故事都有 translation，長度跟 paragraphs 一樣、每段非空
  15. （提醒）難度：每篇新單字 >14、每篇 >400 字、篇數遠少於 單字數÷12 → 只提醒不擋
- 16. （提醒）故事用了清單外句型「〜んです／〜のです」→ 只提醒不擋
+ 16. （提醒）故事用了清單外句型（〜んです／〜のです／〜なんて／〜おかげで／〜ずつ）→ 只提醒不擋
+ 17. （提醒）文體：同一種句尾連續 3 句、〜ます類連續 >4 句、〜ました類連續 >8 句；
+     一句兩新（同一句同時有第一次出現的單字與第一次出現的文法點）→ 只提醒不擋
 
 用法：
     python3 validate-lessons.py            # 驗全部
@@ -60,6 +62,10 @@ def warn(lid, msg):
 
 
 SENT_END_RE = re.compile(r"[。！？!?]")
+# 文體檢查用的句尾分類（〜ています 跟 〜ます 算不同句尾）
+STYLE_ENDS = ("ていました", "ています", "ませんでした", "ました", "ます", "でした", "です", "ません", "でしょう")
+STYLE_PRES = {"ています", "ます", "です", "ません"}
+STYLE_PAST = {"ていました", "ませんでした", "ました", "でした"}
 # 常見翻譯腔（中文不會這樣講）；只提醒不擋
 STIFF_ZH = ("在了", "而居", "進行了", "作出了", "是…的", "所謂的")
 
@@ -284,11 +290,49 @@ def check_lesson(path, vocab, n4):
             warn(lid, f"篇{si} 一次出現 {len(new_here)} 個新單字（建議 10–13，難度偏高，考慮拆篇）")
         if n_chars > 400:
             warn(lid, f"篇{si} 有 {n_chars} 字（建議 250–350、上限 400）")
-    # 清單外句型（只提醒不擋）：〜んです／〜のです 不在 docs/n4-grammar.md 與 N5 白名單裡
+    # 清單外句型（只提醒不擋）：不在 docs/n4-grammar.md 與 N5 白名單裡、最常溜進故事的幾個
     for si, sp in enumerate(story_plain, 1):
-        hits = [w for w in ("んです", "のです") if w in sp]
+        hits = [w for w in ("んです", "のです", "なんて", "おかげで", "ずつ") if w in sp]
         if hits:
             warn(lid, f"篇{si} 用了清單外句型「{'、'.join(hits)}」（只用 docs/n4-grammar.md 與 N5 白名單內的文法）")
+    # 文體與一句一新（只提醒不擋；規則見 new-lesson SKILL.md 步驟 4 第 3、6 條）
+    seen_k, seen_g = set(), set()
+    for si, s in enumerate(stories, 1):
+        for p in story_paras(s):
+            if not isinstance(p, str):
+                continue
+            sents, buf, depth = [], "", 0
+            for ch in p:  # 以 。！？ 切句，「」內的不切
+                buf += ch
+                depth += (ch == "「") - (ch == "」")
+                if ch in "。！？" and depth <= 0:
+                    sents.append(buf)
+                    buf = ""
+            if buf.strip():
+                sents.append(buf)
+            kinds = []
+            for raw in sents:
+                ks = {k.strip() for k, _, _ in TARGET_RE.findall(raw)}
+                gs = {int(x) for x in re.findall(r"\[\[g(\d+)\]\]", raw)}
+                nk, ng = ks - seen_k, gs - seen_g
+                if nk and ng:
+                    warn(lid, f"篇{si} 一句兩新（新字 {'、'.join(sorted(nk))}＋新文法 g{'、g'.join(map(str, sorted(ng)))}）：「{plain(raw)[:30]}」")
+                seen_k |= ks
+                seen_g |= gs
+                e = plain(raw).rstrip("。！？ ")
+                kinds.append(next((k for k in STYLE_ENDS if e.endswith(k)), None))
+            run, pres, past = 0, 0, 0
+            for i, k in enumerate(kinds):
+                run = run + 1 if k and i and k == kinds[i - 1] else 1
+                pres = pres + 1 if k in STYLE_PRES else 0
+                past = past + 1 if k in STYLE_PAST else 0
+                tail = "／".join(plain(x)[-6:] for x in sents[max(0, i - 2):i + 1])
+                if k and run == 3:
+                    warn(lid, f"篇{si} 句尾「〜{k}」連續 3 句：{tail}")
+                if pres == 5:
+                    warn(lid, f"篇{si} 現在式〜ます類連續超過 4 句（到「{plain(sents[i])[-8:]}」）")
+                if past == 9:
+                    warn(lid, f"篇{si} 過去式〜ました類連續超過 8 句（到「{plain(sents[i])[-8:]}」）")
     if len(lesson_words) >= 40 and 0 < len(stories) < round(len(lesson_words) / 12) - 1:
         warn(lid, f"{len(lesson_words)} 個單字只有 {len(stories)} 篇故事（建議約 {round(len(lesson_words) / 12)} 篇，每篇約 12 個新單字）")
 
