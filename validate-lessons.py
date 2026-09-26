@@ -22,6 +22,13 @@
  16. （提醒）故事用了清單外句型（〜んです／〜のです／〜なんて／〜おかげで／〜ずつ）→ 只提醒不擋
  17. （提醒）文體：同一種句尾連續 3 句、〜ます類連續 >4 句、〜ました類連續 >8 句；
      一句兩新（同一句同時有第一次出現的單字與第一次出現的文法點）→ 只提醒不擋
+ 18. 複習字：{{key}} 的 key 在 vocab.json 但 lessons 不含本課 → 算複習字（不算新字、不進難度計算）；
+     新格式的課（有會話或文章文法）複習字少於 5 個 → 提醒
+ 19. 會話（stories[].kind == "dialogue"）：speakers 跟 paragraphs 一樣長、每個說話人都有聲音、
+     聲音在允許清單內且不同人不重複；不能出現還沒在前面故事出現過的本課字或文法點
+ 20. 文章文法 passageQuiz：id（pq-NN）唯一、st／para 對得到、空格數＝items 數、
+     每格 4 選項、a／g 合法；正解填回空格後必須等於原段落
+ 21. vocab 選填欄位：jlpt 只能是 N5–N1 或「外」；exKana 全假名＋標點、句數跟 ex 一樣
 
 用法：
     python3 validate-lessons.py            # 驗全部
@@ -47,6 +54,11 @@ GRAM_OPEN_RE = re.compile(r"\[\[g(\d+)\]\]")
 GRAM_CLOSE_RE = re.compile(r"\[\[/g\]\]")
 GRAM_SPAN_RE = re.compile(r"\[\[g(\d+)\]\](.*?)\[\[/g\]\]", re.S)
 KANA_ONLY = re.compile(r"^[ぁ-んァ-ヶ・ーゝゞ〜]+$")
+KANA_SENT = re.compile(r"^[ぁ-んァ-ヶ・ーゝゞ〜、。？！「」]+$")
+# 會話可用的聲音（try-voices.py 試聽過的那組）；同一篇會話裡不同人不能用同一個
+VOICES = {"ja-JP-Neural2-B", "ja-JP-Neural2-C", "ja-JP-Neural2-D", "ja-JP-Wavenet-A", "ja-JP-Wavenet-C"}
+JLPT_LEVELS = {"N5", "N4", "N3", "N2", "N1", "外"}
+FW_DIGITS = "０１２３４５６７８９"
 TITLE_RE = re.compile(r"<title>(.*?)</title>", re.I | re.S)
 
 errs = []
@@ -112,6 +124,22 @@ def point_stems(point):
 def stems_too_weak(stems):
     """字樣短到幾乎每句都會命中（～と／～ば／～の／～間／お…），比對等於沒比對。"""
     return bool(stems) and all(sum(len(part) for part in v) < 2 for v in stems)
+
+
+def is_dialogue(s):
+    return isinstance(s, dict) and s.get("kind") == "dialogue"
+
+
+def audio_key(s, pi, para):
+    """音檔 key：一般段落＝純文字；會話＝"@<聲音>:<純文字>"（同一句不同人說是不同音檔）。
+    generate-audio.py、build-audio-check.py、assets/lesson-engine.js 要用同一套規則。"""
+    if is_dialogue(s):
+        names = s.get("speakers") or []
+        spk = names[pi] if pi < len(names) else None
+        voice = (s.get("voices") or {}).get(spk)
+        if voice:
+            return f"@{voice}:{plain(para)}"
+    return plain(para)
 
 
 def story_paras(s):
@@ -232,6 +260,20 @@ def check_lesson(path, vocab, n4):
             story_plain.append("")
             continue
         story_plain.append("".join(plain(p) for p in paras))
+        if is_dialogue(s):
+            spk = s.get("speakers")
+            voices = s.get("voices") or {}
+            if not isinstance(spk, list) or len(spk) != len(paras):
+                err(lid, f"stories[{si}] 是會話，speakers 要跟 paragraphs 一樣長（一行一個說話人）")
+            else:
+                for name in dict.fromkeys(spk):
+                    if name not in voices:
+                        err(lid, f"stories[{si}] 說話人「{name}」沒有在 voices 指定聲音")
+            for name, v in voices.items():
+                if v not in VOICES:
+                    err(lid, f"stories[{si}] 說話人「{name}」的聲音「{v}」不在允許清單（{'、'.join(sorted(VOICES))}）")
+            if len(set(voices.values())) != len(voices):
+                err(lid, f"stories[{si}] 不同說話人用了同一個聲音，聽不出是誰在說")
         tr = s.get("translation")
         if not isinstance(tr, list) or not tr:
             err(lid, f"stories[{si}] 缺 translation（每篇故事都要逐段中文翻譯，不是只做第一篇）")
@@ -264,17 +306,21 @@ def check_lesson(path, vocab, n4):
     if not lesson_words:
         warn(lid, "data/vocab.json 沒有 lessons 含此課的字")
 
-    # {{}} 標記
-    used = set()
+    # {{}} 標記：本課字，或複習字（別課學過的字，lessons 不含本課）
+    used, review = set(), set()
+    all_keys = {w["key"] for w in vocab}
     for si, s in enumerate(stories, 1):
         for p in story_paras(s):
             for k, label, rd in TARGET_RE.findall(p):
                 k = k.strip()
                 used.add(k)
-                if k not in {w["key"] for w in vocab}:
+                if k not in all_keys:
                     err(lid, f"故事用了 {{{{...}}}} 標記 key「{k}」但 data/vocab.json 沒有")
                 elif k not in lesson_words:
-                    err(lid, f"標記 key「{k}」的 vocab lessons 不含「{lid}」")
+                    review.add(k)
+    new_format = any(is_dialogue(s) for s in stories) or bool(data.get("passageQuiz"))
+    if new_format and len(review) < 5:
+        warn(lid, f"複習字只有 {len(review)} 個（建議全課 5–10 個、每篇 1–3 個，從之前的課挑）")
     missing = lesson_words - used
     if missing:
         err(lid, f"這些目標單字沒在故事出現：{'、'.join(sorted(missing))}")
@@ -282,7 +328,9 @@ def check_lesson(path, vocab, n4):
     # 難度（只提醒不擋；標準見 docs/lesson-authoring.md「難度控制」）：篇數 ≈ 單字數 ÷ 12、每篇新單字 10–13、每篇 ≤400 字
     seen_keys = set()
     for si, s in enumerate(stories, 1):
-        keys = [k.strip() for k, _, _ in TARGET_RE.findall("".join(story_paras(s)))]
+        if is_dialogue(s):
+            continue
+        keys = [k.strip() for k, _, _ in TARGET_RE.findall("".join(story_paras(s))) if k.strip() not in review]
         new_here = [k for k in dict.fromkeys(keys) if k not in seen_keys]
         seen_keys.update(keys)
         n_chars = len(story_plain[si - 1]) if si - 1 < len(story_plain) else 0
@@ -300,6 +348,16 @@ def check_lesson(path, vocab, n4):
     # 文體與一句一新（只提醒不擋；規則見 new-lesson SKILL.md 步驟 4 第 3、6 條）
     seen_k, seen_g = set(), set()
     for si, s in enumerate(stories, 1):
+        if is_dialogue(s):
+            # 會話不能帶新東西：本課字、文法點都要在前面的故事出現過
+            for p in story_paras(s):
+                for k, _, _ in TARGET_RE.findall(p):
+                    if k.strip() in lesson_words and k.strip() not in seen_k:
+                        err(lid, f"stories[{si}]（會話）用了還沒在前面故事出現過的本課字「{k.strip()}」——會話只重組已經學過的字")
+                for gi_s in GRAM_OPEN_RE.findall(p):
+                    if int(gi_s) not in seen_g:
+                        err(lid, f"stories[{si}]（會話）用了還沒在前面故事標過的文法點 g{gi_s}——會話不教新文法")
+            continue
         for p in story_paras(s):
             if not isinstance(p, str):
                 continue
@@ -314,7 +372,7 @@ def check_lesson(path, vocab, n4):
                 sents.append(buf)
             kinds = []
             for raw in sents:
-                ks = {k.strip() for k, _, _ in TARGET_RE.findall(raw)}
+                ks = {k.strip() for k, _, _ in TARGET_RE.findall(raw)} - review
                 gs = {int(x) for x in re.findall(r"\[\[g(\d+)\]\]", raw)}
                 nk, ng = ks - seen_k, gs - seen_g
                 if nk and ng:
@@ -335,8 +393,9 @@ def check_lesson(path, vocab, n4):
                     warn(lid, f"篇{si} 現在式〜ます類連續超過 4 句（到「{plain(sents[i])[-8:]}」）")
                 if past == 9:
                     warn(lid, f"篇{si} 過去式〜ました類連續超過 8 句（到「{plain(sents[i])[-8:]}」）")
-    if len(lesson_words) >= 40 and 0 < len(stories) < round(len(lesson_words) / 12) - 1:
-        warn(lid, f"{len(lesson_words)} 個單字只有 {len(stories)} 篇故事（建議約 {round(len(lesson_words) / 12)} 篇，每篇約 12 個新單字）")
+    n_normal = sum(1 for s in stories if not is_dialogue(s))
+    if len(lesson_words) >= 40 and 0 < n_normal < round(len(lesson_words) / 12) - 1:
+        warn(lid, f"{len(lesson_words)} 個單字只有 {n_normal} 篇故事（建議約 {round(len(lesson_words) / 12)} 篇，每篇約 12 個新單字）")
 
     # grammar
     grammar = data.get("grammar") or []
@@ -426,7 +485,7 @@ def check_lesson(path, vocab, n4):
                              f"——看起來是「{'、'.join(sorted(kin))}」，索引可能指錯條目")
                 elif verdict is None:
                     ambiguous.setdefault((gi_n, pt), []).append(f"篇{si}「{span}」")
-        if grammar and not marked_here:
+        if grammar and not marked_here and not is_dialogue(s):
             err(lid, f"stories[{si}] 整篇沒有任何 [[g#]] 文法標記"
                      f"（每篇故事都要標，不是只標第一篇）")
         marked_all |= marked_here
@@ -455,6 +514,46 @@ def check_lesson(path, vocab, n4):
             elif qid in seen_ids:
                 err(lid, f"{'grammarQuiz' if kind == 'gq' else 'reading'} 的 id「{qid}」重複")
             seen_ids.add(qid)
+
+    # 文章文法（選填）
+    pq_ids = set()
+    for qi, q in enumerate(data.get("passageQuiz") or []):
+        where = f"passageQuiz[{qi}]"
+        pid = q.get("id")
+        if not isinstance(pid, str) or not re.fullmatch(r"pq-\d{2,}", pid):
+            err(lid, f"{where} 缺 id 或格式不對（要像 pq-01）")
+        elif pid in pq_ids:
+            err(lid, f"passageQuiz 的 id「{pid}」重複")
+        pq_ids.add(pid)
+        st, para = q.get("st"), q.get("para")
+        if not isinstance(st, int) or not (1 <= st <= len(stories)) or is_dialogue(stories[st - 1]):
+            err(lid, f"{where}.st（{st}）要指到一篇故事（不是會話）"); continue
+        paras = story_paras(stories[st - 1])
+        if not isinstance(para, int) or not (1 <= para <= len(paras)):
+            err(lid, f"{where}.para（{para}）超出篇{st}的段數"); continue
+        items = q.get("items") or []
+        text = q.get("text") or ""
+        slots = re.findall(r"（([０-９])）", text)
+        if [FW_DIGITS.index(d) for d in slots] != list(range(1, len(items) + 1)):
+            err(lid, f"{where} 空格（１）（２）…的數量或順序跟 items（{len(items)} 格）對不上")
+            continue
+        filled = plain(text)
+        for n, it in enumerate(items, 1):
+            o = it.get("o") or []
+            if len(o) != 4:
+                err(lid, f"{where}.items[{n - 1}] 選項不是 4 個")
+            a = it.get("a")
+            if not isinstance(a, int) or not (0 <= a < len(o)):
+                err(lid, f"{where}.items[{n - 1}].a 超出選項範圍"); break
+            g = it.get("g")
+            if g is not None and (not isinstance(g, int) or not (0 <= g < len(grammar))):
+                err(lid, f"{where}.items[{n - 1}].g（{g}）不是 grammar[] 的合法索引")
+            filled = filled.replace(f"（{FW_DIGITS[n]}）", o[a], 1)
+        else:
+            orig = plain(paras[para - 1])
+            if filled != orig:
+                err(lid, f"{where} 把正解填回去後跟篇{st}第{para}段不一樣——題目文字要跟故事一致\n"
+                         f"      填回：{filled}\n      原文：{orig}")
 
     # grammarQuiz
     for qi, q in enumerate(data.get("grammarQuiz") or []):
@@ -508,6 +607,14 @@ def check_vocab(vocab, only):
             err(tag, "lessons 必須是陣列")
         if engine and w.get("reading") and not KANA_ONLY.match(w["reading"]):
             err(tag, f"reading「{w['reading']}」不是純假名（引擎課單字卡用它合成）")
+        if "jlpt" in w and w["jlpt"] not in JLPT_LEVELS:
+            err(tag, f"jlpt「{w['jlpt']}」只能是 {'／'.join(sorted(JLPT_LEVELS))}")
+        if "exKana" in w:
+            ek, ex = w.get("exKana") or "", w.get("ex") or ""
+            if not KANA_SENT.match(ek):
+                err(tag, f"exKana「{ek}」要全部是假名與標點（聽寫題用它對答案）")
+            elif ek.count("。") != ex.count("。"):
+                err(tag, f"exKana 的句數跟 ex 不一樣（ex：{ex}）")
 
 
 def check_backlinks():
@@ -541,8 +648,8 @@ def check_audio_coverage(files, vocab):
             if lid in (w.get("lessons") or []):
                 keys.add(w.get("dict")); keys.add(w.get("ex"))
         for s in data.get("stories", []):
-            for p in s.get("paragraphs", []):
-                keys.add(plain(p))
+            for pi, p in enumerate(s.get("paragraphs", [])):
+                keys.add(audio_key(s, pi, p))
         missing = [k for k in keys if k and k not in man]
         if missing:
             warn(lid, f"{len(missing)} 段還沒產語音（跑 generate-audio.py）：{missing[0][:20]}…")

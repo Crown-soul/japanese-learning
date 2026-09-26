@@ -95,7 +95,20 @@
 - **發佈前驗證也攔 `git push`**（36aeaae）：`validate-on-publish` 原本只攔 `publish.sh`，直接 `git push` 會完全繞過驗證。兩種都攔，並同樣改成先取出真正的指令再比對。
 - 已知未解：`～のに`／`～たら`／`～ても`／`～てくる` 四組仍只能人工判讀；純技術性修改（只改 CDN 網址）會讓該課在 `index.html` 的日期跳成當天並置頂，因為日期規則是「最後 commit 日」。
 
+## 2026-09-26
+
+- **prompt 稽核**：`new-lesson` SKILL 精簡（去掉壓力語氣、重複強調、歷史敘述）；「句尾連續幾句」「一句一新」改由 `validate-lessons.py` 提醒，清單外句型多抓 〜なんて／〜おかげで／〜ずつ。
+- `boarding-house`、`business-trip` 修句尾單調與清單外句型、補漏譯；`boarding-house`：`暗号`→`暗証番号`、`通って` 讀音修正、修正表 `楽に`／`行った` 收窄。
+- **新手友善改版**（`docs/learner-plan.md`，先做 `preview/graduation-v2/` 試用版、確認後併回正式並刪掉試用版）：
+  - 引擎：每篇 ①聽讀 ②跟讀 ③本篇單字 ④本篇文法 ⑤讀解 流程與完成狀態、篇篩選、複習字、文法卡「怎麼接／容易搞混／常見錯誤」、中→日打字、單字／例句聽寫、JLPT 參考等級、段落回報、會話（每人不同聲音）、文章文法、單課小考（`assets/mock-exam.js`）。
+  - `store.js` 加 `stories`／`exams`／`paraNotes`（只新增欄位，v 仍是 1）。
+  - 資料格式：`stories[].kind/speakers/voices`、`passageQuiz`、vocab `jlpt`／`exKana`；驗證器同步（複習字、會話不帶新東西、文章文法填回＝原段落…）。
+  - 語音：會話 key `@<聲音>:<文字>`，`generate-audio.py`／`build-audio-check.py` 支援；既有 614 段檔名不變。
+  - `graduation` 改成新版（複習字 9 個、會話 8 句、文章文法 2 組、70 字的 JLPT／例句假名）；篇六「来年から」→「四月から」（3 月畢業、4 月入學）。
+  - `docs/n4-grammar.md` 補 10 條「接續」（三課用到的都有了；全站 54／92）。
+  - 首頁分四區；動詞工具 `<title>` 改「動詞變化練習」。
+  - `new-lesson` skill、`lesson-authoring.md` 更新成產出上述內容。
+
 ## 已擱置
 
-- JLPT 等級標籤
 - Phase 2（hook/CI 強制檢查、CLAUDE.md 深度稽核、handoff 實際套用）

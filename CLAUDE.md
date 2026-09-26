@@ -31,9 +31,10 @@
 
 ## 改一處要連動更新
 
-- **新增引擎課** ⇒ `data/lessons/<id>.json`（每題有 `id`、每個文法點有 `chunks`）+ `data/vocab.json`（加字、`lessons:["<id>"]`）+ `lessons/<id>.html` 薄殼（含 `store.js`）+ `generate-audio.py`（多音字修正表）+ `build-index.py` + `build-grammar.py`（各跑一次）+ audio-check
+- **新增引擎課** ⇒ `data/lessons/<id>.json`（每題有 `id`、每個文法點有 `chunks`、會話一篇、`passageQuiz`、故事帶複習字）+ `data/vocab.json`（加字、`lessons:["<id>"]`、`jlpt`、`exKana`）+ `lessons/<id>.html` 薄殼（含 `store.js`）+ `generate-audio.py`（多音字修正表）+ `build-index.py` + `build-grammar.py`（各跑一次）+ audio-check
 - **改 `assets/store.js`** ⇒ 影響所有頁面的進度與設定：引擎課、`review.html`、`index.html`（前端）、`日文單字總表.html`、`grammar-index.html`；改資料結構要加版本轉換，不能讓舊資料讀不到
-- **改 `assets/lesson-engine.js` 或 `lesson.css`** ⇒ 影響所有引擎課，全部要重測
+- **改 `assets/lesson-engine.js`、`lesson.css` 或 `mock-exam.js`** ⇒ 影響所有引擎課，全部要重測
+- **改音檔 key 規則**（段落怎麼變成 manifest key，含會話的 `@<聲音>:` 前綴）⇒ `generate-audio.py`、`build-audio-check.py`、`validate-lessons.py`、`lesson-engine.js` 四處一起改（見 `docs/lesson-authoring.md`）
 - **改 `assets/vocab-table.js`** ⇒ 影響所有引擎課的「單字表」分頁 **和** `日文單字總表.html`
 - **改 `data/lessons/<id>.json` 的故事／新增單字** ⇒ 一定要重跑 `generate-audio.py` + audio-check（不然音檔對不上）
 - **確認新的 TTS 誤讀** ⇒ 補進 `generate-audio.py` 的修正表 **和** `docs/tts-notes.md` 的清單

@@ -153,9 +153,12 @@ def get_api_key() -> str:
 
 
 # ---------- 抽文字 ----------
-# 回傳 [(manifest_key, synth_text)]：
+# 回傳 [(manifest_key, synth_text, voice)]：
 #   - manifest_key 是 HTML/引擎裡 play() 會查的字串
 #   - synth_text 是實際送去 TTS 的文字（可能不同，例如單字卡用假名合成）
+#   - voice 是合成用的聲音；只有會話（stories[].kind == "dialogue"）會依說話人換聲音，
+#     而且會話的 key 是 "@<聲音>:<純文字>"（同一句不同人說是不同音檔）。
+#     這條 key 規則 build-audio-check.py、validate-lessons.py、assets/lesson-engine.js 要一致。
 # 單字／例句：data/vocab.json
 # 故事段落：舊課 lessons/*.html 的 const storyN；引擎課 data/lessons/*.json
 VOCAB_JSON = ROOT / "data" / "vocab.json"
@@ -190,8 +193,8 @@ def extract_pairs():
         lessons = w.get("lessons") or []
         # 全部所屬課程都是引擎課、且有 reading -> 單字卡用「完整假名」合成，讀音 100% 正確
         use_kana = bool(lessons) and all(l in engine_ids for l in lessons) and w.get("reading")
-        pairs.append((w["dict"], w["reading"] if use_kana else w["dict"]))
-        pairs.append((w["ex"], w["ex"]))
+        pairs.append((w["dict"], w["reading"] if use_kana else w["dict"], VOICE))
+        pairs.append((w["ex"], w["ex"], VOICE))
 
     for html_file in sorted(LESSONS_DIR.glob("*.html")):
         html = html_file.read_text(encoding="utf-8")
@@ -199,21 +202,29 @@ def extract_pairs():
             for lit in re.findall(r"`([^`]*)`", block.group(1)):
                 c = clean_story_html(lit)
                 if c:
-                    pairs.append((c, c))
+                    pairs.append((c, c, VOICE))
     for jf in sorted(LESSON_DATA_DIR.glob("*.json")) if LESSON_DATA_DIR.exists() else []:
         data = json.loads(jf.read_text(encoding="utf-8"))
         for story in data.get("stories", []):
-            for para in story.get("paragraphs", []):
+            dialogue = story.get("kind") == "dialogue"
+            speakers = story.get("speakers") or []
+            voices = story.get("voices") or {}
+            for pi, para in enumerate(story.get("paragraphs", [])):
                 c = clean_story_json(para)
-                if c:
-                    pairs.append((c, c))
+                if not c:
+                    continue
+                voice = voices.get(speakers[pi]) if dialogue and pi < len(speakers) else None
+                if voice:
+                    pairs.append((f"@{voice}:{c}", c, voice))
+                else:
+                    pairs.append((c, c, VOICE))
 
     # 去重（依 key），保留順序
     seen, ordered = set(), []
-    for key, synth in pairs:
+    for key, synth, voice in pairs:
         if key and key not in seen:
             seen.add(key)
-            ordered.append((key, synth))
+            ordered.append((key, synth, voice))
     return ordered
 
 
@@ -264,22 +275,22 @@ def main():
     AUDIO_DIR.mkdir(exist_ok=True)
 
     pairs = extract_pairs()
-    print(f"共 {len(pairs)} 段文字，約 {sum(len(s) for _, s in pairs)} 字元")
+    print(f"共 {len(pairs)} 段文字，約 {sum(len(s) for _, s, _ in pairs)} 字元")
 
     manifest = {}
     made = skipped = 0
     total_chars_billed = 0
     new_keys = []   # 本次新產的段落，寫進 audio/last-run.json 給 build-audio-check.py 只列新增
 
-    for i, (key, synth) in enumerate(pairs, 1):
-        fname = filename_for(synth)
+    for i, (key, synth, voice) in enumerate(pairs, 1):
+        fname = filename_for(synth, voice)
         manifest[key] = fname
         out = AUDIO_DIR / fname
         if out.exists():
             skipped += 1
             continue
         try:
-            audio = synthesize(apply_reading_fixes(synth), api_key)
+            audio = synthesize(apply_reading_fixes(synth), api_key, voice=voice)
         except urllib.error.HTTPError as e:
             print(f"\n第 {i} 段失敗：HTTP {e.code}\n{e.read().decode('utf-8', 'ignore')}")
             sys.exit(1)

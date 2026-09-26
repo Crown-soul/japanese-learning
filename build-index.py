@@ -13,8 +13,9 @@
   依「該檔第一次被 commit 的時間」由新到舊；還沒 commit 的新檔排最上面。
   之後修改舊課不會讓它跳到前面。（要改成舊到新，把 collect() 結尾的 sort 拿掉 reverse=True）
 
-引擎課（有 data/lessons/<id>.json）的卡片會多顯示「幾個字 · 幾個文法點 · 幾篇」；
-「今天要複習」那塊與各課的學習狀態是前端 JS 讀 assets/store.js 填的，這裡只放骨架。
+引擎課（有 data/lessons/<id>.json）的卡片會多顯示「幾個字 · 幾個文法點 · 幾篇（＋會話）」；
+「今天要複習」那塊與各課的學習狀態（熟練字數、流程完成幾篇、小考最高分）是前端 JS 讀 assets/store.js 填的，這裡只放骨架。
+版面分四區：開始學（引擎課）→ 每日複習 → 工具（沒有單字資料的頁面）→ 舊版（有單字、但不是引擎課）。
 
 用法：
     python3 build-index.py
@@ -98,10 +99,13 @@ def lesson_meta(stem: str, vocab_counts: dict):
         d = json.loads(jf.read_text(encoding="utf-8"))
     except Exception:
         return None
+    stories = d.get("stories") or []
     return {
         "words": vocab_counts.get(stem, 0),
         "grammar": len(d.get("grammar") or []),
-        "stories": len(d.get("stories") or []),
+        "stories": sum(1 for s in stories if not (isinstance(s, dict) and s.get("kind") == "dialogue")),
+        "dialogues": sum(1 for s in stories if isinstance(s, dict) and s.get("kind") == "dialogue"),
+        "total": len(stories),
     }
 
 
@@ -155,7 +159,8 @@ h1{{font-size:1.4rem;margin:0 0 4px}}
 .review .l span{{display:block;color:var(--muted);font-size:13px}}
 .review .go{{border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:14px;white-space:nowrap;background:var(--accent);color:var(--bg)}}
 .review.quiet .go{{background:transparent;color:var(--text)}}
-h2{{font-size:.85rem;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:0 0 10px}}
+h2{{font-size:.85rem;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:22px 0 10px}}
+.hint{{color:var(--muted);font-size:13px;margin:-4px 0 10px}}
 ul{{list-style:none;margin:0;padding:0}}
 li{{margin-bottom:12px}}
 a.card{{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit}}
@@ -165,7 +170,7 @@ a.card:hover{{border-color:#9ca3af}}
 .st{{margin-top:8px;height:6px;background:var(--line);border-radius:999px;overflow:hidden;display:none}}
 .st>i{{display:block;height:100%;background:var(--accent);width:0}}
 .stt{{font-size:12px;color:var(--muted);margin-top:4px;display:none}}
-.tools{{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}}
+.tools{{display:flex;gap:8px;flex-wrap:wrap}}
 .tools a{{border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;text-decoration:none;color:var(--text);background:var(--card)}}
 footer{{margin-top:28px;color:var(--muted);font-size:12px}}
 </style>
@@ -174,20 +179,23 @@ footer{{margin-top:28px;color:var(--muted);font-size:12px}}
 <div class="app">
   <h1>日文學習檔案目錄</h1>
   <div class="sub">共 {count} 份 · 最後更新 {updated}</div>
+  <h2>開始學</h2>
+  <div class="hint">一課分成幾篇，一天一篇：進課程照每篇標題下的 ①→⑤ 走。</div>
+  <ul>
+{rows}
+  </ul>
+  <h2>每日複習</h2>
   <a class="review quiet" id="reviewBox" href="review.html">
     <b id="dueN">–</b>
     <div class="l">今天要複習<span id="dueSub">讀取中…</span></div>
     <span class="go">開始複習</span>
   </a>
-  <h2>課程</h2>
-  <ul>
-{rows}
-  </ul>
   <h2>工具</h2>
   <div class="tools">
     <a href="review.html">跨課複習中心</a>
 {tools}
   </div>
+{legacy}
   <footer>此頁由 build-index.py 自動產生，請勿手動編輯。</footer>
 </div>
 <script src="assets/store.js"></script>
@@ -221,7 +229,11 @@ footer{{margin-top:28px;color:var(--muted);font-size:12px}}
       if (!st.master && !st.learning) {{ txt.style.display = "block"; txt.textContent = "還沒開始"; return; }}
       bar.style.display = "block"; bar.firstElementChild.style.width = (st.master / st.total * 100) + "%";
       txt.style.display = "block";
-      txt.textContent = "熟練 " + st.master + " / " + st.total + (st.due ? " · 今日到期 " + st.due : "") + (st.graduated ? " · 畢業 " + st.graduated : "");
+      var n = +a.dataset.stories || 0, read = 0;
+      for (var i = 1; i <= +(a.dataset.total || n); i++) if (S.getStory(a.dataset.id, i).read) read++;
+      var ex = S.getExam(a.dataset.id);
+      txt.textContent = "熟練 " + st.master + " / " + st.total + (st.due ? " · 今日到期 " + st.due : "") + (st.graduated ? " · 畢業 " + st.graduated : "") +
+        (read ? " · 讀過 " + read + " / " + (+a.dataset.total || n) + " 篇" : "") + (ex ? " · 小考最高 " + ex.best + " / " + ex.total : "");
     }});
   }}).catch(function () {{
     document.getElementById("dueSub").textContent = "需要用伺服器或線上版開啟才能算";
@@ -232,7 +244,7 @@ footer{{margin-top:28px;color:var(--muted);font-size:12px}}
 </html>
 """
 
-ROW = '''    <li><a class="card" href="{href}" data-id="{id}">
+ROW = '''    <li><a class="card" href="{href}" data-id="{id}"{extra}>
       <div class="t">{title}</div>
       <div class="d"><span>{date}</span>{meta}</div>
       <div class="st"><i></i></div><div class="stt"></div>
@@ -241,7 +253,7 @@ ROW = '''    <li><a class="card" href="{href}" data-id="{id}">
 
 def main():
     items = collect()
-    rows, tools = [], []
+    rows, tools, legacy = [], [], []
     for it in items:
         # 沒有單字資料的頁面是工具（單字總表、動詞工具、文法查詢），不是課程
         if not it["meta"] and not it["words"]:
@@ -250,10 +262,13 @@ def main():
         meta = ""
         if it["meta"]:
             m = it["meta"]
-            meta = f'<span>{m["words"]} 字</span><span>{m["grammar"]} 個文法點</span><span>{m["stories"]} 篇</span>'
+            meta = (f'<span>{m["words"]} 字</span><span>{m["grammar"]} 個文法點</span><span>{m["stories"]} 篇</span>'
+                    + ('<span>＋會話</span>' if m["dialogues"] else ''))
         elif it["words"]:
             meta = f'<span>{it["words"]} 字</span>'
-        rows.append(ROW.format(
+        target = rows if it["meta"] else legacy
+        target.append(ROW.format(
+            extra=(f' data-stories="{it["meta"]["stories"]}" data-total="{it["meta"]["total"]}"' if it["meta"] else ""),
             href=html.escape(it["href"]),
             id=html.escape(it["id"]),
             title=html.escape(it["title"]),
@@ -265,6 +280,7 @@ def main():
         updated=(max(it["date"] for it in items) if items else datetime.date.today()).isoformat(),
         rows="\n".join(rows),
         tools="\n".join(tools),
+        legacy=("  <h2>舊版</h2>\n  <ul>\n" + "\n".join(legacy) + "\n  </ul>") if legacy else "",
     )
     OUTPUT.write_text(page, encoding="utf-8")
     print(f"已產生 {OUTPUT}（{len(items)} 份檔案）")

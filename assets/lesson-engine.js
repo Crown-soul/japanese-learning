@@ -11,7 +11,12 @@
          ../data/vocab.json（共用單字庫，取 lessons 含 <id> 的字）
          ../audio/manifest.json（乾淨文字 -> mp3 檔名）
 
-   行為移植自 lessons/日文70單字學習器.html（v4）。
+   行為移植自 lessons/日文70單字學習器.html（v4）；2026-09 加上 docs/learner-plan.md 的功能：
+     每篇「下一步」流程（①聽讀 ②跟讀 ③本篇單字 ④本篇文法 ⑤讀解）與完成狀態、篇篩選、
+     複習字（{{key}} 的 key 不屬於本課＝別課學過的字）、文法卡「怎麼接／容易搞混」（data/grammar.json）、
+     中→日打字、單字／例句聽寫（vocab.exKana）、JLPT 參考等級（vocab.jlpt）、段落回報、
+     會話（stories[].kind == "dialogue"，每個說話人不同聲音，音檔 key "@<聲音>:<純文字>"）、
+     文章文法（passageQuiz）、單課小考（assets/mock-exam.js，按下去才載入）。
    進度與設定全部透過 assets/store.js（window.JLStore）存取，跨課共用、不綁課程。
    ============================================================ */
 (function () {
@@ -21,6 +26,13 @@
   if (!app || !LESSON_ID) { console.error("缺少 #app[data-lesson]"); return; }
   var TITLE = document.title || LESSON_ID;
   var S = window.JLStore;
+  var BASE = "../";
+  var LESSON_TITLES = {};          // 複習字卡片上的「在哪一課學過」，啟動時抓那幾課的 title
+  var REVIEW = {};                 // 複習字：key -> 舊課的 vocab 資料
+  var STORY_OF = {}, GSTORY = {};  // 本課字／文法點 -> 第一次出現的篇（1 起）
+  var SF = 0;                      // 篇篩選：0 = 全部
+  var GREF = {};                   // docs/n4-grammar.md 的條目（data/grammar.json）
+
   if (!S) { console.error("缺少 assets/store.js（要放在 lesson-engine.js 之前）"); }
 
   /* ---------- 小工具 ---------- */
@@ -52,7 +64,9 @@
     var inner = w.reading
       ? "<ruby>" + esc(w.label) + '<rt class="rt-t">' + esc(w.reading) + "</rt></ruby>"
       : esc(w.label);
-    return '<span class="word" tabindex="0" role="button" data-key="' + esc(w.key) + '">' + inner + "</span>";
+    var rv = REVIEW[w.key] && !vocab[w.key];
+    return '<span class="word' + (rv ? " review" : "") + '" tabindex="0" role="button" data-key="' + esc(w.key) + '"' +
+      (rv ? ' title="複習字（之前的課學過）"' : "") + ">" + inner + "</span>";
   }
   // 一段 -> {plain（音檔 key）, html}
   function parsePara(raw) {
@@ -85,7 +99,7 @@
   function speak(text, onDone) {
     if (!("speechSynthesis" in window)) { if (onDone) onDone(); return; }
     speechSynthesis.cancel();
-    var u = new SpeechSynthesisUtterance(text);
+    var u = new SpeechSynthesisUtterance(String(text).replace(/^@[^:]+:/, ""));
     u.lang = "ja-JP"; u.rate = 0.85 * (setting("audioRate") || 1);
     var ja = voicesCache.find(function (v) { return /^ja(-|_)/i.test(v.lang); });
     if (ja) u.voice = ja;
@@ -94,12 +108,12 @@
   }
   function play(text, onDone) {
     if (!text) { if (onDone) onDone(); return; }
-    var file = AUDIO[text];
+    var file = AUDIO[text], dir = BASE + "audio/";
     if (file && /^[0-9a-f]{8,40}\.mp3$/.test(file)) {
       try {
         if (curAudio) { curAudio.pause(); curAudio = null; }
         if ("speechSynthesis" in window) speechSynthesis.cancel();
-        curAudio = new Audio("../audio/" + file);
+        curAudio = new Audio(dir + file);
         curAudio.playbackRate = setting("audioRate") || 1;
         if (onDone) curAudio.onended = function () { onDone(); };
         curAudio.play().catch(function () { speak(text, onDone); });
@@ -186,7 +200,7 @@
   function shell() {
     app.innerHTML =
       '<header>' +
-        '<div class="hrow"><a class="backlink" href="../">← 回目錄</a>' +
+        '<div class="hrow"><a class="backlink" href="' + BASE + '">← 回目錄</a>' +
         '<button class="gear" id="gearBtn" aria-label="設定">⚙︎</button></div>' +
         '<h1>' + esc(TITLE) + '</h1>' +
         '<div class="ctl-row" id="readingRow" role="group" aria-label="注音與遮字">' +
@@ -207,7 +221,8 @@
         '</div></div>' +
       storiesSection() +
       '<section id="vocabtable" class="section">' +
-        '<div class="legend">本課單字一覽。點任一列看詳解與複習狀態，列首的 ▶ 可聽發音。</div>' +
+        '<div class="legend">本課單字一覽。點任一列看詳解與複習狀態，列首的 ▶ 可聽發音。字旁的小標籤是 JLPT 參考等級。</div>' +
+        sfChips() + '<div class="small" id="levelInfo" style="margin:-4px 0 10px"></div>' +
         '<div id="vocabTableHost"></div>' +
       '</section>' +
       quizSection() +
@@ -223,7 +238,7 @@
   function storiesSection() {
     var cards = DATA.stories.map(function (s, i) {
       var hasTr = Array.isArray(s.translation) && s.translation.length > 0;
-      return '<article class="story-card" data-story="' + i + '">' +
+      return '<article class="story-card' + (s.kind === "dialogue" ? " dialogue" : "") + '" data-story="' + i + '" id="card' + i + '">' +
         '<div class="story-head">' +
           '<h2 lang="ja">' + esc(s.title || ("篇" + (i + 1))) + '</h2>' +
           '<span class="story-tools">' +
@@ -235,6 +250,7 @@
               '<button data-lang="zh">中文</button></span>' : '') +
           '</span>' +
         '</div>' +
+        '<div class="flow" id="flow' + i + '"></div>' +
         '<div class="recwrap" id="rec' + i + '" hidden></div>' +
         '<div class="story-text" id="story' + i + '" data-lang="ja"></div>' +
         '</article>';
@@ -242,7 +258,7 @@
     var rqFilters = '<button class="active" data-rqfilter="all">全部</button>';
     if (DATA.stories.length > 1) {
       DATA.stories.forEach(function (s, i) {
-        rqFilters += '<button data-rqfilter="s' + (i + 1) + '">篇' + cn(i + 1) + '</button>';
+        rqFilters += '<button data-rqfilter="s' + (i + 1) + '">' + (s.kind === "dialogue" ? "會話" : "篇" + cn(i + 1)) + '</button>';
       });
     }
     rqFilters += '<button data-rqfilter="ng">只練答錯的</button>';
@@ -252,8 +268,9 @@
         '<button data-sview="quiz">讀解測驗</button></div>' +
       '<div id="storyRead">' +
         '<details class="tip" id="tip"><summary>怎麼用這一課</summary>' +
-        '<div>點粗體重點字看詳解，段首 ▶ 聽整段，紫色「文」是文法點。' +
-        '建議順序：先「全部注音」聽讀 → 「藏重點字注音」練讀音 → 「遮住重點字」練回想 → 單字測驗 → 文法克漏字 → 讀解測驗。</div></details>' +
+        '<div>一天一篇：照每篇標題下面的 ①→⑤ 走，每一步做完會打勾。點粗體重點字看詳解；<span class="rv-sample">虛線</span>是之前的課學過的複習字。' +
+        '段首 ▶ 聽整段，紫色「文」是文法點，段尾「⋯」可以回報怪怪的句子。</div></details>' +
+        '<div class="lesson-sum" id="lessonSum"></div>' +
         cards +
       '</div>' +
       '<div id="storyQuizWrap" hidden>' +
@@ -277,7 +294,11 @@
         '<button data-qdir="listen">聽力</button>' +
         '<button data-qdir="listenex">例句聽力</button>' +
         '<button data-qdir="yomi">漢字読み</button>' +
-        '<button data-qdir="hyoki">表記</button></div>' +
+        '<button data-qdir="hyoki">表記</button>' +
+        '<button data-qdir="zhjptype">中→日打字</button>' +
+        '<button data-qdir="dict">單字聽寫</button>' +
+        (Object.keys(vocab).some(function (k) { return vocab[k].exKana; }) ? '<button data-qdir="dictex">例句聽寫</button>' : "") + '</div>' +
+      sfChips() +
       '<div class="filter-row" aria-label="測驗篩選">' +
         '<button class="active" data-qfilter="all">全部</button>' +
         '<button data-qfilter="due">今日複習</button>' +
@@ -289,6 +310,10 @@
         '<div class="quiz-q" id="quizQuestion"></div>' +
         '<div class="quiz-hint" id="quizHint"></div>' +
         '<div class="gq-opts" id="quizChoices" hidden></div>' +
+        '<div class="typebox" id="quizType" hidden>' +
+          '<input id="typeInput" lang="ja" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="用假名輸入（平假名、片假名都可以）">' +
+          '<button id="typeCheck" class="primary">對答案</button>' +
+          '<div class="typeres" id="typeRes"></div></div>' +
         '<div class="quiz-answer" id="quizAnswer"></div>' +
         '<div class="quiz-controls" id="quizChoiceNext" hidden><button id="choiceNext" class="primary">下一題</button></div>' +
         '<div class="quiz-controls" id="quizPre">' +
@@ -308,7 +333,9 @@
       '<div class="subtabs" role="group" aria-label="文法分頁">' +
         '<button class="active" data-gview="table">對照表</button>' +
         '<button data-gview="quiz">克漏字</button>' +
-        '<button data-gview="order">排序</button></div>' +
+        '<button data-gview="order">排序</button>' +
+        ((DATA.passageQuiz || []).length ? '<button data-gview="passage">文章文法</button>' : "") + '</div>' +
+      '<div id="gSfWrap" hidden>' + sfChips() + '</div>' +
       '<div id="grammarTable"><div class="story-card">' +
         '<table><thead><tr><th>文法</th><th>例句</th><th>意思</th></tr></thead>' +
         '<tbody id="grammarBody"></tbody></table></div></div>' +
@@ -335,9 +362,25 @@
           '<div class="gq-explain" id="soExplain"></div>' +
           '<div class="quiz-controls"><button id="soReset">重來</button><button id="soNext">下一題</button></div>' +
         '</div></div>' +
+      '<div id="grammarPassageWrap" hidden>' +
+        '<div class="legend">一段文章挖幾個空，每格選最適合的（JLPT「文章文法」題型）。文章取自本課故事。</div>' +
+        '<div class="quiz-card pq-card">' +
+          '<div class="small" id="pqCount"></div>' +
+          '<div class="pq-text" id="pqText" lang="ja"></div>' +
+          '<div id="pqItems"></div>' +
+          '<div class="quiz-controls"><button id="pqNext">下一組</button></div>' +
+        '</div></div>' +
     '</section>';
   }
   function cn(n) { return "一二三四五六七八九十".charAt(n - 1) || String(n); }
+  function normalStories() { return DATA.stories.map(function (s, i) { return { s: s, n: i + 1 }; }).filter(function (x) { return x.s.kind !== "dialogue"; }); }
+  function sfChips() {
+    return '<div class="filter-row sf-row" role="group" aria-label="篇篩選"><span class="lab">篇</span>' +
+      '<button data-sf="0">全部</button>' +
+      normalStories().map(function (x) { return '<button data-sf="' + x.n + '">' + cn(x.n) + "</button>"; }).join("") + "</div>";
+  }
+  function inSF(k) { return !SF || STORY_OF[k] === SF; }
+  function syncSF() { document.querySelectorAll("[data-sf]").forEach(function (b) { b.classList.toggle("active", +b.dataset.sf === SF); }); }
 
   /* ============================================================
      渲染
@@ -345,10 +388,17 @@
   function renderStories() {
     DATA.stories.forEach(function (s, i) {
       var tr = Array.isArray(s.translation) ? s.translation : [];
+      var dlg = s.kind === "dialogue";
       $("story" + i).innerHTML = s.paragraphs.map(function (raw, pi) {
         var p = parsePara(raw);
-        return '<div class="para">' +
-          '<p class="ja" lang="ja"><button class="play" data-audio="' + esc(p.plain) + '" aria-label="播放這段">▶</button>' + p.html + "</p>" +
+        var spk = dlg ? (s.speakers || [])[pi] || "" : "";
+        var key = dlg && s.voices && s.voices[spk] ? "@" + s.voices[spk] + ":" + p.plain : p.plain;
+        var pk = "s" + (i + 1) + "p" + (pi + 1);
+        var noted = S.getParaNote(LESSON_ID + "/" + pk) ? " has" : "";
+        return '<div class="para' + (dlg ? " dline " + (spk === "私" ? "me" : "other") : "") + '">' +
+          (dlg ? '<div class="spk">' + esc(spk) + "</div>" : "") +
+          '<p class="ja" lang="ja"><button class="play" data-audio="' + esc(key) + '" aria-label="播放這段">▶</button>' + p.html +
+          '<button class="pnote' + noted + '" data-pk="' + pk + '" aria-label="回報這段">⋯</button></p>' +
           (tr[pi] ? '<p class="zh" lang="zh-Hant">' + esc(tr[pi]) + "</p>" : "") +
           "</div>";
       }).join("");
@@ -362,9 +412,17 @@
   function renderVocabTab() {
     var host = $("vocabTableHost");
     if (!host) return;
-    if (window.vocabTableHTML) host.innerHTML = window.vocabTableHTML(Object.values(vocab), { wordClickable: true });
-    else host.innerHTML = '<p class="legend">單字表元件載入失敗，請重新整理。</p>';
+    var rows = Object.values(vocab).filter(function (w) { return inSF(w.key); });
+    if (window.vocabTableHTML) host.innerHTML = window.vocabTableHTML(rows, { wordClickable: true });
+    else { host.innerHTML = '<p class="legend">單字表元件載入失敗，請重新整理。</p>'; return; }
+    host.querySelectorAll(".vt-word[data-key]").forEach(function (el) {
+      var v = vocab[el.dataset.key]; if (v && v.jlpt) el.insertAdjacentHTML("afterend", jlTag(v.jlpt));
+    });
+    var hard = rows.filter(function (w) { return /^(N[123]|外)$/.test(w.jlpt || ""); });
+    $("levelInfo").textContent = rows.length + " 個字" + (hard.length ? "；其中 N3 以上或常用表外 " + hard.length + " 個（" + hard.map(function (w) { return w.dict; }).join("、") + "）" : "");
   }
+
+  function jlTag(lv) { return '<span class="jl jl-' + (lv === "外" ? "x" : lv.toLowerCase()) + '" title="JLPT 參考等級">' + esc(lv) + "</span>"; }
 
   /* ---------- 注音四態：all / target / none / mask ---------- */
   var readingMode = setting("reading") || "all";
@@ -390,16 +448,18 @@
   /* ---------- 單字詳解 modal ---------- */
   var modal, sheet;
   function openCard(key) {
-    var v = vocab[key];
+    var v = vocab[key] || REVIEW[key];
     if (!v) return;
     currentCardKey = key;
+    var rvFrom = !vocab[key] && REVIEW[key] ? (REVIEW[key].lessons || []).map(function (id) { return "「" + (LESSON_TITLES[id] || id) + "」"; }).join("、") : "";
     var boxTxt = S.boxLabel(S.getVocab(key));
     sheet.innerHTML =
       '<button class="sheet-close" data-act="close">關閉</button>' +
-      '<h3 lang="ja">' + esc(v.dict) + "</h3>" +
+      '<h3 lang="ja">' + esc(v.dict) + (v.jlpt ? " " + jlTag(v.jlpt) : "") + "</h3>" +
       '<div class="meta"><span lang="ja">' + esc(v.reading) + "</span>｜" + esc(v.pos) + "</div>" +
+      (rvFrom ? '<div class="kv review-note"><strong>複習字</strong><div>在' + esc(rvFrom) + "學過，這課再遇到一次。</div></div>" : "") +
       '<div class="kv"><strong>中文</strong><div>' + esc(v.zh) + "</div></div>" +
-      (v.form ? '<div class="kv"><strong>本文形式</strong><div lang="ja">' + esc(v.form) + "</div></div>" : "") +
+      (v.form && !rvFrom ? '<div class="kv"><strong>本文形式</strong><div lang="ja">' + esc(v.form) + "</div></div>" : "") +
       '<div class="kv"><strong>例句</strong><div class="example" lang="ja">' + esc(v.ex) + "</div></div>" +
       '<div class="actions">' +
         '<button data-act="play-dict">▶ 單字</button>' +
@@ -422,12 +482,28 @@
       '<h3 lang="ja">' + esc(g.point) + "</h3>" +
       '<div class="kv"><strong>例句</strong><div class="example" lang="ja">' + esc(g.example) + "</div></div>" +
       '<div class="kv"><strong>意思</strong><div>' + esc(g.meaning) + "</div></div>" +
+      grefHTML((g.point || "").trim()) +
       (g.n4ref ? '<div class="kv"><strong>N4 依據</strong><div class="small">' + esc(g.n4ref) + "</div></div>" : "") +
       '<div class="kv"><strong>複習</strong><div class="small">' + esc(S.boxLabel(S.getGrammar((g.point || "").trim()))) + "</div></div>" +
       '<div class="kv"><strong>我的筆記</strong><textarea class="note" data-note="grammar" data-key="' + esc((g.point || "").trim()) + '" rows="2" placeholder="自己的理解、跟哪個文法容易搞混…">' + esc(S.getNote("grammar", (g.point || "").trim())) + "</textarea></div>" +
       '<div class="actions"><button data-act="goto-grammar">查看文法對照表 →</button>' +
         '<a class="btn" href="grammar-index.html">查 N4 文法清單 ↗</a></div>';
     modal.classList.add("show");
+  }
+  function findGref(pt) {
+    if (GREF[pt]) return GREF[pt];
+    var hit = null;
+    Object.keys(GREF).some(function (t) { if (t.split("／").indexOf(pt) >= 0) { hit = GREF[t]; return true; } return false; });
+    return hit;
+  }
+  function grefHTML(pt) {
+    var r = findGref(pt); if (!r) return "";
+    var f = r.fields || {}, out = "";
+    if (f["接續"]) out += '<div class="kv"><strong>怎麼接</strong><div lang="ja">' + esc(f["接續"]) + "</div></div>";
+    if (f["對比"]) out += '<div class="kv"><strong>容易搞混</strong><div lang="ja">' + esc(f["對比"]) + "</div></div>";
+    if (f["誤區"]) out += '<div class="kv"><strong>常見錯誤</strong><div lang="ja">' + esc(f["誤區"]) + "</div></div>";
+    if (f["注意"]) out += '<div class="kv"><strong>注意</strong><div>' + esc(f["注意"]) + "</div></div>";
+    return out;
   }
   function rateSrs(key, rating) {
     S.rateVocab(key, rating);
@@ -447,15 +523,58 @@
     $("statLearning").textContent = st.learning;
     $("statDue").textContent = st.due;
     $("statNew").textContent = st.fresh;
+    refreshFlows();
   }
 
   /* ---------- 單字測驗（Anki 流程：看題 → 顯示答案 → 評分 → 自動下一題）---------- */
   var quizKeys = [], qi = 0, quizDir = "jpzh", quizFilter = "all", answerShown = false;
   function getFilteredKeys() {
-    if (quizFilter === "due") return dueKeys();
-    if (quizFilter === "new") return newKeys();
-    if (quizFilter === "grad") return keysAll().filter(function (k) { return S.isGraduated(S.getVocab(k)); });
-    return keysAll();
+    var ks;
+    if (quizFilter === "due") ks = dueKeys();
+    else if (quizFilter === "new") ks = newKeys();
+    else if (quizFilter === "grad") ks = keysAll().filter(function (k) { return S.isGraduated(S.getVocab(k)); });
+    else ks = keysAll();
+    return ks.filter(inSF);
+  }
+  function isTypeDir() { return quizDir === "zhjptype" || quizDir === "dict" || quizDir === "dictex"; }
+  function typeTarget(v) { return quizDir === "dictex" ? v.exKana : v.reading; }
+  // 比對用：片假名轉平假名、去掉空白與標點
+  function normKana(s) {
+    return String(s || "").replace(/[ァ-ヶ]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0x60); })
+      .replace(/[\s、。，,．.！!？?「」『』・…～〜]/g, "");
+  }
+  // 逐字比對（LCS）：回傳 [你打的 html, 正解 html]
+  function kanaDiff(a, b) {
+    var n = a.length, m = b.length, L = [], i, j;
+    for (i = 0; i <= n; i++) { L.push(new Array(m + 1).fill(0)); }
+    for (i = n - 1; i >= 0; i--) for (j = m - 1; j >= 0; j--) L[i][j] = a[i] === b[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+    var ha = "", hb = ""; i = 0; j = 0;
+    while (i < n && j < m) {
+      if (a[i] === b[j]) { ha += esc(a[i]); hb += esc(b[j]); i++; j++; }
+      else if (L[i + 1][j] >= L[i][j + 1]) { ha += '<span class="d-bad">' + esc(a[i]) + "</span>"; i++; }
+      else { hb += '<span class="d-miss">' + esc(b[j]) + "</span>"; j++; }
+    }
+    while (i < n) { ha += '<span class="d-bad">' + esc(a[i++]) + "</span>"; }
+    while (j < m) { hb += '<span class="d-miss">' + esc(b[j++]) + "</span>"; }
+    return [ha, hb];
+  }
+  function checkTyped() {
+    if (!quizKeys.length || answerShown) return;
+    var v = vocab[quizKeys[qi]], want = typeTarget(v), got = $("typeInput").value;
+    var a = normKana(got), b = normKana(want);
+    var res = $("typeRes");
+    if (!a) { res.innerHTML = '<span class="small">先輸入再對答案；想不出來就按「顯示答案」。</span>'; return; }
+    if (a === b) res.innerHTML = '<div class="t-ok">✓ 完全正確</div>';
+    else {
+      var d = kanaDiff(a, b);
+      res.innerHTML = '<div class="t-ng">✗ 有地方不一樣</div>' +
+        '<div class="t-line"><span class="small">你打的</span><span lang="ja">' + d[0] + "</span></div>" +
+        '<div class="t-line"><span class="small">正確</span><span lang="ja">' + d[1] + "</span></div>" +
+        '<div class="small">紅字＝多打或打錯、底線＝漏打。輸入法選錯字的話，自己判斷算不算對。</div>';
+    }
+    $("typeInput").disabled = true; $("typeCheck").disabled = true;
+    showAnswer();
+    try { $("typeInput").blur(); res.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
   }
   var HAS_KANJI_RE = new RegExp("[" + KANJI + "]");
   function isChoiceDir() { return quizDir === "yomi" || quizDir === "hyoki"; }
@@ -463,6 +582,7 @@
   function shuffle() {
     var keys = getFilteredKeys().slice();
     if (isChoiceDir()) keys = kanjiKeys(keys);
+    if (quizDir === "dictex") keys = keys.filter(function (k) { return vocab[k].exKana; });
     quizKeys = keys.sort(function () { return Math.random() - 0.5; }); qi = 0; renderQuiz();
   }
   // 四選一的干擾項：同課其他字，讀音長度相近的優先
@@ -493,6 +613,8 @@
     $("quizPre").hidden = false;
     $("quizDock").hidden = true;
     $("quizChoices").hidden = true; $("quizChoiceNext").hidden = true;
+    $("quizType").hidden = true; $("typeRes").innerHTML = "";
+    $("typeInput").value = ""; $("typeInput").disabled = false; $("typeCheck").disabled = false;
     if (!quizKeys.length) {
       $("quizCount").textContent = "0 / 0";
       var q0 = $("quizQuestion"); q0.lang = ""; q0.textContent = "目前沒有符合條件的單字";
@@ -512,6 +634,25 @@
       $("quizChoices").innerHTML = opts.map(function (o) { return '<button data-choice="' + esc(o) + '" lang="ja">' + esc(o) + "</button>"; }).join("");
       $("quizChoices").hidden = false; $("quizPre").hidden = true;
       ans.innerHTML = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div>' + esc(v.zh) + '</div><div class="example" lang="ja">' + esc(v.ex) + "</div>";
+      return;
+    }
+    if (isTypeDir()) {
+      $("quizType").hidden = false;
+      var full = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div>' + esc(v.zh) + '</div><div class="example" lang="ja">' + esc(v.ex) + "</div>";
+      if (quizDir === "zhjptype") {
+        q.lang = ""; q.textContent = v.zh.split("、")[0];
+        $("quizHint").textContent = "用假名打出這個字的日文讀音";
+        ans.innerHTML = full;
+      } else if (quizDir === "dict") {
+        q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
+        $("quizHint").textContent = "聽單字，用假名打出來";
+        ans.innerHTML = full; play(v.dict);
+      } else {
+        q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
+        $("quizHint").textContent = "聽整句，用假名打出來（標點不用打）";
+        ans.innerHTML = '<div class="example" lang="ja">' + esc(v.ex) + '</div><div lang="ja" class="small">' + esc(v.exKana) + "</div>" + full;
+        play(v.ex);
+      }
       return;
     }
     if (quizDir === "jpzh") {
@@ -558,7 +699,7 @@
   function gqWrong() { return gqAll().filter(function (q, i) { var r = S.getQuiz(qid("gq", q, i)); return r && r.r === "ng"; }).length; }
   function gqPoint(item) { var g = (DATA.grammar || [])[item.g]; return g ? (g.point || "").trim() : ""; }
   function gqPool() {
-    var idx = gqAll().map(function (_, i) { return i; });
+    var idx = gqAll().map(function (_, i) { return i; }).filter(function (i) { return !SF || GSTORY[gqAll()[i].g] === SF; });
     if (gqFilter === "ng") return idx.filter(function (i) { var r = S.getQuiz(qid("gq", gqAll()[i], i)); return r && r.r === "ng"; });
     if (gqFilter === "due") return idx.filter(function (i) { return S.isDue(S.getGrammar(gqPoint(gqAll()[i]))); });
     return idx;
@@ -573,7 +714,7 @@
     var opts = $("gqOpts"), expl = $("gqExplain");
     if (!gqOrder.length) {
       $("gqCount").textContent = "0 / 0";
-      $("gqSentence").textContent = gqFilter === "ng" ? "目前沒有答錯的題目" : gqFilter === "due" ? "今天沒有到期的文法點" : "沒有題目";
+      $("gqSentence").textContent = gqFilter === "ng" ? "目前沒有答錯的題目" : gqFilter === "due" ? "今天沒有到期的文法點" : SF ? "篇" + cn(SF) + "沒有新的文法點" : "沒有題目";
       opts.innerHTML = ""; expl.classList.remove("show"); return;
     }
     if (gqi >= gqOrder.length) gqi = 0;
@@ -587,13 +728,13 @@
 
   /* ---------- 並べ替え（文の組み立て）：用 grammar[].chunks ---------- */
   var soOrder = [], soi = 0, soPicked = [], soDone = false;
-  function soAll() { return (DATA.grammar || []).map(function (g, i) { return { g: g, i: i }; }).filter(function (x) { return Array.isArray(x.g.chunks) && x.g.chunks.length >= 3; }); }
+  function soAll() { return (DATA.grammar || []).map(function (g, i) { return { g: g, i: i }; }).filter(function (x) { return Array.isArray(x.g.chunks) && x.g.chunks.length >= 3 && (!SF || GSTORY[x.i] === SF); }); }
   function soShuffle() { soOrder = soAll().sort(function () { return Math.random() - 0.5; }); soi = 0; soRender(); }
   function soRender() {
     var pool = $("soPool"), ansEl = $("soAnswer"), expl = $("soExplain");
     soPicked = []; soDone = false; expl.classList.remove("show"); expl.innerHTML = "";
     if (!soOrder.length) {
-      $("soCount").textContent = "0 / 0"; $("soPoint").textContent = "這一課的文法點還沒有排序題（需要 grammar[].chunks）";
+      $("soCount").textContent = "0 / 0"; $("soPoint").textContent = SF ? "篇" + cn(SF) + "沒有新的文法點" : "這一課的文法點還沒有排序題（需要 grammar[].chunks）";
       ansEl.innerHTML = ""; pool.innerHTML = ""; return;
     }
     if (soi >= soOrder.length) soi = 0;
@@ -620,9 +761,48 @@
     S.rateGrammar((item.g.point || "").trim(), ok ? "good" : "bad"); gqInfo();
   }
 
+  /* ---------- 文章文法（passageQuiz）---------- */
+  var pqi = 0;
+  var FW = "０１２３４５６７８９";
+  function pqAll() { return DATA.passageQuiz || []; }
+  function pqRender() {
+    var list = pqAll();
+    if (!list.length) { $("pqCount").textContent = "0 / 0"; $("pqText").textContent = "這一課沒有文章文法題"; $("pqItems").innerHTML = ""; return; }
+    if (pqi >= list.length) pqi = 0;
+    var item = list[pqi];
+    $("pqCount").textContent = (pqi + 1) + " / " + list.length + "　（取自篇" + cn(item.st) + "）";
+    $("pqText").innerHTML = parsePara(item.text).html.replace(/（([０-９])）/g, function (m, d) {
+      return '<span class="pslot" id="pslot' + FW.indexOf(d) + '">（' + d + "）</span>";
+    });
+    $("pqItems").innerHTML = item.items.map(function (it, k) {
+      var n = k + 1, order = it.o.map(function (_, i) { return i; }).sort(function () { return Math.random() - 0.5; });
+      return '<div class="pq-item"><div class="pq-no">（' + FW.charAt(n) + '）</div><div class="gq-opts" data-pn="' + n + '">' +
+        order.map(function (oi) { return '<button data-oi="' + oi + '" lang="ja">' + esc(it.o[oi]) + "</button>"; }).join("") +
+        '</div><div class="gq-explain" id="pqEx' + n + '"></div></div>';
+    }).join("");
+  }
+  function pqAnswer(btn) {
+    var box = btn.closest("[data-pn]"), n = +box.dataset.pn;
+    if (box.dataset.done) return;
+    box.dataset.done = "1";
+    var item = pqAll()[pqi], it = item.items[n - 1], pick = +btn.dataset.oi, ok = pick === it.a;
+    box.querySelectorAll("button").forEach(function (x) {
+      x.disabled = true;
+      if (+x.dataset.oi === it.a) x.classList.add("correct"); else if (x === btn) x.classList.add("wrong");
+    });
+    var slot = $("pslot" + n); if (slot) { slot.textContent = it.o[it.a]; slot.classList.add(ok ? "ok" : "ng"); }
+    var ex = $("pqEx" + n), g = it.g != null ? (DATA.grammar || [])[it.g] : null;
+    ex.innerHTML = (ok ? "正確。" : "正解：" + esc(it.o[it.a]) + "。") +
+      (g ? '<b lang="ja">' + esc(g.point) + "</b>　" + esc(g.meaning) : "這格考的是接續詞：看前後兩句是什麼關係（原因→結果、轉折、補充）。");
+    ex.classList.add("show");
+    S.markQuiz(LESSON_ID + "/" + item.id + "#" + n, ok);
+    if (g) S.rateGrammar((g.point || "").trim(), ok ? "good" : "bad");
+  }
+
   /* ---------- 讀解測驗 ---------- */
   var rqOrder = [], rqi = 0, rqFilter = "all", rqAnswered = false;
   function rqAll() { return DATA.reading || []; }
+  function storyLabel(n) { var s = DATA.stories[n - 1]; return s && s.kind === "dialogue" ? "會話" : "篇" + cn(n); }
   function rqIsWrong(i) { var r = S.getQuiz(qid("rq", rqAll()[i], i)); return r && r.r === "ng"; }
   function rqPool() {
     var idx = rqAll().map(function (_, i) { return i; });
@@ -648,10 +828,140 @@
     rqAnswered = false;
     var item = rqAll()[rqOrder[rqi]];
     $("rqCount").textContent = (rqi + 1) + " / " + rqOrder.length +
-      (DATA.stories.length > 1 ? "　（篇" + cn(item.st) + "）" : "");
+      (DATA.stories.length > 1 ? "　（" + storyLabel(item.st) + "）" : "");
     $("rqQuestion").textContent = item.q;
     expl.classList.remove("show"); expl.innerHTML = "";
     opts.innerHTML = item.o.map(function (o, i) { return '<button data-oi="' + i + '" lang="ja">' + esc(o) + "</button>"; }).join("");
+  }
+
+  /* ---------- 每篇的「下一步」流程 ---------- */
+  function storyKeys(n) { return keysAll().filter(function (k) { return STORY_OF[k] === n; }); }
+  function storyGq(n) { return gqAll().map(function (q, i) { return { q: q, i: i }; }).filter(function (x) { return GSTORY[x.q.g] === n; }); }
+  function storyRq(n) { return rqAll().map(function (q, i) { return { q: q, i: i }; }).filter(function (x) { return x.q.st === n; }); }
+  function stepState(n) {
+    var st = S.getStory(LESSON_ID, n), s = DATA.stories[n - 1], dlg = s.kind === "dialogue";
+    var ks = storyKeys(n), kd = ks.filter(function (k) { var r = S.getVocab(k); return r && r.seen; }).length;
+    var gs = storyGq(n), gd = gs.filter(function (x) { return S.getQuiz(qid("gq", x.q, x.i)); }).length;
+    var rs = storyRq(n), rd = rs.filter(function (x) { return S.getQuiz(qid("rq", x.q, x.i)); }).length;
+    var steps = [
+      { id: "read", label: dlg ? "聽會話" : "聽讀", done: !!st.read },
+      { id: "shadow", label: "跟讀", done: !!st.shadow }];
+    if (!dlg) {
+      steps.push({ id: "vocab", label: "本篇單字", done: ks.length > 0 && kd === ks.length, info: kd + "/" + ks.length });
+      steps.push({ id: "grammar", label: "本篇文法", done: gd === gs.length, info: gs.length ? gd + "/" + gs.length : "沒有新文法" });
+    }
+    steps.push({ id: "reading", label: "讀解", done: rs.length ? rd === rs.length : true, info: rs.length ? rd + "/" + rs.length : "" });
+    return steps;
+  }
+  var CIRC = "①②③④⑤⑥";
+  function renderFlow(i) {
+    var n = i + 1, el = $("flow" + i); if (!el) return;
+    var steps = stepState(n), done = steps.every(function (s) { return s.done; });
+    el.innerHTML = '<ol class="steps' + (done ? " all" : "") + '">' + steps.map(function (s, k) {
+      return '<li class="' + (s.done ? "done" : "") + '"><button data-step="' + s.id + '" data-n="' + n + '">' +
+        '<span class="no">' + (s.done ? "✓" : CIRC.charAt(k)) + "</span>" + esc(s.label) +
+        (s.info ? '<span class="inf">' + esc(s.info) + "</span>" : "") + "</button></li>";
+    }).join("") + "</ol>" +
+      (done && n < DATA.stories.length ? '<button class="nextstory" data-next="' + n + '">這篇完成了！下一篇 ↓</button>' : "");
+  }
+  function renderSum() {
+    if (!$("lessonSum")) return;
+    var total = DATA.stories.length, done = 0;
+    for (var n = 1; n <= total; n++) if (stepState(n).every(function (s) { return s.done; })) done++;
+    var ex = S.getExam(LESSON_ID);
+    $("lessonSum").innerHTML = '<div class="sum-l"><b>' + done + " / " + total + "</b> 篇完成" +
+      (ex ? "　·　小考最高 <b>" + ex.best + " / " + ex.total + "</b>" : "") + "</div>" +
+      '<button class="primary" data-exam="1">本課小考（10 題）</button>';
+  }
+  function refreshFlows() { if (!DATA) return; DATA.stories.forEach(function (_, i) { renderFlow(i); }); renderSum(); }
+  function setSFv(n) { SF = n; syncSF(); renderVocabTab(); shuffle(); gqShuffle(); soShuffle(); }
+  function setGview(v) {
+    document.querySelectorAll("[data-gview]").forEach(function (x) { x.classList.toggle("active", x.dataset.gview === v); });
+    $("grammarTable").hidden = v !== "table";
+    $("grammarQuizWrap").hidden = v !== "quiz";
+    $("grammarOrderWrap").hidden = v !== "order";
+    $("grammarPassageWrap").hidden = v !== "passage";
+    $("gSfWrap").hidden = !(v === "quiz" || v === "order");
+  }
+  function setSview(v) {
+    document.querySelectorAll("[data-sview]").forEach(function (x) { x.classList.toggle("active", x.dataset.sview === v); });
+    $("storyRead").hidden = v !== "read";
+    $("storyQuizWrap").hidden = v !== "quiz";
+    $("readingRow").hidden = v !== "read";
+  }
+  function goStep(id, n) {
+    var i = n - 1;
+    if (id === "read") {
+      var pa = document.querySelector('.playall[data-story="' + i + '"]');
+      stopAudio(); if (pa) playStory($("story" + i), pa);
+      S.markStory(LESSON_ID, n, "read"); refreshFlows();
+    } else if (id === "shadow") {
+      var wrap = $("rec" + i);
+      var texts = [].slice.call($("story" + i).querySelectorAll(".play")).map(function (x) { return x.dataset.audio; });
+      wrap.innerHTML = recorderHTML(texts[0] || "") +
+        '<div class="small">按每段的 ▶ 聽一句、停下來自己念一遍；有麥克風可以錄下來跟原音比。念完整篇就按下面的按鈕。</div>' +
+        '<button class="primary" data-shadowdone="' + n + '">跟讀完了 ✓</button>';
+      wrap.hidden = false;
+    } else if (id === "vocab") {
+      setSFv(n); quizFilter = "all";
+      document.querySelectorAll("[data-qfilter]").forEach(function (x) { x.classList.toggle("active", x.dataset.qfilter === "all"); });
+      setTab("quiz"); setQuizDir("jpzh");
+    } else if (id === "grammar") {
+      setSFv(n); setGview("quiz"); setTab("grammar");
+    } else if (id === "reading") {
+      setTab("stories"); setSview("quiz");
+      rqFilter = "s" + n;
+      document.querySelectorAll("[data-rqfilter]").forEach(function (x) { x.classList.toggle("active", x.dataset.rqfilter === rqFilter); });
+      rqShuffle();
+    }
+  }
+
+  /* ---------- 段落回報 ---------- */
+  function paraPlain(pk) {
+    var m = /^s(\d+)p(\d+)$/.exec(pk); if (!m) return "";
+    var s = DATA.stories[+m[1] - 1], raw = s && s.paragraphs[+m[2] - 1];
+    return raw ? parsePara(raw).plain : "";
+  }
+  function openPnote(pk) {
+    currentCardKey = null;
+    sheet.innerHTML = '<button class="sheet-close" data-act="close">關閉</button><h3>回報這段</h3>' +
+      '<div class="example" lang="ja">' + esc(paraPlain(pk)) + "</div>" +
+      '<div class="kv"><strong>哪裡怪怪的？</strong><textarea id="pnoteText" rows="3" placeholder="例：日本人好像不會這樣說／翻譯漏了一句／注音不對／語音念錯">' + esc(S.getParaNote(LESSON_ID + "/" + pk)) + "</textarea></div>" +
+      '<div class="actions"><button class="primary" data-act="pnote-save" data-pk="' + pk + '">儲存</button>' +
+      '<button data-act="pnote-del" data-pk="' + pk + '">刪除這則</button></div>' +
+      '<div class="small">回報存在這個瀏覽器裡。到 ⚙ 設定的「我的回報」可以一次複製全部，貼給 Claude 修。</div>';
+    modal.classList.add("show");
+  }
+  function notesText() {
+    return S.listParaNotes(LESSON_ID + "/").map(function (r) {
+      var m = /\/s(\d+)p(\d+)$/.exec(r.key); if (!m) return "";
+      return "【" + TITLE + "】" + storyLabel(+m[1]) + " 第" + m[2] + "段：「" + paraPlain("s" + m[1] + "p" + m[2]) + "」→ " + r.text;
+    }).filter(Boolean).join("\n");
+  }
+  function copyNotes(btn) {
+    var txt = notesText(); if (!txt) return;
+    var done = function () { btn.textContent = "已複製 ✓"; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, function () { showNotesBox(txt); });
+    else showNotesBox(txt);
+  }
+  function showNotesBox(txt) {
+    var box = sheet.querySelector("#notesBox"); if (!box) return;
+    box.hidden = false; box.value = txt; box.focus(); box.select();
+  }
+
+  /* ---------- 單課小考 ---------- */
+  function openExam() {
+    if (!window.LessonExam) {
+      var sc = document.createElement("script");
+      sc.src = BASE + "assets/mock-exam.js";
+      sc.onload = function () { if (window.LessonExam) openExam(); else alert("小考元件載入失敗，請重新整理。"); };
+      sc.onerror = function () { alert("小考元件載入失敗，請重新整理。"); };
+      document.head.appendChild(sc);
+      return;
+    }
+    stopAudio();
+    window.LessonExam.open({ sheet: sheet, modal: modal, esc: esc, play: play, vocab: vocab, DATA: DATA, S: S,
+      lessonId: LESSON_ID, qid: qid, parsePara: parsePara, onDone: refreshFlows });
   }
 
   /* ---------- 分頁 ---------- */
@@ -665,6 +975,7 @@
     $("readingRow").hidden = !(name === "stories" && !$("storyRead").hidden);
     if (name === "quiz") { $("quizDock").hidden = !answerShown || !quizKeys.length || isChoiceDir(); }
     else $("quizDock").hidden = true;
+    if (name === "stories") refreshFlows();
     window.scrollTo(0, 0);
     try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
   }
@@ -692,8 +1003,16 @@
     sheet.addEventListener("click", function (e) {
       var b = e.target.closest("[data-act],[data-set],[data-rec]"); if (!b) return;
       if (b.dataset.act === "close") { modal.classList.remove("show"); return; }
-      if (b.dataset.act === "play-dict") play(currentCardKey && vocab[currentCardKey].dict);
-      else if (b.dataset.act === "play-ex") play(currentCardKey && vocab[currentCardKey].ex);
+      if (b.dataset.act === "pnote-save" || b.dataset.act === "pnote-del") {
+        var ta = sheet.querySelector("#pnoteText");
+        S.setParaNote(LESSON_ID + "/" + b.dataset.pk, b.dataset.act === "pnote-del" ? "" : (ta && ta.value));
+        modal.classList.remove("show"); renderStories(); applyReading(); return;
+      }
+      if (b.dataset.act === "copy-notes") { copyNotes(b); return; }
+      if (b.dataset.act === "exam") { modal.classList.remove("show"); openExam(); return; }
+      var cv = currentCardKey && (vocab[currentCardKey] || REVIEW[currentCardKey]);
+      if (b.dataset.act === "play-dict") play(cv && cv.dict);
+      else if (b.dataset.act === "play-ex") play(cv && cv.ex);
       else if (b.dataset.act === "rate") rateSrs(currentCardKey, b.dataset.val);
       else if (b.dataset.act === "goto-grammar") { modal.classList.remove("show"); setTab("grammar"); }
       else if (b.dataset.act === "shuffle") { modal.classList.remove("show"); shuffle(); gqShuffle(); rqShuffle(); soShuffle(); }
@@ -725,31 +1044,28 @@
 
     // story view toggle
     document.querySelectorAll("[data-sview]").forEach(function (b) {
-      b.onclick = function () {
-        stopAudio();
-        var v = b.dataset.sview;
-        document.querySelectorAll("[data-sview]").forEach(function (x) { x.classList.toggle("active", x === b); });
-        $("storyRead").hidden = v !== "read";
-        $("storyQuizWrap").hidden = v !== "quiz";
-        $("readingRow").hidden = v !== "read";
-      };
+      b.onclick = function () { stopAudio(); setSview(b.dataset.sview); if (b.dataset.sview === "read") refreshFlows(); };
     });
     // grammar view toggle
     document.querySelectorAll("[data-gview]").forEach(function (b) {
-      b.onclick = function () {
-        var v = b.dataset.gview;
-        document.querySelectorAll("[data-gview]").forEach(function (x) { x.classList.toggle("active", x === b); });
-        $("grammarTable").hidden = v !== "table";
-        $("grammarQuizWrap").hidden = v !== "quiz";
-        $("grammarOrderWrap").hidden = v !== "order";
-      };
+      b.onclick = function () { setGview(b.dataset.gview); };
     });
+    $("pqItems").addEventListener("click", function (e) { var b = e.target.closest("button[data-oi]"); if (b) pqAnswer(b); });
+    $("pqNext").onclick = function () { pqi = (pqi + 1) % Math.max(1, pqAll().length); pqRender(); };
     $("grammarBody").addEventListener("click", function (e) {
       var r = e.target.closest("tr[data-g]"); if (r) openGrammarCard(+r.dataset.g);
     });
 
     // delegated: play / word / playall / lang
     document.addEventListener("click", function (e) {
+      var sfb = e.target.closest("[data-sf]"); if (sfb) { setSFv(+sfb.dataset.sf); return; }
+      var stp = e.target.closest("[data-step]"); if (stp) { goStep(stp.dataset.step, +stp.dataset.n); return; }
+      var sd = e.target.closest("[data-shadowdone]");
+      if (sd) { var n = +sd.dataset.shadowdone; S.markStory(LESSON_ID, n, "shadow"); $("rec" + (n - 1)).hidden = true; refreshFlows(); return; }
+      var nx = e.target.closest("[data-next]");
+      if (nx) { var c = $("card" + nx.dataset.next); if (c) c.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+      var exb = e.target.closest("[data-exam]"); if (exb) { openExam(); return; }
+      var pn = e.target.closest(".pnote"); if (pn && pn.closest("#storyRead")) { openPnote(pn.dataset.pk); return; }
       var ro = e.target.closest(".recopen");
       if (ro) {
         var wrap = $("rec" + ro.dataset.recstory);
@@ -829,7 +1145,7 @@
     $("nextQuiz").onclick = function () { if (quizKeys.length) { qi = (qi + 1) % quizKeys.length; renderQuiz(); } };
     document.querySelectorAll("[data-qdir]").forEach(function (b) { b.onclick = function () { setQuizDir(b.dataset.qdir); }; });
     $("quizQuestion").addEventListener("click", function (e) {
-      if (e.target.closest("#listenPlay") && quizKeys.length) play(quizDir === "listenex" ? vocab[quizKeys[qi]].ex : vocab[quizKeys[qi]].dict);
+      if (e.target.closest("#listenPlay") && quizKeys.length) play(quizDir === "listenex" || quizDir === "dictex" ? vocab[quizKeys[qi]].ex : vocab[quizKeys[qi]].dict);
     });
     // 漢字読み／表記：選了就評分（對＝記得、錯＝不記得），看完答案自己按下一題
     $("quizChoices").addEventListener("click", function (e) {
@@ -845,7 +1161,9 @@
       play(v.dict);
     });
     $("choiceNext").onclick = function () { afterQuizRate(); };
-    $("speakQuiz").onclick = function () { if (quizKeys.length) play(quizDir === "listenex" ? vocab[quizKeys[qi]].ex : vocab[quizKeys[qi]].dict); };
+    $("speakQuiz").onclick = function () { if (quizKeys.length) play(quizDir === "listenex" || quizDir === "dictex" ? vocab[quizKeys[qi]].ex : vocab[quizKeys[qi]].dict); };
+    $("typeCheck").onclick = checkTyped;
+    $("typeInput").addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); checkTyped(); } });
     document.querySelectorAll("[data-qfilter]").forEach(function (b) {
       b.onclick = function () {
         quizFilter = b.dataset.qfilter;
@@ -875,7 +1193,7 @@
         '<div class="small" style="margin-top:6px" lang="ja">例：' + esc(g.example) + "</div>";
       expl.classList.add("show");
       S.markQuiz(qid("gq", item, gqOrder[gqi]), ok);
-      S.rateGrammar(gqPoint(item), ok ? "good" : "bad"); gqInfo();
+      S.rateGrammar(gqPoint(item), ok ? "good" : "bad"); gqInfo(); refreshFlows();
     });
     $("gqNext").onclick = function () { if (gqOrder.length) { gqi = (gqi + 1) % gqOrder.length; gqRender(); } };
     // 並べ替え
@@ -911,7 +1229,7 @@
       expl.innerHTML = (ok ? "正確" : "正解：" + esc(item.o[item.a])) +
         '<div class="small" style="margin-top:6px" lang="ja">文章：「' + esc(item.ref) + "」</div>";
       expl.classList.add("show");
-      S.markQuiz(qid("rq", item, rqOrder[rqi]), ok); rqInfo();
+      S.markQuiz(qid("rq", item, rqOrder[rqi]), ok); rqInfo(); refreshFlows();
     });
     $("rqNext").onclick = function () { if (rqOrder.length) { rqi = (rqi + 1) % rqOrder.length; rqRender(); } };
     document.querySelectorAll("[data-rqfilter]").forEach(function (b) {
@@ -967,6 +1285,11 @@
       '<div class="setrow"><span class="lab">練習</span>' +
         '<button data-act="shuffle">重新洗牌所有題目</button>' +
         '<button data-act="reset" class="danger">清除這一課的紀錄</button></div>' +
+      '<div class="setrow"><span class="lab">這一課的回報（' + S.listParaNotes(LESSON_ID + "/").length + ' 則）</span>' +
+        (S.listParaNotes(LESSON_ID + "/").length
+          ? '<button data-act="copy-notes">複製全部，貼給 Claude</button><textarea id="notesBox" rows="4" hidden></textarea>' +
+            '<div class="small notes-list">' + S.listParaNotes(LESSON_ID + "/").map(function (r) { return esc(r.key.replace(LESSON_ID + "/", "") + "：" + r.text); }).join("<br>") + "</div>"
+          : '<span class="small">還沒有。讀到怪怪的句子，按段尾的「⋯」。</span>') + "</div>" +
       '<div class="setrow"><span class="lab">備份（進度存在這個瀏覽器裡，換手機前先匯出）</span>' +
         '<button data-act="export">匯出進度檔</button>' +
         '<button data-act="import">匯入進度檔</button>' +
@@ -992,25 +1315,50 @@
     $("tip").open = setting("tipOpen") !== false;
     applyReading();
     updateProgress();
+    syncSF(); setGview("table"); pqRender();
     shuffle(); gqShuffle(); rqShuffle(); soShuffle();
     setTab(setting("lastTab") || "stories");
-    fetch("../audio/manifest.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : {}; })
+    refreshFlows();
+    fetch(BASE + "audio/manifest.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : {}; })
       .then(function (m) { AUDIO = m || {}; }).catch(function () {});
+    fetch(BASE + "data/grammar.json").then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { ((d && d.points) || []).forEach(function (x) { if (!x.retired) GREF[x.title] = x; }); }).catch(function () {});
   }
   function fail(msg) {
-    app.innerHTML = '<header><a class="backlink" href="../">← 回目錄</a>' +
+    app.innerHTML = '<header><a class="backlink" href="' + BASE + '">← 回目錄</a>' +
       '<h1>' + esc(TITLE) + "</h1></header>" +
       '<p class="loaderr">' + esc(msg) + "</p>";
   }
 
   applyTheme(); applyFont();   // 先套用，避免閃爍
   Promise.all([
-    fetch("../data/lessons/" + LESSON_ID + ".json").then(function (r) { if (!r.ok) throw new Error("lesson HTTP " + r.status); return r.json(); }),
-    fetch("../data/vocab.json").then(function (r) { if (!r.ok) throw new Error("vocab HTTP " + r.status); return r.json(); })
+    fetch(BASE + "data/lessons/" + LESSON_ID + ".json").then(function (r) { if (!r.ok) throw new Error("lesson HTTP " + r.status); return r.json(); }),
+    fetch(BASE + "data/vocab.json").then(function (r) { if (!r.ok) throw new Error("vocab HTTP " + r.status); return r.json(); })
   ]).then(function (res) {
     DATA = res[0];
-    (res[1] || []).forEach(function (w) {
+    var all = res[1] || [], byKey = {};
+    all.forEach(function (w) {
+      byKey[w.key] = w;
       if (!w.lessons || w.lessons.indexOf(LESSON_ID) >= 0) vocab[w.key] = w;
+    });
+    // 複習字：故事標記的 key 在 vocab.json 但不屬於本課（別課學過）
+    (DATA.stories || []).forEach(function (s) {
+      (s.paragraphs || []).forEach(function (para) {
+        String(para).replace(TARGET_RE, function (m, k) { k = k.trim(); if (!vocab[k] && byKey[k]) REVIEW[k] = byKey[k]; return m; });
+      });
+    });
+    var ids = {};
+    Object.keys(REVIEW).forEach(function (k) { (REVIEW[k].lessons || []).forEach(function (id) { ids[id] = 1; }); });
+    Object.keys(ids).forEach(function (id) {
+      fetch(BASE + "data/lessons/" + encodeURIComponent(id) + ".json").then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) { if (d && d.title) LESSON_TITLES[id] = d.title; }).catch(function () {});
+    });
+    (DATA.stories || []).forEach(function (s, i) {
+      if (s.kind === "dialogue") return;
+      (s.paragraphs || []).forEach(function (para) {
+        String(para).replace(TARGET_RE, function (m, k) { k = k.trim(); if (vocab[k] && STORY_OF[k] == null) STORY_OF[k] = i + 1; return m; });
+        String(para).replace(GRAM_OPEN_RE, function (m, gi) { if (GSTORY[+gi] == null) GSTORY[+gi] = i + 1; return m; });
+      });
     });
     if (!DATA || !Array.isArray(DATA.stories) || !DATA.stories.length) throw new Error("lesson JSON 缺 stories");
     try { if (S) S.migrateLegacy([LESSON_ID]); boot(); }

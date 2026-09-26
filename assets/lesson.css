@@ -208,10 +208,109 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
   .tabs,.quiz-dock{max-width:1100px}
 }
 @media print{
-  header,.hud,.tabs,.subtabs,.toolbar,.filter-row,.quiz-card,.quiz-dock,.play,.playall,.tip,.lang-tabs{display:none!important}
+  header,.hud,.tabs,.subtabs,.toolbar,.filter-row,.quiz-card,.quiz-dock,.play,.playall,.tip,.lang-tabs,.flow,.pnote,.lesson-sum{display:none!important}
   .section{display:block!important}
   .para .zh{display:block!important}
   body{background:#fff;color:#000;line-height:1.5}
   .story-card,.panel{border:1px solid #999;break-inside:avoid}
   ruby rt{color:#444!important;visibility:visible!important;font-size:.52em!important}
 }
+/* ---------- 2026-09 新增：下一步流程、複習字、JLPT、打字／聽寫、回報、會話、文章文法、單課小考 ---------- */
+
+
+/* 本課進度 */
+.lesson-sum{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 14px}
+.lesson-sum .sum-l{font-size:14px}
+.lesson-sum .sum-l b{font-size:17px}
+.lesson-sum button{min-height:44px}
+
+/* 每篇「下一步」流程 */
+.flow{margin:0 0 12px}
+.flow .steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.flow .steps li{margin:0}
+.flow .steps button{min-height:40px;padding:6px 12px 6px 8px;border-radius:999px;font-size:13.5px;display:inline-flex;align-items:center;gap:6px}
+.flow .steps .no{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
+  background:var(--soft);font-size:13px;font-weight:700}
+.flow .steps li.done button{background:var(--good);border-color:transparent}
+.flow .steps li.done .no{background:#3aa564;color:#fff}
+.flow .steps .inf{font-size:11.5px;color:var(--muted)}
+.flow .nextstory{margin-top:8px;min-height:44px;width:100%;border-radius:12px;background:var(--good);font-weight:600}
+
+/* 複習字：虛線底＋小「復」 */
+.word.review{font-weight:600;border-bottom:2px dashed #d08a2e}
+.word.review::after{content:"復";font-size:.55em;vertical-align:super;margin-left:1px;color:#d08a2e;font-weight:700}
+.word.review.blank::after{content:"＿＿";vertical-align:baseline;font-size:1em;color:var(--muted)}
+.review-note div{color:#b06f1a}
+.rv-sample{border-bottom:2px dashed #d08a2e;font-weight:600}
+
+/* JLPT 參考等級 */
+.jl{display:inline-block;font-size:11px;font-weight:700;line-height:1;padding:3px 5px;border-radius:5px;margin-left:6px;
+  vertical-align:middle;background:var(--soft);color:var(--muted);letter-spacing:.02em}
+.jl-n5,.jl-n4{background:var(--good);color:#2f7a4b}
+.jl-n3{background:var(--warn);color:#9a6a12}
+.jl-n2,.jl-n1,.jl-x{background:var(--bad);color:#b04444}
+:root[data-theme="dark"] .jl-n5,:root[data-theme="dark"] .jl-n4{color:#8fd4a8}
+:root[data-theme="dark"] .jl-n3{color:#e8c07a}
+:root[data-theme="dark"] .jl-n2,:root[data-theme="dark"] .jl-n1,:root[data-theme="dark"] .jl-x{color:#f0a0a0}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .jl-n5,:root:not([data-theme="light"]) .jl-n4{color:#8fd4a8}
+  :root:not([data-theme="light"]) .jl-n3{color:#e8c07a}
+  :root:not([data-theme="light"]) .jl-n2,:root:not([data-theme="light"]) .jl-n1,:root:not([data-theme="light"]) .jl-x{color:#f0a0a0}
+}
+
+/* 篇篩選 */
+.sf-row .lab{font-size:13px;color:var(--muted);margin-right:2px}
+.sf-row button{min-width:44px}
+
+/* 測驗方式按鈕變多：可以橫向捲動，不擠壞版面 */
+#quiz .subtabs,#grammar .subtabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+#quiz .subtabs::-webkit-scrollbar,#grammar .subtabs::-webkit-scrollbar{display:none}
+#quiz .subtabs button,#grammar .subtabs button{flex:0 0 auto}
+
+/* 打字作答／聽寫 */
+.typebox{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px;text-align:left}
+.typebox input{flex:1 1 200px;min-height:48px;font-size:17px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;
+  background:var(--bg);color:var(--text)}
+.typebox button{min-height:48px}
+.typeres{flex:1 1 100%;font-size:15px;line-height:1.8}
+.typeres .t-ok{color:#2f8a55;font-weight:700}
+.typeres .t-ng{color:#c04848;font-weight:700}
+.typeres .t-line{display:flex;gap:10px;align-items:baseline}
+.typeres .t-line .small{flex:0 0 3.5em}
+.d-bad{color:#c04848;background:var(--bad);border-radius:3px}
+.d-miss{text-decoration:underline 2px #c04848;text-underline-offset:3px}
+
+/* 段落回報 */
+.pnote{border:0;background:transparent;color:var(--muted);min-height:32px;min-width:32px;padding:0 6px;margin-left:4px;
+  font-size:14px;border-radius:8px;vertical-align:middle;opacity:.55}
+.pnote.has{opacity:1;color:#d06a2a;background:var(--warn)}
+@media (hover:hover){ .pnote:hover{opacity:1;background:var(--soft)} }
+.notes-list{margin-top:6px;line-height:1.7}
+#notesBox{width:100%;margin-top:8px;font-size:13px}
+
+/* 會話 */
+.story-card.dialogue .dline{display:flex;flex-direction:column;align-items:flex-start;margin-bottom:.8em}
+.story-card.dialogue .dline.me{align-items:flex-end}
+.story-card.dialogue .spk{font-size:12px;color:var(--muted);margin:0 6px 2px}
+.story-card.dialogue .dline p.ja{background:var(--soft);border-radius:14px 14px 14px 4px;padding:6px 10px;max-width:92%}
+.story-card.dialogue .dline.me p.ja{background:var(--gram-soft);border-radius:14px 14px 4px 14px}
+.story-card.dialogue .dline .zh{padding:2px 8px 0;max-width:92%}
+.story-card.dialogue .dline.me .zh{text-align:right}
+
+/* 文章文法 */
+.pq-card{text-align:left}
+.pq-text{font-size:var(--fs);line-height:2.1;margin:8px 0 14px}
+.pslot{display:inline-block;min-width:3em;text-align:center;border-bottom:2px solid var(--accent);padding:0 4px;font-weight:700}
+.pslot.ok{background:var(--good);border-bottom-color:#3aa564}
+.pslot.ng{background:var(--bad);border-bottom-color:#d06666}
+.pq-item{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+.pq-no{font-weight:700;font-size:14px}
+
+/* 單課小考 */
+.exam .ex-head{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin:4px 0 12px}
+.exam .ex-q{font-size:calc(var(--fs) + 1px);line-height:1.8;margin-bottom:10px}
+.exam .so-pool{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.exam .so-pool button{min-height:44px}
+.exam .ex-wrong{padding-left:18px;line-height:1.8;margin:6px 0 0}
+.exam .ex-wrong li{margin-bottom:8px}

@@ -12,6 +12,10 @@
        events  [[日期, 類型 v|g|q, key, 結果], ...]            最近 EVENT_CAP 筆
        daily   { "YYYY-MM-DD": {n, ok} }                       折舊後的每日彙總
        migrated [ "<舊 key>", ... ]                            已搬過的舊資料
+       stories  { "<課程id>/<篇號>": {read?, shadow?} }          每篇「下一步」流程裡按過的步驟（日期）
+       exams    { "<課程id>": {best, last, total, times, at} }  單課小考
+       paraNotes{ "<課程id>/s<篇>p<段>": {text, at} }           段落回報（「這段怪怪的」）
+     後三個是 2026-09 新增的欄位；舊資料讀進來時補成空物件，所以 v 仍是 1。
 
    SRS：Leitner 箱 0–6，間隔 [0,1,3,7,16,30,60] 天；box 6 = 畢業。
    評分：good → +1；mid → 維持（最少 1）；bad → 退回 0（box ≥4 退到 3）。
@@ -55,12 +59,12 @@
   /* ---------- progress ---------- */
   var progressCache = null;
   function emptyProgress() {
-    return { v: 1, updatedAt: nowIso(), vocab: {}, grammar: {}, quiz: {}, events: [], daily: {}, migrated: [] };
+    return { v: 1, updatedAt: nowIso(), vocab: {}, grammar: {}, quiz: {}, events: [], daily: {}, migrated: [], stories: {}, exams: {}, paraNotes: {} };
   }
   function normalize(p) {
     var e = emptyProgress();
     if (!p || typeof p !== "object") return e;
-    ["vocab", "grammar", "quiz", "daily"].forEach(function (k) { if (!p[k] || typeof p[k] !== "object" || Array.isArray(p[k])) p[k] = {}; });
+    ["vocab", "grammar", "quiz", "daily", "stories", "exams", "paraNotes"].forEach(function (k) { if (!p[k] || typeof p[k] !== "object" || Array.isArray(p[k])) p[k] = {}; });
     if (!Array.isArray(p.events)) p.events = [];
     if (!Array.isArray(p.migrated)) p.migrated = [];
     // 清掉壞掉的紀錄（box 不是數字、due 不是日期），不然到期比對會整個失效
@@ -187,6 +191,31 @@
     return (r && r.note) || "";
   }
 
+  /* ---------- 每篇完成狀態、單課小考、段落回報 ---------- */
+  function markStory(lessonId, n, step) {
+    var p = progress(), k = lessonId + "/" + n, r = p.stories[k] || {};
+    r[step] = today(); p.stories[k] = r; save();
+  }
+  function getStory(lessonId, n) { var r = progress().stories[lessonId + "/" + n]; return r ? Object.assign({}, r) : {}; }
+  function setExam(lessonId, score, total) {
+    var p = progress(), r = p.exams[lessonId] || { best: 0, total: total, times: 0 };
+    r.times = (r.times | 0) + 1; r.last = score; r.total = total; r.at = today();
+    if (score > (r.best | 0)) r.best = score;
+    p.exams[lessonId] = r; save(); return Object.assign({}, r);
+  }
+  function getExam(lessonId) { var r = progress().exams[lessonId]; return r ? Object.assign({}, r) : null; }
+  function setParaNote(key, text) {
+    var p = progress(); text = String(text || "").trim();
+    if (text) p.paraNotes[key] = { text: text, at: today() }; else delete p.paraNotes[key];
+    save();
+  }
+  function getParaNote(key) { var r = progress().paraNotes[key]; return r ? r.text : ""; }
+  function listParaNotes(prefix) {
+    var n = progress().paraNotes;
+    return Object.keys(n).sort().filter(function (k) { return !prefix || k.indexOf(prefix) === 0; })
+      .map(function (k) { return { key: k, text: n[k].text, at: n[k].at }; });
+  }
+
   /* ---------- 清除 ---------- */
   function resetProgress(opts) {
     // opts.vocabKeys / opts.grammarPoints / opts.quizPrefix：只清某一課；都不給 = 全清
@@ -194,7 +223,12 @@
     if (!opts) { progressCache = emptyProgress(); progressCache.migrated = p.migrated; return save(); }
     (opts.vocabKeys || []).forEach(function (k) { delete p.vocab[k]; });
     (opts.grammarPoints || []).forEach(function (k) { delete p.grammar[k]; });
-    if (opts.quizPrefix) Object.keys(p.quiz).forEach(function (k) { if (k.indexOf(opts.quizPrefix) === 0) delete p.quiz[k]; });
+    if (opts.quizPrefix) {
+      Object.keys(p.quiz).forEach(function (k) { if (k.indexOf(opts.quizPrefix) === 0) delete p.quiz[k]; });
+      // 同一課的流程打勾與小考紀錄一起清（段落回報是給作者看的，不清）
+      Object.keys(p.stories).forEach(function (k) { if (k.indexOf(opts.quizPrefix) === 0) delete p.stories[k]; });
+      delete p.exams[opts.quizPrefix.replace(/\/$/, "")];
+    }
     return save();
   }
 
@@ -213,6 +247,11 @@
       mergeBucket(p.vocab, incoming.vocab); mergeBucket(p.grammar, incoming.grammar);
       Object.keys(incoming.quiz).forEach(function (k) {
         if (!p.quiz[k] || (incoming.quiz[k].at || "") >= (p.quiz[k].at || "")) p.quiz[k] = incoming.quiz[k];
+      });
+      ["stories", "paraNotes"].forEach(function (b) { Object.keys(incoming[b]).forEach(function (k) { if (!p[b][k]) p[b][k] = incoming[b][k]; }); });
+      Object.keys(incoming.exams).forEach(function (k) {
+        var a = p.exams[k], b = incoming.exams[k];
+        if (!a || (b.best | 0) > (a.best | 0)) p.exams[k] = b;
       });
       p.events = p.events.concat(incoming.events).sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; });
       Object.keys(incoming.daily).forEach(function (day) {
@@ -295,6 +334,8 @@
     dueVocab: dueVocab, dueGrammar: dueGrammar, isDue: isDue, isGraduated: isGraduated, stats: stats, boxLabel: boxLabel,
     markQuiz: markQuiz, getQuiz: getQuiz, wrongQuiz: wrongQuiz,
     setNote: setNote, getNote: getNote,
+    markStory: markStory, getStory: getStory, setExam: setExam, getExam: getExam,
+    setParaNote: setParaNote, getParaNote: getParaNote, listParaNotes: listParaNotes,
     resetProgress: resetProgress, exportAll: exportAll, importAll: importAll, summary: summary,
     migrateLegacy: migrateLegacy,
     _events: function () { return progress().events.slice(); },

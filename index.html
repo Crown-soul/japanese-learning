@@ -22,7 +22,8 @@ h1{font-size:1.4rem;margin:0 0 4px}
 .review .l span{display:block;color:var(--muted);font-size:13px}
 .review .go{border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:14px;white-space:nowrap;background:var(--accent);color:var(--bg)}
 .review.quiet .go{background:transparent;color:var(--text)}
-h2{font-size:.85rem;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:0 0 10px}
+h2{font-size:.85rem;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:22px 0 10px}
+.hint{color:var(--muted);font-size:13px;margin:-4px 0 10px}
 ul{list-style:none;margin:0;padding:0}
 li{margin-bottom:12px}
 a.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit}
@@ -32,7 +33,7 @@ a.card:hover{border-color:#9ca3af}
 .st{margin-top:8px;height:6px;background:var(--line);border-radius:999px;overflow:hidden;display:none}
 .st>i{display:block;height:100%;background:var(--accent);width:0}
 .stt{font-size:12px;color:var(--muted);margin-top:4px;display:none}
-.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
 .tools a{border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;text-decoration:none;color:var(--text);background:var(--card)}
 footer{margin-top:28px;color:var(--muted);font-size:12px}
 </style>
@@ -40,42 +41,47 @@ footer{margin-top:28px;color:var(--muted);font-size:12px}
 <body>
 <div class="app">
   <h1>日文學習檔案目錄</h1>
-  <div class="sub">共 7 份 · 最後更新 2026-09-21</div>
+  <div class="sub">共 7 份 · 最後更新 2026-09-26</div>
+  <h2>開始學</h2>
+  <div class="hint">一課分成幾篇，一天一篇：進課程照每篇標題下的 ①→⑤ 走。</div>
+  <ul>
+    <li><a class="card" href="lessons/graduation.html" data-id="graduation" data-stories="6" data-total="7">
+      <div class="t">いよいよ卒業式</div>
+      <div class="d"><span>2026-09-19</span><span>70 字</span><span>12 個文法點</span><span>6 篇</span><span>＋會話</span></div>
+      <div class="st"><i></i></div><div class="stt"></div>
+    </a></li>
+    <li><a class="card" href="lessons/business-trip.html" data-id="business-trip" data-stories="6" data-total="6">
+      <div class="t">初めての出張</div>
+      <div class="d"><span>2026-09-14</span><span>70 字</span><span>12 個文法點</span><span>6 篇</span></div>
+      <div class="st"><i></i></div><div class="stt"></div>
+    </a></li>
+    <li><a class="card" href="lessons/boarding-house.html" data-id="boarding-house" data-stories="6" data-total="6">
+      <div class="t">下宿生活の一年</div>
+      <div class="d"><span>2026-09-14</span><span>70 字</span><span>14 個文法點</span><span>6 篇</span></div>
+      <div class="st"><i></i></div><div class="stt"></div>
+    </a></li>
+  </ul>
+  <h2>每日複習</h2>
   <a class="review quiet" id="reviewBox" href="review.html">
     <b id="dueN">–</b>
     <div class="l">今天要複習<span id="dueSub">讀取中…</span></div>
     <span class="go">開始複習</span>
   </a>
-  <h2>課程</h2>
+  <h2>工具</h2>
+  <div class="tools">
+    <a href="review.html">跨課複習中心</a>
+    <a href="lessons/grammar-index.html">N4 文法查詢</a>
+    <a href="lessons/%E6%97%A5%E6%96%87%E5%96%AE%E5%AD%97%E7%B8%BD%E8%A1%A8.html">日文單字總表</a>
+    <a href="lessons/%E6%97%A5%E8%AA%9E%E5%8B%95%E8%A9%9E%E8%AE%8A%E5%8C%96%E7%B7%B4%E7%BF%92%E5%B7%A5%E5%85%B7.html">動詞變化練習</a>
+  </div>
+  <h2>舊版</h2>
   <ul>
-    <li><a class="card" href="lessons/graduation.html" data-id="graduation">
-      <div class="t">いよいよ卒業式</div>
-      <div class="d"><span>2026-09-19</span><span>70 字</span><span>12 個文法點</span><span>6 篇</span></div>
-      <div class="st"><i></i></div><div class="stt"></div>
-    </a></li>
-    <li><a class="card" href="lessons/business-trip.html" data-id="business-trip">
-      <div class="t">初めての出張</div>
-      <div class="d"><span>2026-09-14</span><span>70 字</span><span>12 個文法點</span><span>6 篇</span></div>
-      <div class="st"><i></i></div><div class="stt"></div>
-    </a></li>
-    <li><a class="card" href="lessons/boarding-house.html" data-id="boarding-house">
-      <div class="t">下宿生活の一年</div>
-      <div class="d"><span>2026-09-14</span><span>70 字</span><span>14 個文法點</span><span>6 篇</span></div>
-      <div class="st"><i></i></div><div class="stt"></div>
-    </a></li>
     <li><a class="card" href="lessons/%E6%97%A5%E6%96%8770%E5%96%AE%E5%AD%97%E5%AD%B8%E7%BF%92%E5%99%A8.html" data-id="日文70單字學習器">
       <div class="t">日文 70 單字學習器</div>
       <div class="d"><span>2026-09-07</span><span>70 字</span></div>
       <div class="st"><i></i></div><div class="stt"></div>
     </a></li>
   </ul>
-  <h2>工具</h2>
-  <div class="tools">
-    <a href="review.html">跨課複習中心</a>
-    <a href="lessons/grammar-index.html">N4 文法查詢</a>
-    <a href="lessons/%E6%97%A5%E6%96%87%E5%96%AE%E5%AD%97%E7%B8%BD%E8%A1%A8.html">日文單字總表</a>
-    <a href="lessons/%E6%97%A5%E8%AA%9E%E5%8B%95%E8%A9%9E%E8%AE%8A%E5%8C%96%E7%B7%B4%E7%BF%92%E5%B7%A5%E5%85%B7.html">日語動詞變化練習工具 - 最終加固版</a>
-  </div>
   <footer>此頁由 build-index.py 自動產生，請勿手動編輯。</footer>
 </div>
 <script src="assets/store.js"></script>
@@ -109,7 +115,11 @@ footer{margin-top:28px;color:var(--muted);font-size:12px}
       if (!st.master && !st.learning) { txt.style.display = "block"; txt.textContent = "還沒開始"; return; }
       bar.style.display = "block"; bar.firstElementChild.style.width = (st.master / st.total * 100) + "%";
       txt.style.display = "block";
-      txt.textContent = "熟練 " + st.master + " / " + st.total + (st.due ? " · 今日到期 " + st.due : "") + (st.graduated ? " · 畢業 " + st.graduated : "");
+      var n = +a.dataset.stories || 0, read = 0;
+      for (var i = 1; i <= +(a.dataset.total || n); i++) if (S.getStory(a.dataset.id, i).read) read++;
+      var ex = S.getExam(a.dataset.id);
+      txt.textContent = "熟練 " + st.master + " / " + st.total + (st.due ? " · 今日到期 " + st.due : "") + (st.graduated ? " · 畢業 " + st.graduated : "") +
+        (read ? " · 讀過 " + read + " / " + (+a.dataset.total || n) + " 篇" : "") + (ex ? " · 小考最高 " + ex.best + " / " + ex.total : "");
     });
   }).catch(function () {
     document.getElementById("dueSub").textContent = "需要用伺服器或線上版開啟才能算";

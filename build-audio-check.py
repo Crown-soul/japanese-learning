@@ -81,10 +81,17 @@ def main():
         for jf in sorted(LESSON_DATA_DIR.glob("*.json")):
             data = json.loads(jf.read_text(encoding="utf-8"))
             for story in data.get("stories", []):
-                for para in story.get("paragraphs", []):
+                dialogue = story.get("kind") == "dialogue"
+                speakers = story.get("speakers") or []
+                voices = story.get("voices") or {}
+                for pi, para in enumerate(story.get("paragraphs", [])):
                     c = clean(para)
-                    if c in manifest:
-                        rows.append(("故事", c, annotated(para), manifest[c]))
+                    spk = speakers[pi] if dialogue and pi < len(speakers) else None
+                    # 會話的 key 帶聲音（規則同 generate-audio.py）；畫面上標說話人
+                    key = f"@{voices[spk]}:{c}" if spk in voices else c
+                    if key in manifest:
+                        rows.append(("會話" if spk else "故事", key,
+                                     (f"【{spk}】" if spk else "") + annotated(para), manifest[key]))
 
     # 去重（保順序）
     seen, uniq = set(), []
@@ -95,7 +102,7 @@ def main():
         uniq.append(row)
 
     items_json = json.dumps(
-        [{"sec": s, "text": t, "hint": h, "file": f, "new": t in new_keys} for s, t, h, f in uniq],
+        [{"sec": s, "text": re.sub(r"^@[^:]+:", "", t), "hint": h, "file": f, "new": t in new_keys} for s, t, h, f in uniq],
         ensure_ascii=False,
     )
     n_new = sum(1 for _, t, _, _ in uniq if t in new_keys)
