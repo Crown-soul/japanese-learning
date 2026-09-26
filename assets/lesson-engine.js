@@ -1350,6 +1350,8 @@
     var ids = {};
     Object.keys(REVIEW).forEach(function (k) { (REVIEW[k].lessons || []).forEach(function (id) { ids[id] = 1; }); });
     Object.keys(ids).forEach(function (id) {
+      // 只有引擎課有 data/lessons/<id>.json；舊課（中文 id）直接用 id 當課名，不去抓（會 404）
+      if (!/^[a-z0-9-]+$/.test(id)) return;
       fetch(BASE + "data/lessons/" + encodeURIComponent(id) + ".json").then(function (r) { return r.ok ? r.json() : null; })
         .then(function (d) { if (d && d.title) LESSON_TITLES[id] = d.title; }).catch(function () {});
     });
