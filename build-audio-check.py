@@ -63,9 +63,13 @@ def main():
 
     rows = []  # (section, text, hint, file)
 
+    display = {}   # manifest key → 畫面上顯示的日文（key 不是日文本身時用）
     for w in vocab:
-        if w["dict"] in manifest:
-            rows.append(("單字", w["dict"], w["reading"], manifest[w["dict"]]))
+        ak = w.get("audio") or w["dict"]   # 同漢字不同讀音的字另有 key（規則同 generate-audio.py）
+        if ak in manifest:
+            if ak != w["dict"]:
+                display[ak] = w["dict"]
+            rows.append(("單字", ak, w["reading"], manifest[ak]))
     for w in vocab:
         if w["ex"] in manifest:
             rows.append(("例句", w["ex"], f'{w["dict"]}＝{w["reading"]}', manifest[w["ex"]]))
@@ -93,6 +97,21 @@ def main():
                         rows.append(("會話" if spk else "故事", key,
                                      (f"【{spk}】" if spk else "") + annotated(para), manifest[key]))
 
+    # 基礎詞彙的 key 是 "basics:<id>"，畫面上改顯示日文（display 在上面單字那段建立）
+    basics = ROOT / "data" / "basics.json"
+    if basics.exists():
+        bx = json.loads(basics.read_text(encoding="utf-8"))
+        for iid, it in bx.get("items", {}).items():
+            k = f"basics:{iid}"
+            if k in manifest:
+                display[k] = it["ja"]
+                rows.append(("基礎", k, f'{it["ja"]}＝{it["kana"]}', manifest[k]))
+        for eid, e in bx.get("examples", {}).items():
+            k = f"basics:{eid}"
+            if k in manifest:
+                display[k] = e["ja"]
+                rows.append(("基礎例句", k, e["ja"] + (f'（念作：{e["say"]}）' if e.get("say") else ""), manifest[k]))
+
     # 去重（保順序）
     seen, uniq = set(), []
     for row in rows:
@@ -102,7 +121,7 @@ def main():
         uniq.append(row)
 
     items_json = json.dumps(
-        [{"sec": s, "text": re.sub(r"^@[^:]+:", "", t), "hint": h, "file": f, "new": t in new_keys} for s, t, h, f in uniq],
+        [{"sec": s, "text": display.get(t) or re.sub(r"^@[^:]+:", "", t), "hint": h, "file": f, "new": t in new_keys} for s, t, h, f in uniq],
         ensure_ascii=False,
     )
     n_new = sum(1 for _, t, _, _ in uniq if t in new_keys)

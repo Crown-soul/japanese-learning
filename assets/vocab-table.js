@@ -102,7 +102,7 @@
     return (
       (opts.wordClickable ? '<tbody data-key="' + k + '">' : "<tbody>") +
       '<tr class="vt-main">' +
-        '<td class="vt-w"><button class="play" data-audio="' + esc(w.dict) +
+        '<td class="vt-w"><button class="play" data-audio="' + esc(w.audio || w.dict) +
           '" aria-label="播放單字：' + esc(w.dict) + '">▶</button>' + wordCell + "</td>" +
         '<td class="vt-read" lang="ja">' + reading + "</td>" +
         '<td class="vt-pos">' + esc(w.pos) + "</td>" +

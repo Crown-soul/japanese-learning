@@ -15,7 +15,11 @@
        stories  { "<課程id>/<篇號>": {read?, shadow?} }          每篇「下一步」流程裡按過的步驟（日期）
        exams    { "<課程id>": {best, last, total, times, at} }  單課小考
        paraNotes{ "<課程id>/s<篇>p<段>": {text, at} }           段落回報（「這段怪怪的」）
-     後三個是 2026-09 新增的欄位；舊資料讀進來時補成空物件，所以 v 仍是 1。
+       basics   { "<題庫項目id>": {rec?, rc?, miss?} }        基礎詞彙練習器（data/basics.json）：
+                rec＝認得（選擇／聽力）、rc＝想得起來（自評／打字），各自一組 {box, due, seen}；
+                miss＝答錯的類型次數 {reading|counter|context: n}
+       basicsSec{ "<小節id>": {at, ok, n} }                  練習器小節上完的紀錄
+     stories 之後都是 2026-09 新增的欄位；舊資料讀進來時補成空物件，所以 v 仍是 1。
 
    SRS：Leitner 箱 0–6，間隔 [0,1,3,7,16,30,60] 天；box 6 = 畢業。
    評分：good → +1；mid → 維持（最少 1）；bad → 退回 0（box ≥4 退到 3）。
@@ -59,12 +63,12 @@
   /* ---------- progress ---------- */
   var progressCache = null;
   function emptyProgress() {
-    return { v: 1, updatedAt: nowIso(), vocab: {}, grammar: {}, quiz: {}, events: [], daily: {}, migrated: [], stories: {}, exams: {}, paraNotes: {} };
+    return { v: 1, updatedAt: nowIso(), vocab: {}, grammar: {}, quiz: {}, events: [], daily: {}, migrated: [], stories: {}, exams: {}, paraNotes: {}, basics: {}, basicsSec: {} };
   }
   function normalize(p) {
     var e = emptyProgress();
     if (!p || typeof p !== "object") return e;
-    ["vocab", "grammar", "quiz", "daily", "stories", "exams", "paraNotes"].forEach(function (k) { if (!p[k] || typeof p[k] !== "object" || Array.isArray(p[k])) p[k] = {}; });
+    ["vocab", "grammar", "quiz", "daily", "stories", "exams", "paraNotes", "basics", "basicsSec"].forEach(function (k) { if (!p[k] || typeof p[k] !== "object" || Array.isArray(p[k])) p[k] = {}; });
     if (!Array.isArray(p.events)) p.events = [];
     if (!Array.isArray(p.migrated)) p.migrated = [];
     // 清掉壞掉的紀錄（box 不是數字、due 不是日期），不然到期比對會整個失效
@@ -74,6 +78,16 @@
         if (!r || typeof r !== "object") { delete p[b][k]; return; }
         if (typeof r.box !== "number" || !isFinite(r.box)) r.box = 0;   // isFinite(null) 是 true，要先看型別
         if (r.due != null && !/^\d{4}-\d{2}-\d{2}$/.test(String(r.due))) r.due = today();
+      });
+    });
+    Object.keys(p.basics).forEach(function (k) {
+      var r = p.basics[k];
+      if (!r || typeof r !== "object") { delete p.basics[k]; return; }
+      ["rec", "rc"].forEach(function (t) {
+        var x = r[t]; if (x == null) return;
+        if (typeof x !== "object") { delete r[t]; return; }
+        if (typeof x.box !== "number" || !isFinite(x.box)) x.box = 0;
+        if (x.due != null && !/^\d{4}-\d{2}-\d{2}$/.test(String(x.due))) x.due = today();
       });
     });
     p.v = 1;
@@ -218,11 +232,15 @@
 
   /* ---------- 清除 ---------- */
   function resetProgress(opts) {
-    // opts.vocabKeys / opts.grammarPoints / opts.quizPrefix：只清某一課；都不給 = 全清
+    // opts.vocabKeys / opts.grammarPoints / opts.quizPrefix：只清某一課；opts.basics：清練習器；都不給 = 全清
     var p = progress();
     if (!opts) { progressCache = emptyProgress(); progressCache.migrated = p.migrated; return save(); }
     (opts.vocabKeys || []).forEach(function (k) { delete p.vocab[k]; });
     (opts.grammarPoints || []).forEach(function (k) { delete p.grammar[k]; });
+    if (opts.basics) {
+      p.basics = {}; p.basicsSec = {};
+      Object.keys(p.quiz).forEach(function (k) { if (k.indexOf("basics/") === 0) delete p.quiz[k]; });
+    }
     if (opts.quizPrefix) {
       Object.keys(p.quiz).forEach(function (k) { if (k.indexOf(opts.quizPrefix) === 0) delete p.quiz[k]; });
       // 同一課的流程打勾與小考紀錄一起清（段落回報是給作者看的，不清）
@@ -231,6 +249,44 @@
     }
     return save();
   }
+
+  /* ---------- 基礎詞彙練習器（data/basics.json） ----------
+     track："rec"（認得）或 "rc"（想得起來）；err：答錯的類型，只在 bad 時累計 */
+  function rateBasics(id, track, rating, err) {
+    if (!id || (track !== "rec" && track !== "rc")) return null;
+    var p = progress(), r = p.basics[id] || (p.basics[id] = {});
+    var rec = applyRating(r[track], rating); delete rec.note;
+    if (rating === "bad") rec.due = addDays(1);   // 當下已在練習裡隔幾題重考，這裡排明天
+    r[track] = rec;
+    if (rating === "bad" && err) { r.miss = r.miss || {}; r.miss[err] = (r.miss[err] | 0) + 1; }
+    logEvent("b", id + "#" + track, rating);
+    save();
+    return Object.assign({}, rec);
+  }
+  function getBasics(id) { var r = progress().basics[id]; return r ? JSON.parse(JSON.stringify(r)) : null; }
+  // 上完一節：還沒有紀錄的項目排進明天的複習（兩個 track 都要）
+  function seedBasics(ids) {
+    var p = progress(), tomorrow = addDays(1);
+    (ids || []).forEach(function (id) {
+      var r = p.basics[id] || (p.basics[id] = {});
+      ["rec", "rc"].forEach(function (t) { if (!r[t]) r[t] = { box: 0, due: tomorrow, seen: today() }; });
+    });
+    save();
+  }
+  // 回傳到期的 [{id, track}]；ids 省略＝全部
+  function dueBasics(ids, date) {
+    var b = progress().basics, d = date || today(), out = [];
+    (ids || Object.keys(b)).forEach(function (id) {
+      var r = b[id]; if (!r) return;
+      ["rec", "rc"].forEach(function (t) { if (isDue(r[t], d)) out.push({ id: id, track: t }); });
+    });
+    return out;
+  }
+  function markBasicsSection(id, ok, n) {
+    progress().basicsSec[id] = { at: today(), ok: ok | 0, n: n | 0 };
+    return save();
+  }
+  function getBasicsSection(id) { var r = progress().basicsSec[id]; return r ? Object.assign({}, r) : null; }
 
   /* ---------- 匯出／匯入 ---------- */
   function exportAll() {
@@ -245,6 +301,12 @@
     else {
       var p = progress();
       mergeBucket(p.vocab, incoming.vocab); mergeBucket(p.grammar, incoming.grammar);
+      Object.keys(incoming.basics).forEach(function (k) {
+        var a = p.basics[k] || (p.basics[k] = {}), b = incoming.basics[k];
+        ["rec", "rc"].forEach(function (t) { var x = {}; x[t] = a[t]; var y = {}; if (b[t]) { y[t] = b[t]; mergeBucket(x, y); a[t] = x[t]; } });
+        if (b.miss) { a.miss = a.miss || {}; Object.keys(b.miss).forEach(function (e) { a.miss[e] = Math.max(a.miss[e] | 0, b.miss[e] | 0); }); }
+      });
+      Object.keys(incoming.basicsSec).forEach(function (k) { if (!p.basicsSec[k] || (incoming.basicsSec[k].at || "") > (p.basicsSec[k].at || "")) p.basicsSec[k] = incoming.basicsSec[k]; });
       Object.keys(incoming.quiz).forEach(function (k) {
         if (!p.quiz[k] || (incoming.quiz[k].at || "") >= (p.quiz[k].at || "")) p.quiz[k] = incoming.quiz[k];
       });
@@ -338,6 +400,8 @@
     setParaNote: setParaNote, getParaNote: getParaNote, listParaNotes: listParaNotes,
     resetProgress: resetProgress, exportAll: exportAll, importAll: importAll, summary: summary,
     migrateLegacy: migrateLegacy,
+    rateBasics: rateBasics, getBasics: getBasics, seedBasics: seedBasics, dueBasics: dueBasics,
+    markBasicsSection: markBasicsSection, getBasicsSection: getBasicsSection,
     _events: function () { return progress().events.slice(); },
     _daily: function () { return Object.assign({}, progress().daily); }
   };

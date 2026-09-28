@@ -38,12 +38,12 @@
     take(kanji, 2).forEach(function (k) {
       qs.push({ type: "漢字読み", prompt: '「<b lang="ja">' + esc(V[k].dict) + "</b>」怎麼念？",
         options: choices(k, "reading", kanji), answer: V[k].reading,
-        explain: esc(V[k].dict) + "（" + esc(V[k].reading) + "）" + esc(V[k].zh), sound: V[k].dict });
+        explain: esc(V[k].dict) + "（" + esc(V[k].reading) + "）" + esc(V[k].zh), sound: V[k].audio || V[k].dict });
     });
     take(kanji, 2).forEach(function (k) {
       qs.push({ type: "表記", prompt: '「<b lang="ja">' + esc(V[k].reading) + "</b>」的漢字是？",
         options: choices(k, "dict", kanji), answer: V[k].dict,
-        explain: esc(V[k].dict) + "（" + esc(V[k].reading) + "）" + esc(V[k].zh), sound: V[k].dict });
+        explain: esc(V[k].dict) + "（" + esc(V[k].reading) + "）" + esc(V[k].zh), sound: V[k].audio || V[k].dict });
     });
     // 文脈規定：例句裡原樣出現辭書形的字（多半是名詞），挖掉後選回去；干擾項優先同詞性
     var ctxKeys = keys.filter(function (k) { var d = V[k].dict; return d.length >= 2 && (V[k].ex || "").indexOf(d) >= 0; });

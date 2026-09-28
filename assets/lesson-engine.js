@@ -106,6 +106,9 @@
     if (onDone) u.onend = u.onerror = function () { onDone(); };
     speechSynthesis.speak(u);
   }
+  // 單字卡音檔的 manifest key：預設是 dict（漢字）；同漢字不同讀音的字（開く＝ひらく／あく）另填 audio 欄位（＝讀音），
+  // 才不會共用同一個音檔。generate-audio.py、build-audio-check.py、validate-lessons.py、vocab-table.js、mock-exam.js、review.html 同一條規則。
+  function audioOf(v) { return v && (v.audio || v.dict); }
   function play(text, onDone) {
     if (!text) { if (onDone) onDone(); return; }
     var file = AUDIO[text], dir = BASE + "audio/";
@@ -646,7 +649,7 @@
       } else if (quizDir === "dict") {
         q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
         $("quizHint").textContent = "聽單字，用假名打出來";
-        ans.innerHTML = full; play(v.dict);
+        ans.innerHTML = full; play(audioOf(v));
       } else {
         q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
         $("quizHint").textContent = "聽整句，用假名打出來（標點不用打）";
@@ -672,7 +675,7 @@
       q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
       $("quizHint").textContent = "聽日文發音，想中文意思";
       ans.innerHTML = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div>' + esc(v.zh) + '</div><div class="example" lang="ja">' + esc(v.ex) + "</div>";
-      play(v.dict);   // manifest key 是 dict（引擎課的音檔用假名合成、但 key 仍是漢字）
+      play(audioOf(v));   // manifest key 見 audioOf()
     }
   }
   function afterQuizRate() {
@@ -1011,7 +1014,7 @@
       if (b.dataset.act === "copy-notes") { copyNotes(b); return; }
       if (b.dataset.act === "exam") { modal.classList.remove("show"); openExam(); return; }
       var cv = currentCardKey && (vocab[currentCardKey] || REVIEW[currentCardKey]);
-      if (b.dataset.act === "play-dict") play(cv && cv.dict);
+      if (b.dataset.act === "play-dict") play(cv && audioOf(cv));
       else if (b.dataset.act === "play-ex") play(cv && cv.ex);
       else if (b.dataset.act === "rate") rateSrs(currentCardKey, b.dataset.val);
       else if (b.dataset.act === "goto-grammar") { modal.classList.remove("show"); setTab("grammar"); }
@@ -1145,7 +1148,7 @@
     $("nextQuiz").onclick = function () { if (quizKeys.length) { qi = (qi + 1) % quizKeys.length; renderQuiz(); } };
     document.querySelectorAll("[data-qdir]").forEach(function (b) { b.onclick = function () { setQuizDir(b.dataset.qdir); }; });
     $("quizQuestion").addEventListener("click", function (e) {
-      if (e.target.closest("#listenPlay") && quizKeys.length) play(quizDir === "listenex" || quizDir === "dictex" ? vocab[quizKeys[qi]].ex : vocab[quizKeys[qi]].dict);
+      if (e.target.closest("#listenPlay") && quizKeys.length) play(quizDir === "listenex" || quizDir === "dictex" ? vocab[quizKeys[qi]].ex : audioOf(vocab[quizKeys[qi]]));
     });
     // 漢字読み／表記：選了就評分（對＝記得、錯＝不記得），看完答案自己按下一題
     $("quizChoices").addEventListener("click", function (e) {
@@ -1158,10 +1161,10 @@
       });
       $("quizAnswer").classList.add("show"); $("quizChoiceNext").hidden = false;
       S.rateVocab(k, ok ? "good" : "bad"); updateProgress();
-      play(v.dict);
+      play(audioOf(v));
     });
     $("choiceNext").onclick = function () { afterQuizRate(); };
-    $("speakQuiz").onclick = function () { if (quizKeys.length) play(quizDir === "listenex" || quizDir === "dictex" ? vocab[quizKeys[qi]].ex : vocab[quizKeys[qi]].dict); };
+    $("speakQuiz").onclick = function () { if (quizKeys.length) play(quizDir === "listenex" || quizDir === "dictex" ? vocab[quizKeys[qi]].ex : audioOf(vocab[quizKeys[qi]])); };
     $("typeCheck").onclick = checkTyped;
     $("typeInput").addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); checkTyped(); } });
     document.querySelectorAll("[data-qfilter]").forEach(function (b) {
@@ -1332,8 +1335,8 @@
 
   applyTheme(); applyFont();   // 先套用，避免閃爍
   Promise.all([
-    fetch(BASE + "data/lessons/" + LESSON_ID + ".json").then(function (r) { if (!r.ok) throw new Error("lesson HTTP " + r.status); return r.json(); }),
-    fetch(BASE + "data/vocab.json").then(function (r) { if (!r.ok) throw new Error("vocab HTTP " + r.status); return r.json(); })
+    fetch(BASE + "data/lessons/" + LESSON_ID + ".json", { cache: "no-cache" }).then(function (r) { if (!r.ok) throw new Error("lesson HTTP " + r.status); return r.json(); }),
+    fetch(BASE + "data/vocab.json", { cache: "no-cache" }).then(function (r) { if (!r.ok) throw new Error("vocab HTTP " + r.status); return r.json(); })
   ]).then(function (res) {
     DATA = res[0];
     var all = res[1] || [], byKey = {};

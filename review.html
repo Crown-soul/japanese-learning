@@ -169,7 +169,7 @@
       q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
       $("quizHint").textContent = "聽日文發音，想中文意思";
       ans.innerHTML = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div>' + esc(v.zh) + '</div><div class="example" lang="ja">' + esc(v.ex) + "</div>";
-      play(v.dict);
+      play(v.audio || v.dict);
     }
   }
   function afterRate() {
@@ -255,8 +255,8 @@
   document.querySelectorAll("[data-gfilter]").forEach(function (b) { b.onclick = function () { gqFilter = b.dataset.gfilter; document.querySelectorAll("[data-gfilter]").forEach(function (x) { x.classList.toggle("active", x === b); }); gqShuffle(); }; });
   $("showAnswer").onclick = showAnswer;
   $("nextQuiz").onclick = function () { if (quizKeys.length) { qi = (qi + 1) % quizKeys.length; renderQuiz(); } };
-  $("speakQuiz").onclick = function () { if (quizKeys.length) play(vocab[quizKeys[qi]].dict); };
-  $("quizQuestion").addEventListener("click", function (e) { if (e.target.closest("#listenPlay") && quizKeys.length) play(vocab[quizKeys[qi]].dict); });
+  $("speakQuiz").onclick = function () { if (quizKeys.length) play(vocab[quizKeys[qi]].audio || vocab[quizKeys[qi]].dict); };
+  $("quizQuestion").addEventListener("click", function (e) { if (e.target.closest("#listenPlay") && quizKeys.length) play(vocab[quizKeys[qi]].audio || vocab[quizKeys[qi]].dict); });
   $("quizHint").addEventListener("click", function (e) { var h = e.target.closest("#hintBtn"); if (h && quizKeys.length) h.outerHTML = '<span lang="ja">讀音：' + esc(vocab[quizKeys[qi]].reading) + "</span>"; });
   $("quizDock").addEventListener("click", function (e) {
     var b = e.target.closest(".status-btn"); if (!b || !quizKeys.length || !answerShown) return;

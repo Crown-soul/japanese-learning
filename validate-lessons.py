@@ -212,8 +212,10 @@ def n4_points():
     raw |= set(re.findall(r"^\|\s*([^|｜\s][^|]*?)\s*\|", txt, re.M))
     norm = set()
     for p in raw:
-        # 一條標題可能列多個等價形：～てしまう／～ちゃう、～ば～ほど…用 ／・、 拆開
-        for piece in re.split(r"[／/・]", p):
+        # 完整標題本身也算（括號裡有「・」的標題，例：～らしい（推測・傳聞），拆開後就對不回來）
+        norm.add(p.strip())
+        # 一條標題可能列多個等價形：～てしまう／～ちゃう、～ば～ほど…用 ／・、 拆開（先去括號，括號裡的「・」不拆）
+        for piece in re.split(r"[／/・]", re.sub(r"（.*?）|\(.*?\)", "", p)):
             piece = piece.strip()
             if not piece or piece in ("文法", "接續詞", "意思", "例", "來源"):
                 continue
@@ -617,6 +619,77 @@ def check_vocab(vocab, only):
                 err(tag, f"exKana 的句數跟 ex 不一樣（ex：{ex}）")
 
 
+def check_vocab_keys(vocab):
+    """key 不能重複（進度用它）；單字卡音檔 key（audio or dict）一樣、讀音卻不同 → 會共用同一個音檔、一定有一個唸錯。"""
+    seen_key, by_audio = {}, {}
+    for w in vocab:
+        k = w.get("key")
+        if k in seen_key:
+            err("vocab:" + str(k), "key 重複（同漢字不同讀音的字，key 要加讀音區分，例：開く（あく））")
+        seen_key[k] = w
+        ak = w.get("audio") or w.get("dict")
+        other = by_audio.get(ak)
+        if other and other.get("reading") != w.get("reading"):
+            err("vocab:" + str(k), f"跟「{other.get('key')}」同寫法「{ak}」但讀音不同（{other.get('reading')}／{w.get('reading')}），"
+                                    f"會共用同一個音檔——新的那個要加 \"audio\": \"{w.get('reading')}\"")
+        by_audio.setdefault(ak, w)
+
+
+def check_basics():
+    """data/basics.json（基礎詞彙練習器）：id 唯一且被引用到的都存在、假名欄位是純假名、選擇題答案在範圍內。"""
+    path = ROOT / "data" / "basics.json"
+    if not path.exists():
+        return
+    tag = "basics"
+    try:
+        d = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as e:
+        err(tag, f"JSON 壞了：{e}")
+        return
+    items, exs, secs = d.get("items", {}), d.get("examples", {}), d.get("sections", {})
+    for iid, it in items.items():
+        for f in ("ja", "kana", "zh"):
+            if not it.get(f):
+                err(tag, f"items.{iid} 缺 {f}")
+        for k in [it.get("kana", "")] + (it.get("alt") or []):
+            if k and not KANA_ONLY.match(k):
+                err(tag, f"items.{iid} 讀音「{k}」不是純假名")
+    for eid, e in exs.items():
+        if not e.get("ja") or not e.get("zh"):
+            err(tag, f"examples.{eid} 缺 ja 或 zh")
+        if e.get("kana") and not KANA_SENT.match(e["kana"]):
+            err(tag, f"examples.{eid}.kana「{e['kana']}」要全部是假名與標點")
+    seen = set()
+    for u in d.get("units", []):
+        for sid in u.get("sections", []):
+            if sid not in secs:
+                err(tag, f"單元 {u.get('id')} 的小節 {sid} 不存在")
+    for sid, s in secs.items():
+        for iid in s.get("items", []) + s.get("compare", {}).get("items", []) + [x for p in s.get("compare", {}).get("family", []) for x in p]:
+            if iid not in items:
+                err(tag, f"{sid} 引用的項目 {iid} 不存在")
+        for eid in s.get("examples", []) + [s.get("apply", {}).get("ex")]:
+            if eid not in exs:
+                err(tag, f"{sid} 引用的例句 {eid} 不存在")
+        for q in s.get("quiz", []) + s.get("recall", []) + [s.get("apply", {})]:
+            qid = q.get("id")
+            if not qid:
+                err(tag, f"{sid} 有題目沒有 id")
+            elif qid in seen:
+                err(tag, f"題目 id {qid} 重複")
+            seen.add(qid)
+            if q.get("item") and q["item"] not in items:
+                err(tag, f"{qid} 的 item {q['item']} 不存在")
+            if "options" in q:
+                o = q["options"]
+                if not isinstance(q.get("answer"), int) or not (0 <= q["answer"] < len(o)):
+                    err(tag, f"{qid} 的 answer 超出選項範圍")
+                if len(set(o)) != len(o):
+                    err(tag, f"{qid} 選項重複")
+                if q.get("type") == "listen" and not q.get("item"):
+                    err(tag, f"{qid} 聽力題要有 item（播哪個音）")
+
+
 def check_backlinks():
     for html in sorted(LESSONS_HTML.glob("*.html")):
         t = html.read_text(encoding="utf-8", errors="ignore")
@@ -646,7 +719,7 @@ def check_audio_coverage(files, vocab):
         keys = set()
         for w in vocab:
             if lid in (w.get("lessons") or []):
-                keys.add(w.get("dict")); keys.add(w.get("ex"))
+                keys.add(w.get("audio") or w.get("dict")); keys.add(w.get("ex"))
         for s in data.get("stories", []):
             for pi, p in enumerate(s.get("paragraphs", [])):
                 keys.add(audio_key(s, pi, p))
@@ -672,7 +745,10 @@ def main():
     for f in files:
         check_lesson(f, vocab, n4)
     check_vocab(vocab, only)
+    check_vocab_keys(vocab)
     check_backlinks()
+    if not only:
+        check_basics()
     check_audio_coverage(files, vocab)
 
     for w in warns:

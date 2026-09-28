@@ -1,0 +1,211 @@
+{
+ "_doc": "基礎詞彙練習器（lessons/basics.html）的題庫。id 一律穩定：修題不改 id、刪題不重用。items 的 kana 是主教讀法、alt 是也算對的讀法；say 是送 TTS 的文字（把數量詞換成假名，避免誤讀）。音檔 key = \"basics:<id>\"。",
+ "units": [
+  {"id": "u01", "title": "數字暖身", "can": "讀出 1–10、百、千，認得常見變音（さんびゃく、はっせん）", "sections": []},
+  {"id": "u02", "title": "基本數物：つ・個・枚・冊・台", "can": "看東西選對量詞，說出數量", "sections": []},
+  {"id": "u03", "title": "人數與年齡：人・歳", "can": "說家裡幾個人、自己幾歲（ひとり、よにん、はたち）", "sections": []},
+  {"id": "u04", "title": "常見變音：本・匹・杯", "can": "說出幾杯、幾瓶、幾隻，不念錯變音", "sections": ["hai-1", "hai-2"], "more": "本、匹 之後補上"},
+  {"id": "u05", "title": "次數、樓層、價格：回・階・円", "can": "說幾次、幾樓、多少錢", "sections": []},
+  {"id": "u06", "title": "現在幾點", "can": "說時、分、半、午前／午後", "sections": []},
+  {"id": "u07", "title": "日期與星期", "can": "說月份、日期（ついたち、はつか…）、星期", "sections": []},
+  {"id": "u08", "title": "要花多久", "can": "分清楚三時／三時間、日期／天數", "sections": []},
+  {"id": "u09", "title": "家人", "can": "介紹自己的家人、談別人的家人、直接叫家人", "sections": ["fam-1", "fam-2", "fam-3"], "more": "弟妹、祖父母、親戚 之後補上"},
+  {"id": "u10", "title": "位置與方向", "can": "用「〜の上／下／中」說東西在哪，認得東西南北", "sections": []},
+  {"id": "u11", "title": "身體", "can": "指認部位，說哪裡痛、洗手等簡單句子", "sections": []},
+  {"id": "u12", "title": "生活綜合", "can": "點餐、約時間、介紹家人時用上學過的說法", "sections": []}
+ ],
+ "sections": {
+  "hai-1": {
+   "title": "杯：一杯〜五杯",
+   "goal": "在店裡能說「一杯、兩杯、三杯…」，不把 さんばい 念成 さんはい。",
+   "use": "「杯」數的是裝在杯子、碗裡的飲料或食物：咖啡、水、茶、酒、白飯、湯。數的是「幾杯／幾碗」，不是瓶子（瓶子用「本」，之後的小節教）。",
+   "items": ["hai-1", "hai-2", "hai-3", "hai-4", "hai-5"],
+   "examples": ["ex-hai-1", "ex-hai-2", "ex-hai-3"],
+   "compare": {"title": "看出變化", "items": ["hai-1", "hai-2", "hai-3", "hai-4", "hai-5"]},
+   "rules": [
+    "1 → <b>いっぱい</b>：數字變促音「っ」，はい 變 <b>ぱい</b>。",
+    "3 → <b>さんばい</b>：はい 變 <b>ばい</b>。",
+    "2・4・5 不變：にはい、よんはい、ごはい。",
+    "這是「杯」的規則。は→ぱ／ば 只發生在 は 行開頭的量詞（杯、本、匹）；冊、枚 就不會這樣變（三冊＝さんさつ）。",
+    "小知識：いっぱい 也是「滿滿的、很多」的意思（お腹がいっぱい＝吃飽了）。"
+   ],
+   "quiz": [
+    {"id": "hai-1-q01", "type": "choice", "err": "reading", "item": "hai-1", "prompt": "「一杯」怎麼念？", "options": ["いっぱい", "いちはい", "いっはい"], "answer": 0, "why": "1 變促音，は 變 ぱ。"},
+    {"id": "hai-1-q02", "type": "choice", "err": "reading", "item": "hai-3", "prompt": "「三杯」怎麼念？", "options": ["さんはい", "さんばい", "さんぱい"], "answer": 1, "why": "3 後面的 は 變 ば。"},
+    {"id": "hai-1-q03", "type": "choice", "err": "reading", "item": "hai-4", "prompt": "「四杯」怎麼念？", "options": ["よんはい", "よんぱい", "しはい"], "answer": 0, "why": "4 不變音；4 念 よん，不念 し。"},
+    {"id": "hai-1-q04", "type": "choice", "err": "counter", "prompt": "下面哪一個用「杯」來數？", "options": ["コーヒー（咖啡）", "本（書）", "猫（貓）"], "answer": 0, "why": "杯 數杯子、碗裡的飲料或食物。"},
+    {"id": "hai-1-q05", "type": "choice", "err": "reading", "item": "hai-5", "prompt": "「ごはい」是幾杯？", "options": ["五杯", "四杯", "九杯"], "answer": 0, "why": "ご＝5。"},
+    {"id": "hai-1-q06", "type": "listen", "err": "reading", "item": "hai-3", "options": ["一杯", "三杯", "四杯"], "answer": 1},
+    {"id": "hai-1-q07", "type": "listen", "err": "reading", "item": "hai-1", "options": ["一杯", "二杯", "五杯"], "answer": 0},
+    {"id": "hai-1-q08", "type": "listen", "err": "reading", "item": "hai-2", "options": ["二杯", "四杯", "五杯"], "answer": 0}
+   ],
+   "recall": [
+    {"id": "hai-1-r01", "item": "hai-5", "prompt": "「五杯」自己念念看"},
+    {"id": "hai-1-r02", "item": "hai-3", "prompt": "「三杯」自己念念看"},
+    {"id": "hai-1-r03", "item": "hai-1", "prompt": "「一杯」自己念念看"}
+   ],
+   "apply": {"id": "hai-1-a01", "ex": "ex-hai-1", "prompt": "在咖啡店，要點一杯咖啡。怎麼說？"}
+  },
+  "hai-2": {
+   "title": "杯：六杯〜十杯、何杯",
+   "goal": "說出 6–10 杯，會問「幾杯？」（なんばい）。",
+   "use": "跟上一節一樣，杯 數杯子、碗裡的東西。這節把 6–10 和「幾杯」補齊。",
+   "items": ["hai-6", "hai-7", "hai-8", "hai-9", "hai-10", "hai-q"],
+   "examples": ["ex-hai-4", "ex-hai-5", "ex-hai-6"],
+   "compare": {"title": "1–10 全部排在一起", "items": ["hai-1", "hai-2", "hai-3", "hai-4", "hai-5", "hai-6", "hai-7", "hai-8", "hai-9", "hai-10", "hai-q"]},
+   "rules": [
+    "6・8・10 跟 1 一樣：促音＋<b>ぱい</b>（ろっぱい、はっぱい、じゅっぱい）。",
+    "「何」跟 3 一樣：<b>ばい</b>（なんばい）。",
+    "7・9 不變：ななはい、きゅうはい。",
+    "8 也可以說 はちはい，10 也可以說 じっぱい，兩種都對；這裡主教 はっぱい、じゅっぱい。"
+   ],
+   "quiz": [
+    {"id": "hai-2-q01", "type": "choice", "err": "reading", "item": "hai-6", "prompt": "「六杯」怎麼念？", "options": ["ろっぱい", "ろくはい", "ろくぱい"], "answer": 0, "why": "6 變促音，は 變 ぱ。"},
+    {"id": "hai-2-q02", "type": "choice", "err": "reading", "item": "hai-8", "prompt": "「八杯」怎麼念？", "options": ["はちぱい", "はっぱい", "はっはい"], "answer": 1, "why": "8 變促音＋ぱい；はちはい 也對，但不在選項裡。"},
+    {"id": "hai-2-q03", "type": "choice", "err": "reading", "item": "hai-10", "prompt": "「十杯」怎麼念？", "options": ["じゅうはい", "じゅっぱい", "じゅうばい"], "answer": 1, "why": "10 變促音＋ぱい（也可說 じっぱい）。"},
+    {"id": "hai-2-q04", "type": "choice", "err": "reading", "item": "hai-q", "prompt": "「何杯」（幾杯）怎麼念？", "options": ["なんはい", "なんぱい", "なんばい"], "answer": 2, "why": "何 跟 3 一樣變 ば。"},
+    {"id": "hai-2-q05", "type": "choice", "err": "reading", "item": "hai-7", "prompt": "「七杯」怎麼念？", "options": ["ななはい", "ななぱい", "ななばい"], "answer": 0, "why": "7 不變音。"},
+    {"id": "hai-2-q06", "type": "listen", "err": "reading", "item": "hai-9", "options": ["九杯", "七杯", "十杯"], "answer": 0},
+    {"id": "hai-2-q07", "type": "listen", "err": "reading", "item": "hai-6", "options": ["六杯", "八杯", "十杯"], "answer": 0},
+    {"id": "hai-2-q08", "type": "choice", "err": "reading", "item": "hai-q", "prompt": "哪一個跟「三杯」一樣念成「〜ばい」？", "options": ["何杯", "六杯", "二杯"], "answer": 0, "why": "何杯＝なんばい；六杯＝ろっぱい、二杯＝にはい。"}
+   ],
+   "recall": [
+    {"id": "hai-2-r01", "item": "hai-8", "prompt": "「八杯」自己念念看"},
+    {"id": "hai-2-r02", "item": "hai-10", "prompt": "「十杯」自己念念看"},
+    {"id": "hai-2-r03", "item": "hai-q", "prompt": "「何杯」自己念念看"}
+   ],
+   "apply": {"id": "hai-2-a01", "ex": "ex-hai-7", "prompt": "朋友說他喝了很多咖啡。問他「你喝了幾杯？」"}
+  },
+  "fam-1": {
+   "title": "爸爸、媽媽：自己的 vs 別人的",
+   "goal": "對老師、同事講自己的爸媽用 父・母；講別人的爸媽用 お父さん・お母さん。",
+   "use": "日文講家人要看「在跟誰說、講的是誰的家人」。對外人講自己家要謙虛（不加 お〜さん）；講別人家要尊敬（加 お〜さん）。",
+   "items": ["fam-chichi", "fam-haha", "fam-otousan", "fam-okaasan"],
+   "examples": ["ex-fam-1", "ex-fam-2", "ex-fam-3", "ex-fam-4"],
+   "compare": {"title": "同一個人，兩種說法", "family": [["fam-chichi", "fam-otousan"], ["fam-haha", "fam-okaasan"]]},
+   "rules": [
+    "對<b>外人</b>（老師、同事、面試官、剛認識的人）講<b>自己的</b>爸媽：<b>父</b>（ちち）、<b>母</b>（はは）。",
+    "講<b>別人的</b>爸媽：<b>お父さん</b>、<b>お母さん</b>。",
+    "跟好朋友聊天時，日本人也常說「うちのお母さん」，不算錯但比較隨便；正式場合一定用 母。",
+    "在家裡跟家人說話，或直接叫爸媽，用 お父さん・お母さん（第 3 節會練）。"
+   ],
+   "quiz": [
+    {"id": "fam-1-q01", "type": "choice", "err": "context", "item": "fam-haha", "scene": ["我", "老師", "我的媽媽"], "prompt": "＿＿は料理が上手です。", "options": ["母", "お母さん"], "answer": 0, "why": "對老師講自己的媽媽 → 母。"},
+    {"id": "fam-1-q02", "type": "choice", "err": "context", "item": "fam-otousan", "scene": ["我", "田中同學", "田中的爸爸"], "prompt": "田中さんの＿＿は先生ですか。", "options": ["父", "お父さん"], "answer": 1, "why": "講別人的爸爸 → お父さん。"},
+    {"id": "fam-1-q03", "type": "choice", "err": "context", "item": "fam-chichi", "scene": ["我", "公司同事", "我的爸爸"], "prompt": "＿＿は会社員です。", "options": ["父", "お父さん"], "answer": 0, "why": "對同事講自己的爸爸 → 父。"},
+    {"id": "fam-1-q04", "type": "choice", "err": "context", "item": "fam-okaasan", "scene": ["我", "朋友", "朋友的媽媽"], "prompt": "＿＿はお元気ですか。", "options": ["母", "お母さん"], "answer": 1, "why": "問別人的媽媽 → お母さん。"},
+    {"id": "fam-1-q05", "type": "choice", "err": "reading", "item": "fam-chichi", "prompt": "「父」怎麼念？", "options": ["ちち", "はは", "とう"], "answer": 0, "why": "父＝ちち、母＝はは。"},
+    {"id": "fam-1-q06", "type": "choice", "err": "reading", "item": "fam-haha", "prompt": "「母」怎麼念？", "options": ["はは", "ちち", "かあ"], "answer": 0, "why": "母＝はは。"},
+    {"id": "fam-1-q07", "type": "listen", "err": "reading", "item": "fam-okaasan", "options": ["お母さん", "母", "お父さん"], "answer": 0},
+    {"id": "fam-1-q08", "type": "listen", "err": "reading", "item": "fam-chichi", "options": ["父", "母", "お父さん"], "answer": 0}
+   ],
+   "recall": [
+    {"id": "fam-1-r01", "item": "fam-haha", "prompt": "對老師講「我媽媽」，用哪個說法？"},
+    {"id": "fam-1-r02", "item": "fam-otousan", "prompt": "問朋友「你爸爸」，用哪個說法？"}
+   ],
+   "apply": {"id": "fam-1-a01", "ex": "ex-fam-1", "prompt": "面試時介紹：「我爸爸是上班族。」"}
+  },
+  "fam-2": {
+   "title": "哥哥、姊姊：自己的 vs 別人的",
+   "goal": "對外人講自己的哥哥姊姊用 兄・姉；講別人的用 お兄さん・お姉さん。",
+   "use": "規則跟爸媽一樣：對外人講自己家 → 謙虛的說法；講別人家 → 加 お〜さん。",
+   "items": ["fam-ani", "fam-ane", "fam-oniisan", "fam-oneesan"],
+   "examples": ["ex-fam-5", "ex-fam-6", "ex-fam-7", "ex-fam-8"],
+   "compare": {"title": "同一個人，兩種說法", "family": [["fam-chichi", "fam-otousan"], ["fam-haha", "fam-okaasan"], ["fam-ani", "fam-oniisan"], ["fam-ane", "fam-oneesan"]]},
+   "rules": [
+    "對外人講<b>自己的</b>哥哥、姊姊：<b>兄</b>（あに）、<b>姉</b>（あね）。",
+    "講<b>別人的</b>哥哥、姊姊：<b>お兄さん</b>、<b>お姉さん</b>。",
+    "兄（あに）和 姉（あね）只差一個音，聽的時候注意最後是 に 還是 ね。"
+   ],
+   "quiz": [
+    {"id": "fam-2-q01", "type": "choice", "err": "context", "item": "fam-ani", "scene": ["我", "老師", "我的哥哥"], "prompt": "＿＿は大学生です。", "options": ["兄", "お兄さん"], "answer": 0, "why": "對老師講自己的哥哥 → 兄。"},
+    {"id": "fam-2-q02", "type": "choice", "err": "context", "item": "fam-oniisan", "scene": ["我", "山田先生", "山田的哥哥"], "prompt": "山田さんの＿＿は背が高いですね。", "options": ["兄", "お兄さん"], "answer": 1, "why": "講別人的哥哥 → お兄さん。"},
+    {"id": "fam-2-q03", "type": "choice", "err": "context", "item": "fam-ane", "scene": ["我", "公司前輩", "我的姊姊"], "prompt": "＿＿は東京に住んでいます。", "options": ["姉", "お姉さん"], "answer": 0, "why": "對前輩講自己的姊姊 → 姉。"},
+    {"id": "fam-2-q04", "type": "choice", "err": "context", "item": "fam-oneesan", "scene": ["我", "朋友", "朋友的姊姊"], "prompt": "＿＿はどこに住んでいますか。", "options": ["姉", "お姉さん"], "answer": 1, "why": "問別人的姊姊 → お姉さん。"},
+    {"id": "fam-2-q05", "type": "choice", "err": "reading", "item": "fam-ani", "prompt": "「兄」怎麼念？", "options": ["あに", "あね", "にい"], "answer": 0, "why": "兄＝あに、姉＝あね。"},
+    {"id": "fam-2-q06", "type": "choice", "err": "reading", "item": "fam-ane", "prompt": "「姉」怎麼念？", "options": ["あね", "あに", "ねえ"], "answer": 0, "why": "姉＝あね。"},
+    {"id": "fam-2-q07", "type": "listen", "err": "reading", "item": "fam-oniisan", "options": ["お兄さん", "お姉さん", "兄"], "answer": 0},
+    {"id": "fam-2-q08", "type": "listen", "err": "reading", "item": "fam-ane", "options": ["姉", "兄", "お姉さん"], "answer": 0}
+   ],
+   "recall": [
+    {"id": "fam-2-r01", "item": "fam-ane", "prompt": "對老師講「我姊姊」，用哪個說法？"},
+    {"id": "fam-2-r02", "item": "fam-oniisan", "prompt": "講朋友的哥哥，用哪個說法？"}
+   ],
+   "apply": {"id": "fam-2-a01", "ex": "ex-fam-5", "prompt": "對老師說：「我哥哥是大學生。」"}
+  },
+  "fam-3": {
+   "title": "直接叫家人",
+   "goal": "回家、叫人的時候，能直接叫爸媽、哥哥姊姊。",
+   "use": "直接叫自己的家人時，不說 父・母・兄・姉，而是用 お父さん・お母さん・お兄ちゃん・お姉ちゃん（或 お兄さん・お姉さん）。",
+   "items": ["fam-oniichan", "fam-oneechan"],
+   "examples": ["ex-fam-9", "ex-fam-10", "ex-fam-11", "ex-fam-12"],
+   "compare": {"title": "三種情境整理", "table": true},
+   "rules": [
+    "直接叫爸媽：<b>お父さん</b>、<b>お母さん</b>（小孩也常叫 パパ、ママ）。",
+    "直接叫哥哥姊姊：<b>お兄ちゃん</b>、<b>お姉ちゃん</b>（比較親暱）或 お兄さん、お姉さん。",
+    "<b>不會</b>叫「母！」「兄！」——父・母・兄・姉 只用在對外人介紹自己家。",
+    "在家裡跟家人講話時，講爸爸也用 お父さん（例：お父さんはどこ？）。",
+    "弟弟、妹妹通常直接叫名字（之後的小節教 弟・妹）。"
+   ],
+   "quiz": [
+    {"id": "fam-3-q01", "type": "choice", "err": "context", "item": "fam-okaasan", "scene": ["我", "我的媽媽（直接叫）", "—"], "prompt": "＿＿、ただいま！", "options": ["母", "お母さん"], "answer": 1, "why": "直接叫媽媽 → お母さん。"},
+    {"id": "fam-3-q02", "type": "choice", "err": "context", "item": "fam-oniichan", "scene": ["我", "我的哥哥（直接叫）", "—"], "prompt": "＿＿、ちょっと来て。", "options": ["兄", "お兄ちゃん"], "answer": 1, "why": "直接叫哥哥 → お兄ちゃん（或 お兄さん）。"},
+    {"id": "fam-3-q03", "type": "choice", "err": "context", "item": "fam-otousan", "scene": ["我", "剛回家的爸爸（直接叫）", "—"], "prompt": "＿＿、おかえりなさい。", "options": ["父", "お父さん"], "answer": 1, "why": "直接叫爸爸 → お父さん。"},
+    {"id": "fam-3-q04", "type": "choice", "err": "context", "item": "fam-oneechan", "scene": ["我", "我的姊姊（直接叫）", "—"], "prompt": "＿＿、これ見て！", "options": ["姉", "お姉ちゃん"], "answer": 1, "why": "直接叫姊姊 → お姉ちゃん（或 お姉さん）。"},
+    {"id": "fam-3-q05", "type": "choice", "err": "context", "item": "fam-ane", "scene": ["我", "老師", "我的姊姊"], "prompt": "＿＿は銀行で働いています。", "options": ["姉", "お姉ちゃん", "お姉さん"], "answer": 0, "why": "對老師講自己的姊姊 → 姉。"},
+    {"id": "fam-3-q06", "type": "choice", "err": "context", "item": "fam-okaasan", "scene": ["我", "鈴木同學", "鈴木的媽媽"], "prompt": "鈴木さんの＿＿は医者ですか。", "options": ["母", "お母さん"], "answer": 1, "why": "講別人的媽媽 → お母さん。"},
+    {"id": "fam-3-q07", "type": "listen", "err": "reading", "item": "fam-oniichan", "options": ["お兄ちゃん", "お兄さん", "兄"], "answer": 0},
+    {"id": "fam-3-q08", "type": "listen", "err": "reading", "item": "fam-oneechan", "options": ["お姉ちゃん", "お姉さん", "姉"], "answer": 0}
+   ],
+   "recall": [
+    {"id": "fam-3-r01", "item": "fam-otousan", "prompt": "直接叫爸爸，怎麼叫？"},
+    {"id": "fam-3-r02", "item": "fam-oneechan", "prompt": "直接叫姊姊，怎麼叫？（說一種就好）", "accept": ["おねえさん", "お姉さん"]}
+   ],
+   "apply": {"id": "fam-3-a01", "ex": "ex-fam-9", "prompt": "放學回家，對媽媽說：「媽，我回來了！」"}
+  }
+ },
+ "items": {
+  "hai-1":  {"ja": "一杯", "kana": "いっぱい", "zh": "一杯", "mark": "p"},
+  "hai-2":  {"ja": "二杯", "kana": "にはい", "zh": "兩杯", "mark": "h"},
+  "hai-3":  {"ja": "三杯", "kana": "さんばい", "zh": "三杯", "mark": "b"},
+  "hai-4":  {"ja": "四杯", "kana": "よんはい", "zh": "四杯", "mark": "h"},
+  "hai-5":  {"ja": "五杯", "kana": "ごはい", "zh": "五杯", "mark": "h"},
+  "hai-6":  {"ja": "六杯", "kana": "ろっぱい", "zh": "六杯", "mark": "p"},
+  "hai-7":  {"ja": "七杯", "kana": "ななはい", "zh": "七杯", "mark": "h"},
+  "hai-8":  {"ja": "八杯", "kana": "はっぱい", "alt": ["はちはい"], "zh": "八杯", "mark": "p"},
+  "hai-9":  {"ja": "九杯", "kana": "きゅうはい", "zh": "九杯", "mark": "h"},
+  "hai-10": {"ja": "十杯", "kana": "じゅっぱい", "alt": ["じっぱい"], "zh": "十杯", "mark": "p"},
+  "hai-q":  {"ja": "何杯", "kana": "なんばい", "zh": "幾杯", "mark": "b"},
+  "fam-chichi":   {"ja": "父", "kana": "ちち", "zh": "（我的）爸爸", "ctx": "own"},
+  "fam-haha":     {"ja": "母", "kana": "はは", "zh": "（我的）媽媽", "ctx": "own"},
+  "fam-ani":      {"ja": "兄", "kana": "あに", "zh": "（我的）哥哥", "ctx": "own"},
+  "fam-ane":      {"ja": "姉", "kana": "あね", "zh": "（我的）姊姊", "ctx": "own"},
+  "fam-otousan":  {"ja": "お父さん", "kana": "おとうさん", "zh": "（別人的）爸爸；直接叫爸爸", "ctx": "other"},
+  "fam-okaasan":  {"ja": "お母さん", "kana": "おかあさん", "zh": "（別人的）媽媽；直接叫媽媽", "ctx": "other"},
+  "fam-oniisan":  {"ja": "お兄さん", "kana": "おにいさん", "zh": "（別人的）哥哥；也可直接叫哥哥", "ctx": "other"},
+  "fam-oneesan":  {"ja": "お姉さん", "kana": "おねえさん", "zh": "（別人的）姊姊；也可直接叫姊姊", "ctx": "other"},
+  "fam-oniichan": {"ja": "お兄ちゃん", "kana": "おにいちゃん", "zh": "（直接叫）哥哥，較親暱", "ctx": "call"},
+  "fam-oneechan": {"ja": "お姉ちゃん", "kana": "おねえちゃん", "zh": "（直接叫）姊姊，較親暱", "ctx": "call"}
+ },
+ "examples": {
+  "ex-hai-1": {"ja": "コーヒーを一杯ください。", "say": "コーヒーをいっぱいください。", "kana": "コーヒーをいっぱいください。", "zh": "請給我一杯咖啡。"},
+  "ex-hai-2": {"ja": "水を二杯飲みました。", "say": "水をにはい飲みました。", "zh": "喝了兩杯水。"},
+  "ex-hai-3": {"ja": "毎朝コーヒーを三杯飲みます。", "say": "毎朝コーヒーをさんばい飲みます。", "zh": "每天早上喝三杯咖啡。"},
+  "ex-hai-4": {"ja": "ご飯を何杯食べましたか。", "say": "ご飯をなんばい食べましたか。", "zh": "你吃了幾碗飯？"},
+  "ex-hai-5": {"ja": "お茶をもう一杯いかがですか。", "say": "お茶をもういっぱいいかがですか。", "zh": "要不要再來一杯茶？"},
+  "ex-hai-6": {"ja": "今日は水を十杯飲みました。", "say": "今日は水をじゅっぱい飲みました。", "zh": "今天喝了十杯水。"},
+  "ex-hai-7": {"ja": "何杯飲みましたか。", "say": "なんばい飲みましたか。", "kana": "なんばいのみましたか。", "zh": "你喝了幾杯？"},
+  "ex-fam-1": {"ja": "父は会社員です。", "kana": "ちちはかいしゃいんです。", "zh": "我爸爸是上班族。（對外人說）"},
+  "ex-fam-2": {"ja": "母は料理が上手です。", "zh": "我媽媽很會做菜。（對外人說）"},
+  "ex-fam-3": {"ja": "田中さんのお父さんは先生ですか。", "zh": "田中的爸爸是老師嗎？"},
+  "ex-fam-4": {"ja": "お母さんはお元気ですか。", "zh": "您母親好嗎？（問對方的媽媽）"},
+  "ex-fam-5": {"ja": "兄は大学生です。", "kana": "あにはだいがくせいです。", "zh": "我哥哥是大學生。（對外人說）"},
+  "ex-fam-6": {"ja": "姉は東京に住んでいます。", "zh": "我姊姊住在東京。（對外人說）"},
+  "ex-fam-7": {"ja": "山田さんのお兄さんは背が高いですね。", "zh": "山田的哥哥個子好高喔。"},
+  "ex-fam-8": {"ja": "お姉さんはどこに住んでいますか。", "zh": "你姊姊住在哪裡？（問對方的姊姊）"},
+  "ex-fam-9": {"ja": "お母さん、ただいま！", "kana": "おかあさん、ただいま！", "zh": "媽，我回來了！"},
+  "ex-fam-10": {"ja": "お兄ちゃん、ちょっと来て。", "zh": "哥，過來一下。"},
+  "ex-fam-11": {"ja": "お父さん、おかえりなさい。", "zh": "爸，你回來啦。"},
+  "ex-fam-12": {"ja": "お姉ちゃん、これ見て！", "zh": "姊，你看這個！"}
+ }
+}

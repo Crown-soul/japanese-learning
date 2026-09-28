@@ -1,0 +1,67 @@
+/* 基礎詞彙練習器（lessons/basics.html）：只補 lesson.css 沒有的元件，色票、字級、按鈕都沿用 lesson.css */
+
+/* 播放鈕：不要外框，只留 ▶（觸控範圍仍 44px） */
+.bx-play{border:0;background:transparent;color:var(--muted);min-width:44px;min-height:44px;padding:0;font-size:14px;flex:none}
+@media (hover:hover){.bx-play:hover{color:var(--text)}}
+
+/* 單元列表 */
+.bx-unit h2{margin:0 0 4px;font-size:1.1rem}
+.bx-unit.off{padding:10px 16px;margin-bottom:8px;color:var(--muted);font-size:14px}
+.bx-secs{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.bx-secs button{justify-content:space-between;text-align:left;width:100%}
+.bx-done{color:#3aa564}
+
+/* 小節頁：一頁到底，每一段是一個 .panel */
+.panel h2{margin:0 0 8px;font-size:1.1rem}
+.panel h3{margin:14px 0 6px;font-size:15px}
+.panel p{margin:4px 0}
+.bx-back{margin:0 0 12px}
+
+/* 單字卡 */
+.bx-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.bx-item{flex-direction:column;align-items:flex-start;gap:0;text-align:left;padding:10px 12px}
+.bx-item .ja{font-size:calc(var(--fs) + 2px);font-weight:700;line-height:1.4}
+.bx-item .kana{font-size:15px}
+.bx-item .zh{font-size:13px;color:var(--muted)}
+.bx-item .alt{font-size:12px;color:var(--muted)}
+.bx-item.mk-p{background:var(--gram-soft)} .bx-item.mk-p .kana{color:var(--gram);font-weight:700}
+.bx-item.mk-b{background:var(--warn)} .bx-item.mk-b .kana{font-weight:700}
+.bx-legend{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.bx-legend span{font-size:12.5px;padding:2px 8px;border-radius:6px;border:1px solid var(--line)}
+.bx-legend .mk-p{background:var(--gram-soft)} .bx-legend .mk-b{background:var(--warn)}
+
+/* 例句（字級跟故事一樣用 --fs） */
+.bx-ex{display:flex;gap:4px;align-items:flex-start;padding:6px 0;border-top:1px solid var(--line)}
+.bx-ex:first-of-type{border-top:0}
+.bx-ex .ja{font-size:var(--fs);line-height:1.8}
+.bx-ex .zh{font-size:calc(var(--fs) - 3px);color:var(--muted)}
+.bx-rules{margin:6px 0 0;padding-left:1.2em;font-size:15px}
+.bx-rules li{margin:4px 0}
+
+/* 對照表 */
+.bx-table{width:100%;border-collapse:collapse;font-size:14px}
+.bx-table th,.bx-table td{border-bottom:1px solid var(--line);padding:6px 4px;text-align:center;vertical-align:middle}
+.bx-table th{font-size:13px;color:var(--muted);font-weight:600}
+.bx-table td button{flex-direction:column;gap:0;width:100%;min-height:44px;padding:4px 2px;font-size:15px;white-space:nowrap}
+.bx-table .k{font-size:12px;color:var(--muted);white-space:nowrap}
+.bx-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* 題目（一頁裡一題接一題，用細線分隔） */
+.bx-q{padding:14px 0;border-top:1px solid var(--line)}
+.bx-q:first-of-type{border-top:0;padding-top:4px}
+.bx-q .small{margin-bottom:4px}
+.bx-q.retry{background:var(--soft);border-radius:12px;padding:12px;border-top:0;margin:6px 0}
+.bx-scene{font-size:13.5px;color:var(--muted);margin:0 0 4px}
+.bx-scene b{color:var(--text);font-weight:600}
+.bx-q .gq-sentence{margin:4px 0 10px}
+.bx-q .gq-explain b.ans{font-size:1.05rem}
+.bx-input{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);min-height:44px;margin:6px 0 8px}
+.bx-input:focus-visible{outline:3px solid var(--muted);outline-offset:2px}
+.bx-q .actions{margin-top:10px}
+.bx-q .actions .status-btn{flex:1}
+.bx-q .actions .status-btn.active:disabled{opacity:1;font-weight:600;color:var(--text);border-color:var(--muted)}
+.bx-q .quiz-answer strong .bx-play{min-height:32px;vertical-align:middle}
+.bx-q .quiz-answer{margin-top:8px}
+.bx-weak{margin:6px 0 0;padding-left:1.2em}
+.bx-tag{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:0 6px;margin-left:4px;color:var(--muted)}
+.bx-finish{width:100%;margin-top:12px}

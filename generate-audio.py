@@ -65,6 +65,28 @@ def prune_blocked(stale_n: int, total_n: int) -> bool:
 #   - EXACT_FIXES  ：只有「整段文字剛好等於左邊」時才換（適合單字卡上的單一漢字，
 #                    例如「日」，直接全域取代會把「今日」「日曜日」也弄壞）
 READING_FIXES = {
+    # --- typhoon-weekend 課（台風の週末）預填 ---
+    # 同漢字不同讀音：本課的「開く＝あく」「止める＝とめる」跟下面舊課的通用規則（開く→ひらく、止める→やめる、
+    # 開きました→ひらきました）相反，所以本課的句子要用「帶上下文的長寫法」排在最前面先換掉。
+    # 每一條都確認過只出現在本課，不會改到其他課已產好的音檔。
+    "窓が開きました": "まどがあきました",
+    "大きく開きました": "おおきくあきました",
+    "車を止め": "くるまをとめ",
+    "奥に止めて": "おくにとめて",
+    "雨が入ります": "あめがはいります",    # 「入」可能被讀成 いり
+    "雨が入りました": "あめがはいりました",
+    "入るのは": "はいるのは",
+    "美咲": "みさき",              # 人名
+    "健太": "けんた",
+    "値札": "ねふだ",
+    "三十パーセント": "さんじゅっパーセント",
+    "二十パーセント": "にじゅっパーセント",
+    "パーセント引き": "パーセントびき",   # 接在數量後面是 びき
+    "あと三分": "あとさんぷん",
+    "二人で走って": "ふたりではしって",
+    "床をふき": "ゆかをふき",          # 「床を」收窄：別課的「床を掃いて／床を汚して」已產好
+    "一試合目": "いちしあいめ",
+    "二試合目": "にしあいめ",
     "大分": "だいぶ",    # 副詞，會被讀成「大／分」或地名 おおいた
     "止める": "やめる",   # 課文是「戒掉」，會被讀成 とめる
     "開く": "ひらく",    # 課文是「翻開抽屜」，會被讀成 あく
@@ -159,9 +181,11 @@ def get_api_key() -> str:
 #     而且會話的 key 是 "@<聲音>:<純文字>"（同一句不同人說是不同音檔）。
 #     這條 key 規則 build-audio-check.py、validate-lessons.py、assets/lesson-engine.js 要一致。
 # 單字／例句：data/vocab.json
+# 基礎詞彙練習器：data/basics.json（key 是 "basics:<id>"，只有 lessons/basics.html 會查）
 # 故事段落：舊課 lessons/*.html 的 const storyN；引擎課 data/lessons/*.json
 VOCAB_JSON = ROOT / "data" / "vocab.json"
 LESSON_DATA_DIR = ROOT / "data" / "lessons"
+BASICS_JSON = ROOT / "data" / "basics.json"   # 基礎詞彙練習器
 
 FURIGANA_RE = re.compile(r"（[ぁ-んァ-ヶ・ーゝゞ〜]+）")
 # 舊課：${S("key","label"[,"reading"])}
@@ -192,7 +216,12 @@ def extract_pairs():
         lessons = w.get("lessons") or []
         # 全部所屬課程都是引擎課、且有 reading -> 單字卡用「完整假名」合成，讀音 100% 正確
         use_kana = bool(lessons) and all(l in engine_ids for l in lessons) and w.get("reading")
-        pairs.append((w["dict"], w["reading"] if use_kana else w["dict"], VOICE))
+        # 同漢字不同讀音（開く＝ひらく／あく）：新的那個填 audio 欄位（＝讀音）當 key，一定用假名合成。
+        # key 規則 audio or dict，跟 lesson-engine.js 的 audioOf()、build-audio-check.py、validate-lessons.py 一致
+        if w.get("audio"):
+            pairs.append((w["audio"], w["reading"], VOICE))
+        else:
+            pairs.append((w["dict"], w["reading"] if use_kana else w["dict"], VOICE))
         pairs.append((w["ex"], w["ex"], VOICE))
 
     for html_file in sorted(LESSONS_DIR.glob("*.html")):
@@ -217,6 +246,14 @@ def extract_pairs():
                     pairs.append((f"@{voice}:{c}", c, voice))
                 else:
                     pairs.append((c, c, VOICE))
+
+    # 基礎詞彙練習器：key = "basics:<id>"；項目用假名合成，例句用 say（數量詞換成假名）
+    if BASICS_JSON.exists():
+        bx = json.loads(BASICS_JSON.read_text(encoding="utf-8"))
+        for iid, it in bx.get("items", {}).items():
+            pairs.append((f"basics:{iid}", it["kana"], VOICE))
+        for eid, e in bx.get("examples", {}).items():
+            pairs.append((f"basics:{eid}", e.get("say") or e["ja"], VOICE))
 
     # 去重（依 key），保留順序
     seen, ordered = set(), []

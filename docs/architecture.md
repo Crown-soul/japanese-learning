@@ -15,9 +15,11 @@ japanese-learning/
 │   ├── grammar-index.html     N4 文法查詢頁（讀 data/grammar.json）
 │   ├── 日文70單字學習器.html    舊課：1000+ 行、CSS/JS/資料全內嵌（不遷移；進度只單向搬一次）
 │   ├── 日文單字總表.html        跨課單字總表（讀整份 vocab.json）
-│   └── 日語動詞變化練習工具.html  React/Babel 單頁，獨立（可從 vocab.json 匯入動詞；<title>「動詞變化練習」）
+│   ├── 日語動詞變化練習工具.html  React/Babel 單頁，獨立（可從 vocab.json 匯入動詞；<title>「動詞變化練習」）
+│   └── basics.html            基礎詞彙練習器（量詞、時間、家人…；讀 data/basics.json，assets/basics.js＋basics.css）
 ├── data/
 │   ├── vocab.json             共用單字庫（陣列，每筆標 lessons:[...]；選填 jlpt、exKana）
+│   ├── basics.json            基礎詞彙練習器題庫（單元→小節→項目／例句／題目，id 穩定；音檔 key "basics:<id>"）
 │   ├── grammar.json           生成物：docs/n4-grammar.md 轉成的 JSON（build-grammar.py）
 │   └── lessons/<id>.json      引擎課的內容：stories（可含一篇 kind:"dialogue" 會話）/ grammar(+chunks) / grammarQuiz(+id) / reading(+id) / passageQuiz(+id)
 ├── assets/
@@ -69,7 +71,7 @@ japanese-learning/
 | key | 內容 |
 |---|---|
 | `jl.settings.v1` | `{v, theme, fs, reading, lastTab, audioRate, tipOpen}`，跟課程無關 |
-| `jl.progress.v1` | `vocab{辭書形: {box,due,seen,note?}}`、`grammar{文法點標題: {...}}`、`quiz{"<課程id>/<題目id>": {r,at}}`（文章文法是 `<課程id>/pq-NN#格`）、`events[[日期,類型,key,結果]]`（最近 10,000 筆）、`daily{日期:{n,ok}}`、`migrated[]`、`stories{"<課程id>/<篇號>": {read?,shadow?}}`（流程 ①② 打勾）、`exams{<課程id>: {best,last,total,times,at}}`（單課小考）、`paraNotes{"<課程id>/s<篇>p<段>": {text,at}}`（段落回報） |
+| `jl.progress.v1` | `vocab{辭書形: {box,due,seen,note?}}`、`grammar{文法點標題: {...}}`、`quiz{"<課程id>/<題目id>": {r,at}}`（文章文法是 `<課程id>/pq-NN#格`）、`events[[日期,類型,key,結果]]`（最近 10,000 筆）、`daily{日期:{n,ok}}`、`migrated[]`、`stories{"<課程id>/<篇號>": {read?,shadow?}}`（流程 ①② 打勾）、`exams{<課程id>: {best,last,total,times,at}}`（單課小考）、`paraNotes{"<課程id>/s<篇>p<段>": {text,at}}`（段落回報） |（另有 `basics{項目id:{rec,rc,miss}}`、`basicsSec{小節id}`：基礎詞彙練習器）
 
 SRS：箱 0–6，間隔 `[0,1,3,7,16,30,60]` 天，box 6 畢業（答錯退回 3）。單字 key 是辭書形、文法 key 是 `docs/n4-grammar.md` 的標題，所以跨課共用。
 舊格式（`jp70-srs`、`<id>:srs/gquiz/rquiz`、三套設定 key）第一次啟動時由 `migrateLegacy()` 單向搬進來，只複製不刪。

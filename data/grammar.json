@@ -215,16 +215,8 @@
    "extra": [],
    "lessons": [
     {
-     "id": "boarding-house",
-     "title": "下宿生活の一年"
-    },
-    {
-     "id": "business-trip",
-     "title": "初めての出張"
-    },
-    {
-     "id": "graduation",
-     "title": "いよいよ卒業式"
+     "id": "typhoon-weekend",
+     "title": "台風の週末"
     }
    ]
   },
@@ -293,7 +285,12 @@
     "對比": "そうだ（傳聞）／らしい／ようだ"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "typhoon-weekend",
+     "title": "台風の週末"
+    }
+   ]
   },
   {
    "title": "～でしょう／だろう（推測・確認）",
@@ -322,7 +319,12 @@
     "來源": "みん日II L32 / JLPT Sensei / Bunpro"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "typhoon-weekend",
+     "title": "台風の週末"
+    }
+   ]
   },
   {
    "title": "～はずだ／～はずがない",
@@ -653,7 +655,12 @@
     "對比": "～ことにする／～ことになる"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "typhoon-weekend",
+     "title": "台風の週末"
+    }
+   ]
   },
   {
    "title": "～ことにしている（習慣）",
@@ -877,6 +884,10 @@
     {
      "id": "graduation",
      "title": "いよいよ卒業式"
+    },
+    {
+     "id": "typhoon-weekend",
+     "title": "台風の週末"
     }
    ]
   },
@@ -891,7 +902,12 @@
     "來源": "みん日II L40（N5 亦有）/ JLPT Sensei"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "typhoon-weekend",
+     "title": "台風の週末"
+    }
+   ]
   },
   {
    "title": "～てある（結果狀態）",
@@ -903,10 +919,37 @@
     "意思": "（有人做了之後）呈…的狀態（強調有意圖的準備）",
     "例": "壁に地図が貼ってある。",
     "來源": "みん日II L30 / JLPT Sensei / Bunpro",
-    "誤區": "「〜ている」（自動詞、單純狀態）vs「〜てある」（他動詞、有人為之）"
+    "誤區": "「〜ている」（自動詞、單純狀態）vs「〜てある」（他動詞、有人為之）",
+    "對比": "～てある（結果狀態）／～ている（結果狀態）"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "typhoon-weekend",
+     "title": "台風の週末"
+    }
+   ]
+  },
+  {
+   "title": "～ている（結果狀態）",
+   "section": "G",
+   "retired": false,
+   "retiredNote": "",
+   "fields": {
+    "接續": "自動詞て形 ＋ いる（開く→開いている、壊れる→壊れている）",
+    "意思": "（某個變化發生後）一直是…的狀態；只描述眼前的樣子，不管是誰做的",
+    "例": "窓が開いている。／ガラスが割れている。",
+    "來源": "みん日II L29 / TRY!N4",
+    "誤區": "「〜ている」除了結果狀態還有「正在做」（走っている）；結果狀態用在瞬間動詞的自動詞（開く・消える・落ちる…）；自他成對：自動詞＋ている「窓が開いている」（只說狀態）／他動詞＋てある「窓が開けてある」（有人刻意開著）",
+    "對比": "～ている（結果狀態）／～てある（結果狀態）"
+   },
+   "extra": [],
+   "lessons": [
+    {
+     "id": "typhoon-weekend",
+     "title": "台風の週末"
+    }
+   ]
   },
   {
    "title": "～たら（過去的發現）",
@@ -1099,7 +1142,12 @@
     "來源": "みん日II L21 / JLPT Sensei"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "typhoon-weekend",
+     "title": "台風の週末"
+    }
+   ]
   },
   {
    "title": "～かどうか",
@@ -1244,7 +1292,12 @@
     "對比": "～うちに／～間に"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "typhoon-weekend",
+     "title": "台風の週末"
+    }
+   ]
   },
   {
    "title": "～たびに",
