@@ -15,6 +15,10 @@ tts-key*.txt
 .env.*
 *.bak
 
+# 任務交接文件不進 repo（範本除外）
+docs/handoff-*.md
+!docs/handoff-template.md
+
 # 語音試聽暫存
 audio/_samples/
 

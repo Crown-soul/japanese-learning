@@ -8,7 +8,7 @@
 
 - **`tts-key.txt` 絕不 commit**（已 `.gitignore`）。金鑰只在產語音時用，產完網站不需要它。
 - **`index.html`、`audio-check.html`、`audio/*`、`data/grammar.json`、引擎課薄殼 `lessons/<id>.html`** 是生成物——用腳本／skill 產，不要手改。
-- **檔名一律英數與連字號**，全小寫（`hospital.html`），不要中文——網址複製出去才不會又長又亂碼。目錄顯示名靠 `<title>`（可中／日文）。
+- **檔名一律英數與連字號**，全小寫（`hospital.html`），不要中文——網址複製出去才不會又長又亂碼。目錄顯示名靠 `<title>`（可中／日文）。既有三個中文檔名（`日文70單字學習器.html`、`日文單字總表.html`、`日語動詞變化練習工具.html`）是舊檔例外，**不要改名**——會斷掉已分享的連結。
 - **`lessons/` 每個頁面都要有 `← 回目錄`**：`<a href="../">`（token 頁放 `<a class="backlink">` 當 `<header>` 第一個子元素；React 動詞頁用 inline style 的 `<a>` 放在 `#root` 前）。
 - **發佈只走 `./publish.sh "說明"`**（會 build-index → add -A → commit → push）。在 `main` 直接操作是這個專案的既定流程。
 - **`lessons/日文70單字學習器.html` 不遷移到引擎**——它自成一格（CSS/JS/資料全內嵌）。要動它要逐項比對驗證。
@@ -58,16 +58,18 @@
 | TTS 金鑰、發音修正機制、已知誤讀 | `docs/tts-notes.md` |
 | 任務中途交接（範本；實際交接文件不進 repo） | `docs/handoff-template.md` |
 | 優化規劃書（分階段、資料結構決策、不做清單、實作狀態） | `docs/roadmap.md` |
+| 模考產生器規劃（尚未動工；刻意跟 new-lesson 分開） | `docs/mock-exam-plan.md` |
+| 新手友善改版計劃（已完成，歷史參考） | `docs/learner-plan.md` |
 | 過去做了什麼（人看的，AI 不用載入） | `docs/changelog.md` |
 | 生成新課的完整步驟 | `.claude/skills/new-lesson/SKILL.md` |
 
 ## 驗證與 Hook
 
-- **`python3 validate-lessons.py [<id>]`**：驗引擎課 JSON —— 合法性、欄位、`grammar.point` 在 `docs/n4-grammar.md`（停用條目列 ⚠）、`grammar.chunks` 接起來＝`example`、題目 `id` 必填唯一、`grammarQuiz.g` 索引、`reading.ref` 是內文子字串、目標單字都有出現在故事、薄殼 `<title>`/`data-lesson` 一致、vocab `reading` 全假名、`lessons` 非空陣列、**所有 `lessons/*.html` 有 `← 回目錄`**、音檔是否已產（warn）。**新課 publish 前一定要過。**
+- **`python3 validate-lessons.py [<id>]`**：驗引擎課 JSON 與所有 `lessons/*.html`（檢查項目看腳本本身）。**新課 publish 前一定要過。**
 - `.claude/hooks/require-tts-key.sh`（PreToolUse/Bash）：偵測到**執行** `python3 generate-audio.py` 但沒金鑰 → 擋下 + 提醒（cat/grep/sed 它不會觸發）。
-- `.claude/hooks/validate-on-publish.sh`（PreToolUse/Bash）：偵測到**執行** `./publish.sh` → 先跑 `validate-lessons.py`，有錯就擋下並列出。
+- `.claude/hooks/validate-on-publish.sh`（PreToolUse/Bash）：偵測到**執行** `./publish.sh` **或直接 `git push`** → 先跑 `validate-lessons.py`，有錯就擋下並列出。
 - `.claude/hooks/check-backlinks.sh`（Stop）：Claude 回完話後掃 `lessons/*.html` 有沒有漏 `← 回目錄`（只提醒；引擎課薄殼由引擎注入，視為已有）。
-- `.github/workflows/validate.yml`：push/PR 跑 JSON 檢查 + `node --check assets/*.js` + `validate-lessons.py` + build-index／build-grammar／build-audio-check 無 diff + `check-console.mjs`（headless Chromium 開每課與 `review.html`、抓 console error）。
+- `.github/workflows/validate.yml`：push/PR 自動跑同一套驗證 + 生成物無 diff + headless console 檢查（細節看 yml）。
 - `build-index.py` 的日期用各檔**最後 commit 日**（未提交的才用 mtime），本機與 CI 一致；「最後更新」= 各課日期最大值。
 
 ## 環境
