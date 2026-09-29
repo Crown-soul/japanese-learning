@@ -61,7 +61,7 @@
   function itemCard(id) {
     var it = item(id);
     return '<button class="bx-item' + (it.mark ? " mk-" + it.mark : "") + '" data-play="' + esc(id) + '">' +
-      '<span class="ja" lang="ja">' + esc(it.ja) + '</span><span class="kana" lang="ja">' + esc(it.kana) + "</span>" +
+      '<span class="ja" lang="ja">' + esc(it.ja) + "</span>" + (it.kana !== it.ja ? '<span class="kana" lang="ja">' + esc(it.kana) + "</span>" : "") +
       (it.alt ? '<span class="alt" lang="ja">也可：' + esc(it.alt.join("、")) + "</span>" : "") +
       (it.zh !== it.ja ? '<span class="zh">' + esc(it.zh) + "</span>" : "") + "</button>";
   }
@@ -144,7 +144,7 @@
   function makeRecall(r) {
     var it = item(r.item), also = (it.alt || []).concat((r.accept || []).filter(function (a) { return a !== it.ja && a !== it.kana && !/^[ぁ-ん]+$/.test(a); }));
     return { kind: "recall", track: "rc", id: r.id, item: r.item, prompt: r.prompt, play: r.item,
-      answerHTML: '<strong lang="ja">' + esc(it.ja) + "（" + esc(it.kana) + "）</strong>" + (also.length ? '<span lang="ja">也可以：' + esc(also.join("、")) + "</span>" : ""),
+      answerHTML: '<strong lang="ja">' + esc(it.ja) + (it.kana !== it.ja ? "（" + esc(it.kana) + "）" : "") + "</strong>" + (also.length ? '<span lang="ja">也可以：' + esc(also.join("、")) + "</span>" : ""),
       accept: [it.kana, it.ja].concat(it.alt || [], r.accept || []) };
   }
   function makeApply(a) {
@@ -203,7 +203,7 @@
     });
     var fb = $("fb-" + uid);
     fb.innerHTML = (ok ? "<b>答對了</b>" : '<b>正確答案：<span lang="ja">' + esc(q.options[q.answer]) + "</span></b>") +
-      (it ? '<div lang="ja">' + esc(it.ja) + "＝" + esc(it.kana) + (it.alt ? "（也可：" + esc(it.alt.join("、")) + "）" : "") + " " + playBtn(q.item) + "</div>" : "") +
+      (it ? '<div lang="ja">' + esc(it.ja) + (it.kana !== it.ja ? "＝" + esc(it.kana) : "") + (it.alt ? "（也可：" + esc(it.alt.join("、")) + "）" : "") + " " + playBtn(q.item) + "</div>" : "") +
       (q.why ? "<div>" + esc(q.why) + "</div>" : "") + (!ok && !q.retry ? '<div class="small">隔幾題會再出一次。</div>' : "");
     fb.classList.add("show");
     record(q, ok, ok ? "good" : "bad", box);
@@ -278,7 +278,7 @@
     a.forEach(function (x) {
       if (x.ok && x.rating !== "mid") return;
       var k = x.q.item || x.q.id;
-      weak[k] = weak[k] || { name: x.q.item ? item(x.q.item).ja + "（" + item(x.q.item).kana + "）" : x.q.prompt, tags: {} };
+      weak[k] = weak[k] || { name: x.q.item ? item(x.q.item).ja + (item(x.q.item).kana !== item(x.q.item).ja ? "（" + item(x.q.item).kana + "）" : "") : x.q.prompt, tags: {} };
       weak[k].tags[x.rating === "mid" ? "模糊" : (x.q.track === "rc" ? "想不起來" : ERR_LABEL[x.q.err] || "答錯")] = 1;
     });
     var h = cur.sid ? "<p>目標：" + esc(D.sections[cur.sid].goal) + "</p>" : "";
