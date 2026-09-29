@@ -28,7 +28,10 @@
 .bx-item.mk-b{background:var(--warn)} .bx-item.mk-b .kana{font-weight:700}
 .bx-legend{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
 .bx-legend span{font-size:12.5px;padding:2px 8px;border-radius:6px;border:1px solid var(--line)}
+.bx-item.mk-t{background:var(--good)} .bx-item.mk-t .kana{font-weight:700}
+.bx-item.mk-x{background:var(--bad)} .bx-item.mk-x .kana{font-weight:700}
 .bx-legend .mk-p{background:var(--gram-soft)} .bx-legend .mk-b{background:var(--warn)}
+.bx-legend .mk-t{background:var(--good)} .bx-legend .mk-x{background:var(--bad)}
 
 /* 例句（字級跟故事一樣用 --fs） */
 .bx-ex{display:flex;gap:4px;align-items:flex-start;padding:6px 0;border-top:1px solid var(--line)}

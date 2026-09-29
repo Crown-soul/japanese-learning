@@ -69,8 +69,15 @@
     var e = ex(id);
     return '<div class="bx-ex">' + playBtn(id) + '<div><div class="ja" lang="ja">' + esc(e.ja) + '</div><div class="zh">' + esc(e.zh) + "</div></div></div>";
   }
-  function legend() {
-    return '<div class="bx-legend"><span class="mk-p">變成 っ＋ぱ</span><span class="mk-b">變成 ば</span><span>不變</span></div>';
+  // 圖例只列出這批項目真的有用到的變音；全部都沒標（例如 つ、枚）就不顯示
+  var MARKS = [["p", "變成 っ＋ぱ行"], ["b", "變成濁音（ば・が・ぜ）"], ["t", "多一個 っ"], ["x", "特別念法"]];
+  function legend(ids) {
+    var has = {};
+    ids.forEach(function (id) { has[item(id).mark || "h"] = 1; });
+    var shown = MARKS.filter(function (m) { return has[m[0]]; });
+    if (!shown.length) return "";
+    return '<div class="bx-legend">' + shown.map(function (m) { return '<span class="mk-' + m[0] + '">' + m[1] + "</span>"; }).join("") +
+      (has.h ? "<span>不變</span>" : "") + "</div>";
   }
   function cell(id) {
     var it = item(id);
@@ -93,7 +100,7 @@
   function compareHTML(c) {
     if (c.table) return familyTable();
     if (c.family) return pairTable(c.family);
-    return legend() + '<div class="bx-items">' + c.items.map(itemCard).join("") + "</div>";
+    return legend(c.items) + '<div class="bx-items">' + c.items.map(itemCard).join("") + "</div>";
   }
   function rulesHTML(rules) { return '<ul class="bx-rules">' + rules.map(function (r) { return "<li>" + r + "</li>"; }).join("") + "</ul>"; }
 
@@ -122,7 +129,7 @@
       else {
         var ids = [];
         u.sections.forEach(function (sid) { D.sections[sid].items.forEach(function (id) { if (ids.indexOf(id) < 0) ids.push(id); }); });
-        h += legend() + '<div class="bx-items">' + ids.map(itemCard).join("") + "</div>";
+        h += legend(ids) + '<div class="bx-items">' + ids.map(itemCard).join("") + "</div>";
       }
       u.sections.forEach(function (sid) { h += "<h3>" + esc(D.sections[sid].title) + "</h3>" + rulesHTML(D.sections[sid].rules); });
       h += "</div>";
