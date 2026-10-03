@@ -107,7 +107,12 @@
     "對比": "～と／～ば／～たら／～なら"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "study-abroad",
+     "title": "留学が決まるまで"
+    }
+   ]
   },
   {
    "title": "～ばよかった",
@@ -641,7 +646,12 @@
     "對比": "～ことにする／～ことになる"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "study-abroad",
+     "title": "留学が決まるまで"
+    }
+   ]
   },
   {
    "title": "～ことになる",
@@ -686,7 +696,12 @@
     "來源": "みん日II L31（N5 亦有）/ JLPT Sensei"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "study-abroad",
+     "title": "留学が決まるまで"
+    }
+   ]
   },
   {
    "title": "～（よ）うと思う",
@@ -732,7 +747,12 @@
     "對比": "～たい／～たがる／～てほしい"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "study-abroad",
+     "title": "留学が決まるまで"
+    }
+   ]
   },
   {
    "title": "～ために（目的）",
@@ -790,7 +810,12 @@
     "對比": "～ようになる／～ようにする"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "study-abroad",
+     "title": "留学が決まるまで"
+    }
+   ]
   },
   {
    "title": "～ように言う／伝える／頼む（轉達指示）",
@@ -874,20 +899,8 @@
    "extra": [],
    "lessons": [
     {
-     "id": "boarding-house",
-     "title": "下宿生活の一年"
-    },
-    {
-     "id": "business-trip",
-     "title": "初めての出張"
-    },
-    {
-     "id": "graduation",
-     "title": "いよいよ卒業式"
-    },
-    {
-     "id": "typhoon-weekend",
-     "title": "台風の週末"
+     "id": "study-abroad",
+     "title": "留学が決まるまで"
     }
    ]
   },
@@ -1035,7 +1048,12 @@
     "來源": "みん日II L15（N5）→ N4 / JLPT Sensei"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "study-abroad",
+     "title": "留学が決まるまで"
+    }
+   ]
   },
   {
    "title": "～てはいけないことになっている／～ことになっている（規定）",
@@ -1160,7 +1178,12 @@
     "來源": "みん日II L40 / JLPT Sensei / Bunpro"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "study-abroad",
+     "title": "留学が決まるまで"
+    }
+   ]
   },
   {
    "title": "疑問詞＋か（間接疑問）",
@@ -1204,7 +1227,12 @@
     "來源": "みん日II L19（N5）→ N4 / JLPT Sensei"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "study-abroad",
+     "title": "留学が決まるまで"
+    }
+   ]
   },
   {
    "title": "～し、～し（並列理由）",
@@ -1230,7 +1258,12 @@
     "來源": "みん日II L18・L16（N5）→ N4 / JLPT Sensei"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "study-abroad",
+     "title": "留学が決まるまで"
+    }
+   ]
   },
   {
    "title": "～間（に）",
@@ -1334,7 +1367,12 @@
     "來源": "みん日II L44 / JLPT Sensei / Bunpro"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "study-abroad",
+     "title": "留学が決まるまで"
+    }
+   ]
   },
   {
    "title": "～やすい／～にくい",
@@ -1348,7 +1386,12 @@
     "來源": "みん日II L44 / JLPT Sensei"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "study-abroad",
+     "title": "留学が決まるまで"
+    }
+   ]
   },
   {
    "title": "～ほど／～くらい（程度）",
