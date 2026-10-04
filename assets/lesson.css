@@ -9,6 +9,7 @@
   --good:#eaf7ef; --warn:#fff7e6; --bad:#fff0f0;
   --gram:#7a4a8f; --gram-soft:#f5eef8;
   --accent-soft:#e1e8f3;
+  --scrim:rgba(0,0,0,.4);
   --rv:#9a5a10; --ok-t:#24734a; --ng-t:#b03a3a; --danger:#b42318;
   --fs:18px;
   /* 標題用明朝：各平台內建（iOS/macOS 冬青、Windows 游明朝、Android Noto Serif CJK），不另外下載字型 */
@@ -45,9 +46,9 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px s
 .hrow h1{flex:1;min-width:0;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .backlink{display:inline-block;font-size:12px;line-height:1.3;color:var(--muted);text-decoration:none;padding:4px 0}
 .backlink:hover{color:var(--text)}
-h1{font-size:1.05rem;margin:0 0 6px;line-height:1.3}
+h1{font-size:17px;margin:0 0 6px;line-height:1.3}
 header h1[lang="ja"]{font-family:var(--mincho);font-size:1.2rem;font-weight:600;letter-spacing:.04em}
-.gear{font-size:16px;padding:4px 10px;min-height:32px;line-height:1}
+.gear{font-size:17px;padding:4px 10px;min-height:32px;line-height:1}
 /* ── 觸控目標：外觀維持小巧，可點範圍至少 44×44 ── */
 .backlink,.gear,.play,.pnote,.playall,.ctl-row .grp button,.flow .steps button,.filter-row button,.hintbtn,.recbar button,.lang-tabs button{position:relative}
 .backlink::after,.gear::after,.play::after,.pnote::after,.playall::after,.ctl-row .grp button::after,.flow .steps button::after,.filter-row button::after,.hintbtn::after,.recbar button::after,.lang-tabs button::after{
@@ -71,7 +72,7 @@ button:disabled{opacity:.45}
 .tabs button{flex:1;border:0;border-radius:0;background:transparent;color:var(--muted);font-size:14px;min-height:var(--tabs-h);padding:0 4px}
 .tabs button.active{background:transparent;color:var(--text);font-weight:700;box-shadow:inset 0 3px 0 var(--accent)}
 /* 課程頁的導覽列：圖示＋文字，選中＝藍色＋圖示後墊淡藍底；跟上方的作答托盤一眼分得開 */
-.tabs.nav-ic button{flex-direction:column;gap:2px;font-size:11.5px;font-weight:500;letter-spacing:.02em;padding:6px 2px 4px}
+.tabs.nav-ic button{flex-direction:column;gap:2px;font-size:12.5px;font-weight:500;letter-spacing:.02em;padding:6px 2px 4px}
 .tabs.nav-ic .ti{display:flex;align-items:center;justify-content:center;width:52px;height:28px;border-radius:999px;transition:background-color .2s}
 .tabs.nav-ic .ti svg{width:22px;height:22px}
 .tabs.nav-ic button.active{box-shadow:none;color:var(--accent);font-weight:700}
@@ -85,7 +86,7 @@ button:disabled{opacity:.45}
 .subtabs{display:flex;gap:6px;margin:0 0 12px}
 .subtabs button{min-height:44px;padding:6px 14px;font-size:14px;border-radius:999px}
 .filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
-.filter-row button{min-height:36px;padding:6px 12px;font-size:13.5px;border-radius:999px}
+.filter-row button{min-height:36px;padding:6px 12px;font-size:14px;border-radius:999px}
 .filter-row .small{margin-left:auto}
 
 /* ── 單字測驗：類型（看／聽／寫）→ 方式 → 範圍（收合） ── */
@@ -153,19 +154,19 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 /* ── 文法點（點整段淡色範圍都可點開，角標只是視覺提示）── */
 .gram{background:var(--gram-soft);border-radius:4px;padding:.15em .1em;margin:-.15em -.1em;cursor:pointer}
 .gram-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;min-height:20px;
-  font-size:10px;font-weight:800;color:var(--card);background:var(--gram);border-radius:5px;padding:2px 5px;
+  font-size:11px;font-weight:800;color:var(--card);background:var(--gram);border-radius:4px;padding:2px 5px;
   margin-left:3px;line-height:1;vertical-align:2px}
 
 .play{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;min-height:0;padding:0;border-radius:50%;font-size:11px;vertical-align:middle;margin-right:6px;flex:none}
 .legend{font-size:13px;color:var(--muted);margin-bottom:10px}
-.tip{background:var(--soft);border-radius:10px;padding:8px 12px;margin:0 0 12px;font-size:13.5px;color:var(--muted)}
+.tip{background:var(--soft);border-radius:10px;padding:8px 12px;margin:0 0 12px;font-size:14px;color:var(--muted)}
 .tip summary{cursor:pointer;font-weight:600;color:var(--text);list-style:none;display:flex;align-items:center;gap:6px;min-height:44px;margin:-8px 0}
 .tip summary::-webkit-details-marker{display:none}
 .tip summary::before{content:"▸";font-size:12px}
 .tip[open] summary::before{content:"▾"}
 .tip>div{margin-top:6px;line-height:1.7}
 
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;z-index:30}
+.modal{position:fixed;inset:0;background:var(--scrim);display:none;align-items:flex-end;z-index:30}
 .modal.show{display:flex}
 .sheet:focus{outline:none}
 .sheet{width:100%;max-width:880px;margin:0 auto;background:var(--card);border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:80vh;overflow:auto}
@@ -190,7 +191,7 @@ body.fg-none .example .ex-kana{display:none}
 .hintbtn{min-height:32px;padding:4px 12px;font-size:13px;border-radius:999px;color:var(--muted)}
 .quiz-answer{display:none;margin-top:12px;padding:14px;border-radius:12px;background:var(--soft);text-align:left}
 .quiz-answer.show{display:block}
-.quiz-answer strong{display:block;font-size:1.25rem;margin:2px 0}
+.quiz-answer strong{display:block;font-size:1.2rem;margin:2px 0}
 .quiz-answer>span{color:var(--muted)}
 .quiz-controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
 .quiz-controls .primary{flex:1 1 160px}
@@ -221,12 +222,12 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 }
 
 /* ── 文法克漏字 / 讀解 ── */
-.gq-sentence{font-size:1.15rem;font-weight:600;line-height:1.9;margin:6px 0 16px}
+.gq-sentence{font-size:1.2rem;font-weight:600;line-height:1.9;margin:6px 0 16px}
 .gq-blank{display:inline-block;min-width:3em;border-bottom:2px solid var(--muted);text-align:center}
 .gq-opts{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 .gq-opts button{text-align:left;font-size:15px;line-height:1.5;white-space:normal;justify-content:flex-start}
-.gq-opts button.correct{background:var(--good);border-color:#3aa564}
-.gq-opts button.wrong{background:var(--bad);border-color:#d06666}
+.gq-opts button.correct{background:var(--good);border-color:var(--ok-t)}
+.gq-opts button.wrong{background:var(--bad);border-color:var(--ng-t)}
 .gq-opts button:disabled{opacity:1}
 .gq-opts button.correct::before{content:"✓";font-weight:800;margin-right:8px;color:var(--ok-t)}
 .gq-opts button.wrong::before{content:"✗";font-weight:800;margin-right:8px;color:var(--ng-t)}
@@ -235,27 +236,27 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 .gq-explain b{font-size:15px}
 
 /* ── 並べ替え ── */
-.so-answer{min-height:52px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;padding:10px;border:2px dashed var(--line);border-radius:12px;margin:10px 0 12px;font-size:1.1rem;line-height:1.6}
-.so-answer.so-ok{border-color:#3aa564;background:var(--good)}
-.so-answer.so-ng{border-color:#d06666;background:var(--bad)}
+.so-answer{min-height:52px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;padding:10px;border:2px dashed var(--line);border-radius:12px;margin:10px 0 12px;font-size:17px;line-height:1.6}
+.so-answer.so-ok{border-color:var(--ok-t);background:var(--good)}
+.so-answer.so-ng{border-color:var(--ng-t);background:var(--bad)}
 .so-answer.so-ok::after{content:"✓ 正確";font-size:14px;font-weight:700;color:var(--ok-t)}
 .so-answer.so-ng::after{content:"✗ 不對";font-size:14px;font-weight:700;color:var(--ng-t)}
 .so-slot{color:var(--muted);font-size:14px}
-.so-chip{background:var(--soft);border-radius:8px;padding:2px 8px}
+.so-chip{background:var(--soft);border-radius:6px;padding:2px 8px}
 .so-pool{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-.so-pool button{font-size:1.05rem;line-height:1.5}
+.so-pool button{font-size:17px;line-height:1.5}
 .so-pool button:disabled{opacity:.25}
 .note{width:100%;font:inherit;font-size:15px;line-height:1.6;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--text);resize:vertical;margin-top:6px}
 .note:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 
 .recbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px;padding:10px;border:1px dashed var(--line);border-radius:12px}
-.recbar button{min-height:36px;padding:6px 12px;font-size:13.5px;border-radius:999px}
+.recbar button{min-height:36px;padding:6px 12px;font-size:14px;border-radius:999px}
 .recbar .recstate{flex:1 1 100%}
 .recwrap{margin:0 0 10px}
 
 .playall{font-size:12px;font-weight:500;padding:5px 10px;min-height:30px;border-radius:999px}
 .playall.playing{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
-.bigplay{font-size:1.1rem;padding:14px 22px;border-radius:14px}
+.bigplay{font-size:17px;padding:14px 22px;border-radius:16px}
 .setrow{display:flex;align-items:center;gap:8px;margin:14px 0;flex-wrap:wrap}
 .setrow .lab{flex:0 0 100%;font-weight:600;margin-bottom:2px}
 .setrow.danger-zone{margin-top:22px;padding-top:14px;border-top:1px solid var(--line)}
@@ -271,7 +272,7 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
   .app{padding-top:8px;padding-bottom:24px}
   .sheet{border-radius:20px;margin-bottom:20px}
   .modal{align-items:center}
-  .tabs{position:sticky;top:auto;bottom:0;max-width:880px;margin:24px auto 0;border:1px solid var(--line);border-radius:14px 14px 0 0}
+  .tabs{position:sticky;top:auto;bottom:0;max-width:880px;margin:24px auto 0;border:1px solid var(--line);border-radius:16px 16px 0 0}
   .quiz-dock{max-width:880px;margin:0 auto}
 }
 @media (min-width:1000px){
@@ -290,7 +291,7 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 
 /* 本課進度 */
 .lesson-sum{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;
-  background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 14px}
+  background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin:0 0 14px}
 .lesson-sum .sum-l{font-size:14px}
 .lesson-sum .sum-l b{font-size:17px}
 .lesson-sum button{min-height:44px}
@@ -309,6 +310,7 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 .flow .steps li.next button{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}
 .flow .steps li.next .no{background:var(--accent);color:var(--card)}
 @media (min-width:700px){.flow .steps{max-width:600px}}
+@media (max-width:360px){.flow .steps button{font-size:11px}}
 .flow .steps .inf{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .flow .nextstory{margin-top:8px;min-height:44px;width:100%;border-radius:12px;background:var(--good);font-weight:600}
 
@@ -320,7 +322,7 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 .rv-sample{border-bottom:2px dashed var(--rv);font-weight:600}
 
 /* JLPT 參考等級 */
-.jl{display:inline-block;font-size:11px;font-weight:700;line-height:1;padding:3px 5px;border-radius:5px;margin-left:6px;
+.jl{display:inline-block;font-size:11px;font-weight:700;line-height:1;padding:3px 5px;border-radius:4px;margin-left:6px;
   vertical-align:middle;background:transparent;border:1px solid var(--line);color:var(--muted);letter-spacing:.02em}
 /* 超出 N4 範圍（N3 以上、未分級）：藍框標出來，不用記得程度的綠黃紅（Semantic Lock） */
 .jl-n3,.jl-n2,.jl-n1,.jl-x{border-color:var(--accent);color:var(--accent)}
@@ -344,13 +346,13 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 .typeres .t-ng{color:var(--ng-t);font-weight:700}
 .typeres .t-line{display:flex;gap:10px;align-items:baseline}
 .typeres .t-line .small{flex:0 0 3.5em}
-.d-bad{color:#c04848;background:var(--bad);border-radius:3px}
-.d-miss{text-decoration:underline 2px #c04848;text-underline-offset:3px}
+.d-bad{color:var(--ng-t);background:var(--bad);border-radius:4px}
+.d-miss{text-decoration:underline 2px var(--ng-t);text-underline-offset:3px}
 
 /* 段落回報 */
 .pnote{border:0;background:transparent;color:var(--muted);min-height:32px;min-width:32px;padding:0 6px;margin-left:4px;
-  font-size:14px;border-radius:8px;vertical-align:middle;opacity:.55}
-.pnote.has{opacity:1;color:#d06a2a;background:var(--warn)}
+  font-size:14px;border-radius:10px;vertical-align:middle;opacity:.55}
+.pnote.has{opacity:1;color:var(--accent);background:var(--accent-soft)}
 @media (hover:hover){ .pnote:hover{opacity:1;background:var(--soft)} }
 .notes-list{margin-top:6px;line-height:1.7}
 #notesBox{width:100%;margin-top:8px;font-size:13px}
@@ -359,8 +361,8 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 .story-card.dialogue .dline{display:flex;flex-direction:column;align-items:flex-start;margin-bottom:.8em}
 .story-card.dialogue .dline.me{align-items:flex-end}
 .story-card.dialogue .spk{font-size:12px;color:var(--muted);margin:0 6px 2px}
-.story-card.dialogue .dline p.ja{background:var(--soft);border-radius:14px 14px 14px 4px;padding:6px 10px;max-width:92%}
-.story-card.dialogue .dline.me p.ja{background:var(--gram-soft);border-radius:14px 14px 4px 14px}
+.story-card.dialogue .dline p.ja{background:var(--soft);border-radius:16px 16px 16px 4px;padding:6px 10px;max-width:92%}
+.story-card.dialogue .dline.me p.ja{background:var(--accent-soft);border-radius:16px 16px 4px 16px}
 .story-card.dialogue .dline .zh{padding:2px 8px 0;max-width:92%}
 .story-card.dialogue .dline.me .zh{text-align:right}
 
@@ -368,8 +370,8 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 .pq-card{text-align:left}
 .pq-text{font-size:var(--fs);line-height:2.1;margin:8px 0 14px}
 .pslot{display:inline-block;min-width:3em;text-align:center;border-bottom:2px solid var(--accent);padding:0 4px;font-weight:700}
-.pslot.ok{background:var(--good);border-bottom-color:#3aa564}
-.pslot.ng{background:var(--bad);border-bottom-color:#d06666}
+.pslot.ok{background:var(--good);border-bottom-color:var(--ok-t)}
+.pslot.ng{background:var(--bad);border-bottom-color:var(--ng-t)}
 .pslot.ok::after{content:" ✓";color:var(--ok-t)}
 .pslot.ng::after{content:" ✗";color:var(--ng-t)}
 .pq-item{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
@@ -380,7 +382,7 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 .exam .ex-q{font-size:calc(var(--fs) + 1px);line-height:1.8;margin-bottom:10px}
 .exam .so-pool{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .exam .so-pool button{min-height:44px}
-.exam .ex-verdict{margin:4px 0 6px;font-size:16px;line-height:1.6}
+.exam .ex-verdict{margin:4px 0 6px;font-size:17px;line-height:1.6}
 .exam .ex-break{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}
 .exam .ex-break li{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:8px 12px;border-radius:10px;background:var(--soft);font-size:14px}
 .exam .ex-break li b{font-variant-numeric:tabular-nums;white-space:nowrap}

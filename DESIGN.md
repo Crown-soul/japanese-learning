@@ -19,6 +19,24 @@ colors:
   text-ok: "#24734a"
   text-ng: "#b03a3a"
   danger: "#b42318"
+  ai-dark: "#b9cbe8"
+  ai-soft-dark: "#2c3a50"
+  paper-dark: "#16181c"
+  card-dark: "#1f2329"
+  ink-dark: "#e6e7ea"
+  ink-muted-dark: "#9aa1ab"
+  line-dark: "#333842"
+  soft-dark: "#2a2f37"
+  grammar-violet-dark: "#cf9fe6"
+  grammar-violet-soft-dark: "#3a2a42"
+  review-amber-dark: "#e0a050"
+  text-ok-dark: "#6fcf97"
+  text-ng-dark: "#f08a8a"
+  danger-dark: "#ff8a80"
+  scrim: "rgba(0,0,0,.4)"
+  print-ink: "#000"
+  print-rule: "#999"
+  print-ruby: "#444"
 typography:
   display:
     fontFamily: "Hiragino Mincho ProN, Yu Mincho, Noto Serif JP, Noto Serif CJK JP, serif"
@@ -37,20 +55,41 @@ typography:
     fontSize: "var(--fs)"
     fontWeight: 400
     lineHeight: 2
+  prompt:
+    fontSize: "1.6rem"
+    fontWeight: 700
+    lineHeight: 1.4
+  heading:
+    fontSize: "1.4rem"
+    fontWeight: 700
+    lineHeight: 1.3
+  lead:
+    fontSize: "17px"
+    fontWeight: 400
+    lineHeight: 1.6
   body:
     fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Noto Sans TC, Noto Sans JP, sans-serif"
     fontSize: "15px"
     fontWeight: 400
     lineHeight: 1.7
+  small:
+    fontSize: "14px"
+    fontWeight: 400
+    lineHeight: 1.6
   label:
     fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Noto Sans TC, Noto Sans JP, sans-serif"
     fontSize: "12.5px"
     fontWeight: 500
     lineHeight: 1.2
+  micro:
+    fontSize: "11px"
+    fontWeight: 700
+    lineHeight: 1
   ruby:
     fontSize: "max(.55em, 11px)"
     fontWeight: 500
 rounded:
+  xs: "4px"
   sm: "6px"
   md: "10px"
   lg: "12px"
@@ -159,7 +198,7 @@ components:
 ### Named Rules
 **The One Ink Rule.** 藍是唯一的品牌色。實心藍只給「要按的主要動作」，同一個畫面最多一個；選中狀態一律用淡藍底，不用實心。
 
-**The Semantic Lock Rule.** 紫、琥珀、綠黃紅各有唯一意思，不能拿來裝飾或表示別的狀態。
+**The Semantic Lock Rule.** 紫、琥珀、綠黃紅各有唯一意思，不能拿來裝飾或表示別的狀態（例如會話裡「我」的對話泡泡用淡藍，不用文法紫；段落「有回報」用選中樣式，不用琥珀）。
 
 ## Typography
 
@@ -173,7 +212,14 @@ components:
 - **Title**（600，1.2rem，字距 .04em）：頂部的日文課名。中文頁面標題不套明朝。
 - **Reading**（400，`--fs`＝18px 可調 16/18/20/23，行高 2）：故事內文，寬度跟著故事卡填滿（不另設行長上限，避免寬螢幕右側留白）。
 - **Body**（400，15px，行高 1.7）：按鈕、說明、抽屜內容。
-- **Label**（500，11.5–13px）：導覽標籤、步驟數字、篩選標籤、`.small` 說明。
+- **Prompt**（700，1.6rem）：單字測驗的題目字。
+- **Heading**（700，1.4rem）：抽屜標題（單字、文法點、設定）。
+- **Lead**（17px）：小考建議句、排序片段、輸入框、聽力播放鈕。
+- **Small**（14px）：次要說明、篩選、提示框、例句解說。
+- **Label**（500，12.5px）：導覽標籤、注音模式、步驟名稱。
+- **Micro**（700，11px）：JLPT 標籤、「文」角標、步驟計數、鍵盤提示。
+
+字級只用這張表裡的值（加上可調的 `--fs` 閱讀字級）；新元件找最接近的一級，不新增零散值。
 - **Ruby**（500，max(.55em, 11px)）：注音，永遠不小於 11px。
 
 ### Named Rules
@@ -196,14 +242,15 @@ components:
 ### Shadow Vocabulary
 - **托盤** (`box-shadow: 0 8px 24px rgba(0,0,0,.14), 0 1px 3px rgba(0,0,0,.08)`)：單字測驗底部的作答托盤，跟導覽列之間留 8px。
 - **抽屜關閉鈕** (`box-shadow: 0 2px 8px rgba(0,0,0,.08)`)：sticky 在抽屜頂部的「關閉」。
-- **抽屜**：用半透明黑底（rgba(0,0,0,.4)）襯托，本身不加陰影。
+- **抽屜**：用遮罩（`--scrim`，rgba(0,0,0,.4)）襯托，本身不加陰影。
+- **列印**：只在 `@media print` 裡用純黑字、#999 框線、#444 注音，不受深色模式影響。
 
 ### Named Rules
 **The Flat-Unless-Floating Rule.** 會捲走的東西是平的；固定浮在內容上的東西才有陰影。
 
 ## Shapes
 
-圓角依「離手指多近」遞增：小標籤 5–6px、按鈕 10px、步驟與托盤內按鈕 12px、卡片 16px、托盤 18px、抽屜 20px。膠囊形（999px）只用在可切換的選項：篩選 chip、範圍、日文／對照／中文、導覽圖示的選中底。
+圓角依「離手指多近」遞增：行內標記與小標籤 4px（重點字、文法範圍、JLPT、「文」角標、打錯的字）、排序片段 6px、按鈕 10px、步驟與托盤內按鈕 12px、卡片 16px、托盤 18px、抽屜 20px。膠囊形（999px）只用在可切換的選項：篩選 chip、範圍、日文／對照／中文、導覽圖示的選中底。
 
 ## Components
 
