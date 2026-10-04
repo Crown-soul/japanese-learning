@@ -6,6 +6,7 @@
    照 docs/mock-exam-plan.md 的分離原則，邏輯不放進課程引擎；之後做跨課模考可以重用。
 
    用法：window.LessonExam.open({ sheet, modal, esc, play, vocab, DATA, S, lessonId, qid, parsePara, onDone })
+         window.LessonExam.inProgress() → 作答中（引擎在點背景／Esc 關抽屜前用來確認）
    ============================================================ */
 (function () {
   "use strict";

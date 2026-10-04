@@ -461,6 +461,10 @@
 
   /* ---------- 單字詳解 modal ---------- */
   var modal, sheet;
+  // 例句：有 exKana 就在下面附假名（注音設成「全部隱藏」時一起藏）
+  function exHTML(v) {
+    return '<div class="example" lang="ja">' + esc(v.ex) + (v.exKana ? '<span class="ex-kana">' + esc(v.exKana) + "</span>" : "") + "</div>";
+  }
   function openCard(key) {
     var v = vocab[key] || REVIEW[key];
     if (!v) return;
@@ -474,7 +478,7 @@
       (rvFrom ? '<div class="kv review-note"><strong>複習字</strong><div>在' + esc(rvFrom) + "學過，這課再遇到一次。</div></div>" : "") +
       '<div class="kv"><strong>中文</strong><div>' + esc(v.zh) + "</div></div>" +
       (v.form && !rvFrom ? '<div class="kv"><strong>本文形式</strong><div lang="ja">' + esc(v.form) + "</div></div>" : "") +
-      '<div class="kv"><strong>例句</strong><div class="example" lang="ja">' + esc(v.ex) + "</div></div>" +
+      '<div class="kv"><strong>例句</strong>' + exHTML(v) + "</div>" +
       '<div class="actions">' +
         '<button data-act="play-dict">▶ 單字</button>' +
         '<button data-act="play-ex">▶ 例句</button>' +
@@ -671,12 +675,12 @@
       $("quizHint").textContent = quizDir === "yomi" ? "這個字怎麼念？" : "這個讀音是哪個字？";
       $("quizChoices").innerHTML = opts.map(function (o) { return '<button data-choice="' + esc(o) + '" lang="ja">' + esc(o) + "</button>"; }).join("");
       $("quizChoices").hidden = false; $("quizPre").hidden = true;
-      ans.innerHTML = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div>' + esc(v.zh) + '</div><div class="example" lang="ja">' + esc(v.ex) + "</div>";
+      ans.innerHTML = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div>' + esc(v.zh) + '</div>' + exHTML(v);
       return;
     }
     if (isTypeDir()) {
       $("quizType").hidden = false;
-      var full = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div>' + esc(v.zh) + '</div><div class="example" lang="ja">' + esc(v.ex) + "</div>";
+      var head = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div>' + esc(v.zh) + '</div>', full = head + exHTML(v);
       if (quizDir === "zhjptype") {
         q.lang = ""; q.textContent = v.zh.split("、")[0];
         $("quizHint").textContent = "用假名打出這個字的日文讀音";
@@ -688,7 +692,7 @@
       } else {
         q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
         $("quizHint").textContent = "聽整句，用假名打出來（標點不用打）";
-        ans.innerHTML = '<div class="example" lang="ja">' + esc(v.ex) + '</div><div lang="ja" class="small">' + esc(v.exKana) + "</div>" + full;
+        ans.innerHTML = exHTML(v) + head;
         play(v.ex);
       }
       return;
@@ -696,20 +700,20 @@
     if (quizDir === "jpzh") {
       q.lang = "ja"; q.textContent = v.dict;
       $("quizHint").innerHTML = '<button class="hintbtn" id="hintBtn">看讀音提示</button>';
-      ans.innerHTML = '<span lang="ja">' + esc(v.reading) + "</span><strong>" + esc(v.zh) + '</strong><div class="example" lang="ja">' + esc(v.ex) + "</div>";
+      ans.innerHTML = '<span lang="ja">' + esc(v.reading) + "</span><strong>" + esc(v.zh) + '</strong>' + exHTML(v);
     } else if (quizDir === "zhjp") {
       q.lang = ""; q.textContent = v.zh.split("、")[0];
       $("quizHint").textContent = "先想日文怎麼說，再顯示答案";
-      ans.innerHTML = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div class="example" lang="ja">' + esc(v.ex) + "</div>";
+      ans.innerHTML = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span>' + exHTML(v);
     } else if (quizDir === "listenex") {
       q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
       $("quizHint").textContent = "聽整句，想這句在說什麼、關鍵字是哪個";
-      ans.innerHTML = '<div class="example" lang="ja">' + esc(v.ex) + '</div><strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + "</span><div>" + esc(v.zh) + "</div>";
+      ans.innerHTML = exHTML(v) + '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + "</span><div>" + esc(v.zh) + "</div>";
       play(v.ex);
     } else {
       q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
       $("quizHint").textContent = "聽日文發音，想中文意思";
-      ans.innerHTML = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div>' + esc(v.zh) + '</div><div class="example" lang="ja">' + esc(v.ex) + "</div>";
+      ans.innerHTML = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div>' + esc(v.zh) + '</div>' + exHTML(v);
       play(audioOf(v));   // manifest key 見 audioOf()
     }
   }
