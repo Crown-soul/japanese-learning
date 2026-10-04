@@ -60,6 +60,10 @@
 | 日程 | にってい | 「日」→ひ／にち | READING_FIXES |
 | 十分間 | じゅっぷんかん | じゅうぶん（充分）。study-abroad 預填，未經聽證 | READING_FIXES |
 | 休みの間は | やすみのあいだは | 「間」→かん。故意收窄，不傷舊課「夏休みの間に」。study-abroad 預填 | READING_FIXES |
+| 真由 | まゆ | 人名讀法不固定。study-abroad 預填 | READING_FIXES |
+| 絵を描いて | えをかいて | 「描」→えがいて。study-abroad 預填 | READING_FIXES |
+| 一日で全部 | いちにちでぜんぶ | 一日→ついたち。study-abroad 預填 | READING_FIXES |
+| 事務室へ行って / イギリスに行っても / 一年行く | じむしつへいって / イギリスにいっても / いちねんいく | 「行」→おこな―。帶上下文收窄。study-abroad 預填 | READING_FIXES |
 | 朝日 | あさひ | ちょうにち | READING_FIXES |
 | までの間に / 夏休みの間に | までのあいだに / なつやすみのあいだに | 「間」→かん／ま。**不可寫成通用的「の間に」**，會誤傷 boarding-house 的「いつの間に＝いつのまに」 | READING_FIXES |
 | 皆で | みなで | みんなで | READING_FIXES |
