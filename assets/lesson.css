@@ -54,12 +54,37 @@ button:disabled{opacity:.45}
 .tabs button{flex:1;border:0;border-radius:0;background:transparent;color:var(--muted);font-size:14px;min-height:var(--tabs-h);padding:0 4px}
 .tabs button.active{background:transparent;color:var(--text);font-weight:700;box-shadow:inset 0 3px 0 var(--accent)}
 
+/* ── 從步驟③④⑤離開時的「← 回到篇N」：浮在底部分頁列（或評分列）上方 ── */
+.backchip{position:fixed;z-index:21;left:50%;transform:translateX(-50%);bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + 12px);
+  min-height:44px;padding:8px 18px;border-radius:999px;font-weight:600;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.16),0 1px 3px rgba(0,0,0,.08)}
+body:has(#quizDock:not([hidden])) .backchip{bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + 86px)}
+body.has-back .app{padding-bottom:calc(var(--tabs-h) + 84px + env(safe-area-inset-bottom))}
+
 /* ── 二級切換：一條細的，不是卡片 ── */
 .subtabs{display:flex;gap:6px;margin:0 0 12px}
 .subtabs button{min-height:38px;padding:6px 14px;font-size:14px;border-radius:999px}
 .filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
 .filter-row button{min-height:36px;padding:6px 12px;font-size:13.5px;border-radius:999px}
 .filter-row .small{margin-left:auto}
+
+/* ── 單字測驗：類型（看／聽／寫）→ 方式 → 範圍（收合） ── */
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card);margin:0 0 8px}
+.seg button{flex:1;border:0;border-radius:0;min-height:44px;font-weight:600;font-size:15px;letter-spacing:.08em}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.active{border-color:var(--accent)}
+#quiz .subtabs.qdirs{flex-wrap:wrap;overflow:visible;margin-bottom:10px}
+.qdirs button.active{background:var(--soft);color:var(--text);border-color:var(--text);font-weight:700}
+.qscope{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+.qscope .small{margin-left:auto;white-space:nowrap}
+.qscope-btn{min-height:44px;padding:6px 12px 6px 14px;border-radius:999px;font-size:14px;gap:8px}
+.qscope-btn .lab{color:var(--muted);margin-right:6px}
+.qscope-btn .chev{font-size:14px;line-height:1;color:var(--muted);transition:transform .2s}
+.qscope-btn[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.qscope-panel{background:var(--soft);border-radius:12px;padding:10px 10px 0;margin:-4px 0 14px}
+.qscope-panel .filter-row .lab{font-size:13px;color:var(--muted);margin-right:2px}
+.qscope-panel .filter-row button{min-height:40px}
+.hud.compact .stats{display:none}
+.hud.compact .progresstext{margin-bottom:0}
 
 /* ── 進度 ── */
 .hud{margin-bottom:14px}
@@ -208,7 +233,7 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
   .tabs,.quiz-dock{max-width:1100px}
 }
 @media print{
-  header,.hud,.tabs,.subtabs,.toolbar,.filter-row,.quiz-card,.quiz-dock,.play,.playall,.tip,.lang-tabs,.flow,.pnote,.lesson-sum{display:none!important}
+  header,.hud,.tabs,.backchip,.subtabs,.toolbar,.filter-row,.quiz-card,.quiz-dock,.play,.playall,.tip,.lang-tabs,.flow,.pnote,.lesson-sum{display:none!important}
   .section{display:block!important}
   .para .zh{display:block!important}
   body{background:#fff;color:#000;line-height:1.5}

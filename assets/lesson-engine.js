@@ -235,7 +235,8 @@
         '<button data-tab="vocabtable">單字表</button>' +
         '<button data-tab="quiz">單字測驗</button>' +
         '<button data-tab="grammar">文法</button>' +
-      '</nav>';
+      '</nav>' +
+      '<button class="backchip" id="backChip" hidden></button>';
   }
 
   function storiesSection() {
@@ -291,23 +292,24 @@
 
   function quizSection() {
     return '<section id="quiz" class="section">' +
-      '<div class="subtabs" role="group" aria-label="測驗方式">' +
-        '<button class="active" data-qdir="jpzh">日→中</button>' +
-        '<button data-qdir="zhjp">中→日</button>' +
-        '<button data-qdir="listen">聽力</button>' +
-        '<button data-qdir="listenex">例句聽力</button>' +
-        '<button data-qdir="yomi">漢字読み</button>' +
-        '<button data-qdir="hyoki">表記</button>' +
-        '<button data-qdir="zhjptype">中→日打字</button>' +
-        '<button data-qdir="dict">單字聽寫</button>' +
-        (Object.keys(vocab).some(function (k) { return vocab[k].exKana; }) ? '<button data-qdir="dictex">例句聽寫</button>' : "") + '</div>' +
-      sfChips() +
-      '<div class="filter-row" aria-label="測驗篩選">' +
-        '<button class="active" data-qfilter="all">全部</button>' +
-        '<button data-qfilter="due">今日複習</button>' +
-        '<button data-qfilter="new">未學過</button>' +
-        '<button data-qfilter="grad">已畢業</button>' +
+      '<div class="seg" role="group" aria-label="測驗類型">' +
+        QFAM.map(function (f, i) { return '<button data-qfam="' + i + '">' + f.name + "</button>"; }).join("") + "</div>" +
+      '<div class="subtabs qdirs" role="group" aria-label="測驗方式">' +
+        QFAM.map(function (f, i) {
+          return f.dirs.filter(function (d) { return d[0] !== "dictex" || Object.keys(vocab).some(function (k) { return vocab[k].exKana; }); })
+            .map(function (d) { return '<button data-qdir="' + d[0] + '" data-fam="' + i + '">' + d[1] + "</button>"; }).join("");
+        }).join("") + "</div>" +
+      '<div class="qscope">' +
+        '<button class="qscope-btn" id="qScopeBtn" aria-expanded="false" aria-controls="qScopePanel"><span id="qScopeSum"></span><span class="chev" aria-hidden="true">▾</span></button>' +
         '<span class="small" id="filterInfo"></span></div>' +
+      '<div class="qscope-panel" id="qScopePanel" hidden>' +
+        sfChips() +
+        '<div class="filter-row" role="group" aria-label="複習狀態"><span class="lab">狀態</span>' +
+          '<button class="active" data-qfilter="all">全部</button>' +
+          '<button data-qfilter="due">今日複習</button>' +
+          '<button data-qfilter="new">未學過</button>' +
+          '<button data-qfilter="grad">已畢業</button></div>' +
+      '</div>' +
       '<div class="quiz-card">' +
         '<div class="small" id="quizCount"></div>' +
         '<div class="quiz-q" id="quizQuestion"></div>' +
@@ -375,6 +377,13 @@
         '</div></div>' +
     '</section>';
   }
+  // 單字測驗方式分三類，一次只攤開一類
+  var QFAM = [
+    { name: "看", dirs: [["jpzh", "日→中"], ["zhjp", "中→日"], ["yomi", "漢字読み"], ["hyoki", "表記"]] },
+    { name: "聽", dirs: [["listen", "聽力"], ["listenex", "例句聽力"]] },
+    { name: "寫", dirs: [["zhjptype", "中→日打字"], ["dict", "單字聽寫"], ["dictex", "例句聽寫"]] }];
+  function famOf(dir) { for (var i = 0; i < QFAM.length; i++) if (QFAM[i].dirs.some(function (d) { return d[0] === dir; })) return i; return 0; }
+  var QFILTER_NAME = { all: "全部", due: "今日複習", new: "未學過", grad: "已畢業" };
   function cn(n) { return "一二三四五六七八九十".charAt(n - 1) || String(n); }
   function normalStories() { return DATA.stories.map(function (s, i) { return { s: s, n: i + 1 }; }).filter(function (x) { return x.s.kind !== "dialogue"; }); }
   function sfChips() {
@@ -586,7 +595,15 @@
     var keys = getFilteredKeys().slice();
     if (isChoiceDir()) keys = kanjiKeys(keys);
     if (quizDir === "dictex") keys = keys.filter(function (k) { return vocab[k].exKana; });
-    quizKeys = keys.sort(function () { return Math.random() - 0.5; }); qi = 0; renderQuiz();
+    quizKeys = keys.sort(function () { return Math.random() - 0.5; }); qi = 0; syncQuizUI(); renderQuiz();
+  }
+  function syncQuizUI() {
+    if (!$("qScopeSum")) return;
+    var fam = famOf(quizDir);
+    document.querySelectorAll("[data-qfam]").forEach(function (b) { var on = +b.dataset.qfam === fam; b.classList.toggle("active", on); b.setAttribute("aria-pressed", on); });
+    document.querySelectorAll("[data-qdir]").forEach(function (b) { var on = b.dataset.qdir === quizDir; b.hidden = +b.dataset.fam !== fam; b.classList.toggle("active", on); b.setAttribute("aria-pressed", on); });
+    document.querySelectorAll("[data-qfilter]").forEach(function (b) { b.classList.toggle("active", b.dataset.qfilter === quizFilter); });
+    $("qScopeSum").innerHTML = '<span class="lab">範圍</span>' + (SF ? storyLabel(SF) : "全部篇") + "・" + QFILTER_NAME[quizFilter];
   }
   // 四選一的干擾項：同課其他字，讀音長度相近的優先
   function distractors(k, field) {
@@ -621,7 +638,8 @@
     if (!quizKeys.length) {
       $("quizCount").textContent = "0 / 0";
       var q0 = $("quizQuestion"); q0.lang = ""; q0.textContent = "目前沒有符合條件的單字";
-      $("quizHint").textContent = quizFilter === "due" ? "今天沒有到期的字。" : quizFilter === "grad" ? "還沒有畢業的字（連續記得到 box 6 就畢業）。" : "所有單字都練過了。";
+      $("quizHint").innerHTML = esc(quizFilter === "due" ? "今天沒有到期的字。" : quizFilter === "grad" ? "還沒有畢業的字（連續記得到 box 6 就畢業）。" : quizFilter === "new" ? "所有單字都練過了。" : "這個範圍沒有可以出題的字。") +
+        (quizFilter !== "all" || SF ? '<div><button class="hintbtn" id="qScopeReset">改練全部單字</button></div>' : "");
       ans.innerHTML = "";
       $("quizPre").hidden = true;
       return;
@@ -692,7 +710,6 @@
   }
   function setQuizDir(dir) {
     quizDir = dir;
-    document.querySelectorAll("[data-qdir]").forEach(function (b) { b.classList.toggle("active", b.dataset.qdir === dir); });
     shuffle();
   }
 
@@ -886,14 +903,38 @@
     $("grammarPassageWrap").hidden = v !== "passage";
     $("gSfWrap").hidden = !(v === "quiz" || v === "order");
   }
-  function setSview(v) {
+  function setSview(v, opts) {
+    var onStories = curTab === "stories";
+    if (onStories) scrollMem[viewKey("stories")] = window.scrollY;
     document.querySelectorAll("[data-sview]").forEach(function (x) { x.classList.toggle("active", x.dataset.sview === v); });
     $("storyRead").hidden = v !== "read";
     $("storyQuizWrap").hidden = v !== "quiz";
     $("readingRow").hidden = v !== "read";
+    if (onStories) window.scrollTo(0, opts && opts.top ? 0 : (scrollMem[viewKey("stories")] || 0));
+    syncBack();
+  }
+  /* 從某篇的步驟③④⑤離開時記下位置，底部浮一顆「← 回到篇N」 */
+  function syncBack() {
+    var chip = $("backChip"); if (!chip) return;
+    if (curTab === "stories" && !$("storyRead").hidden) stepReturn = null;
+    chip.hidden = !stepReturn;
+    document.body.classList.toggle("has-back", !!stepReturn);
+    if (stepReturn) chip.textContent = "← 回到" + storyLabel(stepReturn.n);
+  }
+  function cardTop(n) { var c = $("card" + (n - 1)); return c ? c.getBoundingClientRect().top + window.scrollY : 0; }
+  function returnToStory() {
+    var r = stepReturn; if (!r) return;
+    stopAudio();
+    // 以卡片為錨點：前面的篇多出「下一篇 ↓」等高度變化也不會跑位
+    refreshFlows(); setSview("read");
+    if (curTab !== "stories") setTab("stories");
+    window.scrollTo(0, Math.max(0, cardTop(r.n) + r.dy));
+    var b = document.querySelector("#flow" + (r.n - 1) + " button[data-step]");
+    try { if (b) b.focus({ preventScroll: true }); } catch (e) {}
   }
   function goStep(id, n) {
     var i = n - 1;
+    if (id === "vocab" || id === "grammar" || id === "reading") stepReturn = { n: n, dy: window.scrollY - cardTop(n) };
     if (id === "read") {
       var pa = document.querySelector('.playall[data-story="' + i + '"]');
       stopAudio(); if (pa) playStory($("story" + i), pa);
@@ -906,13 +947,13 @@
         '<button class="primary" data-shadowdone="' + n + '">跟讀完了 ✓</button>';
       wrap.hidden = false;
     } else if (id === "vocab") {
-      setSFv(n); quizFilter = "all";
-      document.querySelectorAll("[data-qfilter]").forEach(function (x) { x.classList.toggle("active", x.dataset.qfilter === "all"); });
-      setTab("quiz"); setQuizDir("jpzh");
+      quizFilter = "all"; setSFv(n);
+      setTab("quiz", { top: true }); setQuizDir("jpzh");
     } else if (id === "grammar") {
-      setSFv(n); setGview("quiz"); setTab("grammar");
+      setSFv(n); setGview("quiz"); setTab("grammar", { top: true });
     } else if (id === "reading") {
-      setTab("stories"); setSview("quiz");
+      if (curTab !== "stories") setTab("stories");
+      setSview("quiz", { top: true });
       rqFilter = "s" + n;
       document.querySelectorAll("[data-rqfilter]").forEach(function (x) { x.classList.toggle("active", x.dataset.rqfilter === rqFilter); });
       rqShuffle();
@@ -968,18 +1009,25 @@
   }
 
   /* ---------- 分頁 ---------- */
-  function setTab(name) {
+  /* 每個分頁（故事再分「閱讀／讀解測驗」）各記一個捲動位置；再點一次目前分頁＝回頂端 */
+  var scrollMem = {}, stepReturn = null;
+  function viewKey(tab) { return tab === "stories" ? "stories:" + ($("storyRead").hidden ? "quiz" : "read") : tab; }
+  function setTab(name, opts) {
     if (!$(name)) name = "stories";
+    var same = name === curTab;
+    if (!same) scrollMem[viewKey(curTab)] = window.scrollY;
     curTab = name;
     setSetting("lastTab", name);
     document.querySelectorAll(".tabs button").forEach(function (x) { x.classList.toggle("active", x.dataset.tab === name); });
     document.querySelectorAll(".section").forEach(function (x) { x.classList.toggle("active", x.id === name); });
     $("hud").hidden = !(name === "vocabtable" || name === "quiz");
+    $("hud").classList.toggle("compact", name === "quiz");
     $("readingRow").hidden = !(name === "stories" && !$("storyRead").hidden);
     if (name === "quiz") { $("quizDock").hidden = !answerShown || !quizKeys.length || isChoiceDir(); }
     else $("quizDock").hidden = true;
     if (name === "stories") refreshFlows();
-    window.scrollTo(0, 0);
+    window.scrollTo(0, same || (opts && opts.top) ? 0 : (scrollMem[viewKey(name)] || 0));
+    syncBack();
     try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
   }
 
@@ -1034,6 +1082,7 @@
     });
 
     $("gearBtn").onclick = openSettings;
+    $("backChip").onclick = returnToStory;
 
     document.querySelectorAll("[data-rd]").forEach(function (b) {
       b.onclick = function () { readingMode = b.dataset.rd; setSetting("reading", readingMode); applyReading(); };
@@ -1047,7 +1096,7 @@
 
     // story view toggle
     document.querySelectorAll("[data-sview]").forEach(function (b) {
-      b.onclick = function () { stopAudio(); setSview(b.dataset.sview); if (b.dataset.sview === "read") refreshFlows(); };
+      b.onclick = function () { stopAudio(); if (b.dataset.sview === "read") refreshFlows(); setSview(b.dataset.sview); };
     });
     // grammar view toggle
     document.querySelectorAll("[data-gview]").forEach(function (b) {
@@ -1168,11 +1217,16 @@
     $("typeCheck").onclick = checkTyped;
     $("typeInput").addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); checkTyped(); } });
     document.querySelectorAll("[data-qfilter]").forEach(function (b) {
-      b.onclick = function () {
-        quizFilter = b.dataset.qfilter;
-        document.querySelectorAll("[data-qfilter]").forEach(function (x) { x.classList.remove("active"); });
-        b.classList.add("active"); shuffle();
-      };
+      b.onclick = function () { quizFilter = b.dataset.qfilter; shuffle(); };
+    });
+    document.querySelectorAll("[data-qfam]").forEach(function (b) {
+      b.onclick = function () { var f = +b.dataset.qfam; if (famOf(quizDir) !== f) setQuizDir(QFAM[f].dirs[0][0]); };
+    });
+    $("qScopeBtn").onclick = function () {
+      var p = $("qScopePanel"); p.hidden = !p.hidden; this.setAttribute("aria-expanded", !p.hidden);
+    };
+    $("quiz").addEventListener("click", function (e) {
+      if (e.target.id === "qScopeReset") { quizFilter = "all"; setSFv(0); }
     });
     $("quizDock").addEventListener("click", function (e) {
       var b = e.target.closest(".status-btn"); if (!b || !quizKeys.length || !answerShown) return;
@@ -1319,6 +1373,7 @@
     applyReading();
     updateProgress();
     syncSF(); setGview("table"); pqRender();
+    if (dueKeys().length) quizFilter = "due";   // 有到期的字就先練到期的
     shuffle(); gqShuffle(); rqShuffle(); soShuffle();
     setTab(setting("lastTab") || "stories");
     refreshFlows();
