@@ -37,6 +37,7 @@ colors:
   print-ink: "#000"
   print-rule: "#999"
   print-ruby: "#444"
+  print-fill: "#eee"
 typography:
   display:
     fontFamily: "Hiragino Mincho ProN, Yu Mincho, Noto Serif JP, Noto Serif CJK JP, serif"
@@ -52,7 +53,7 @@ typography:
     letterSpacing: "0.04em"
   reading:
     fontFamily: "-apple-system, Hiragino Sans, Hiragino Kaku Gothic ProN, Noto Sans JP, Yu Gothic, sans-serif"
-    fontSize: "var(--fs)"
+    fontSize: "18px"
     fontWeight: 400
     lineHeight: 2
   prompt:
@@ -210,7 +211,7 @@ components:
 ### Hierarchy
 - **Display**（600，`--fs` × 1.35，行高 1.4，字距 .05em）：每篇故事的篇名（`lang="ja"`）。
 - **Title**（600，1.2rem，字距 .04em）：頂部的日文課名。中文頁面標題不套明朝。
-- **Reading**（400，`--fs`＝18px 可調 16/18/20/23，行高 2）：故事內文，寬度跟著故事卡填滿（不另設行長上限，避免寬螢幕右側留白）。
+- **Reading**（400，預設 18px，可在設定調 16/18/20/23，存在 `--fs`，行高 2）：故事內文，寬度填滿故事卡；整頁最寬 880px，所以桌機一行約 45 字。斷行按日文詞組（`word-break:auto-phrase`＋`line-break:strict`），不把一個詞切成兩行。
 - **Body**（400，15px，行高 1.7）：按鈕、說明、抽屜內容。
 - **Prompt**（700，1.6rem）：單字測驗的題目字。
 - **Heading**（700，1.4rem）：抽屜標題（單字、文法點、設定）。
@@ -227,9 +228,9 @@ components:
 
 ## Layout
 
-單欄、手機優先。內容最寬 880px（≥1000px 時 1100px），左右 14px 邊距。頂部是固定的一列：「← 回目錄 · 課名 · ⚙」，下面一列是注音四模式（只在文章分頁出現）。底部是固定導覽列（56px），≥700px 時變成貼在內容底部的圓角列。
+單欄、手機優先。內容最寬 880px（所有螢幕寬度都一樣，頂部、故事卡、導覽列對齊同一條邊），左右 14px 邊距。頂部是固定的一列：「← 回目錄 · 課名 · ⚙」，下面一列是注音四模式（只在文章分頁出現）。底部是固定導覽列（56px），≥700px 時變成貼在內容底部的圓角列。
 
-故事內文一律填滿卡片寬度；寬螢幕的「對照」模式改成日中兩欄。
+故事內文一律填滿卡片寬度；≥1000px 的「對照」模式在同一個 880px 內分成日中兩欄。
 
 文章頁的節奏：「閱讀／讀解測驗」切換 →「怎麼用這一課」說明（可收合，記住開關）→ 本課進度（繼續：篇N）→ 每篇一張故事卡（篇名＋工具列 → ①–⑤ 一列步驟，寬螢幕最寬 600px → 內文）。測驗頁的節奏：看／聽／寫分段 → 該類的方式 → 一行「範圍 ▾」→ 題卡；作答按鈕全在底部托盤。
 
@@ -243,7 +244,7 @@ components:
 - **托盤** (`box-shadow: 0 8px 24px rgba(0,0,0,.14), 0 1px 3px rgba(0,0,0,.08)`)：單字測驗底部的作答托盤，跟導覽列之間留 8px。
 - **抽屜關閉鈕** (`box-shadow: 0 2px 8px rgba(0,0,0,.08)`)：sticky 在抽屜頂部的「關閉」。
 - **抽屜**：用遮罩（`--scrim`，rgba(0,0,0,.4)）襯托，本身不加陰影。
-- **列印**：只在 `@media print` 裡用純黑字、#999 框線、#444 注音，不受深色模式影響。
+- **列印**：只在 `@media print` 裡用純黑字、#999 框線、#444 注音與讀音、#eee 表頭底，不受深色模式影響。
 
 ### Named Rules
 **The Flat-Unless-Floating Rule.** 會捲走的東西是平的；固定浮在內容上的東西才有陰影。

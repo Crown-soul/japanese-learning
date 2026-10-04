@@ -124,6 +124,8 @@ button:disabled{opacity:.45}
 .lang-tabs{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:1px;background:var(--card)}
 .lang-tabs button{min-height:30px;padding:4px 10px;font-size:12.5px;border:0;border-radius:999px}
 .story-text{font-size:var(--fs);line-height:2}
+/* 日文按詞組斷行：不把「起きました」切成「起きまし／た」（Chrome／Edge 支援 auto-phrase；其他瀏覽器至少套用嚴格禁則） */
+.story-text p.ja,.pq-text{line-break:strict;word-break:auto-phrase;text-wrap:pretty}
 .para{margin:0 0 1em}
 .para p{margin:0;text-indent:0}
 .para .zh{display:none;color:var(--muted);font-size:calc(var(--fs) - 3px);line-height:1.7;margin-top:2px;padding-left:30px}
@@ -132,7 +134,6 @@ button:disabled{opacity:.45}
 .story-text[data-lang="zh"] .zh{padding-left:0;color:var(--text);font-size:calc(var(--fs) - 1px)}
 body.fg-none .story-text{line-height:1.75}
 @media (min-width:1000px){
-  .app{max-width:1100px}
   .story-text[data-lang="both"] .para{display:grid;grid-template-columns:1.1fr .9fr;gap:0 24px;align-items:start}
   .story-text[data-lang="both"] .zh{padding-left:0;margin-top:.35em}
 }
@@ -276,7 +277,6 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
   .quiz-dock{max-width:880px;margin:0 auto}
 }
 @media (min-width:1000px){
-  .tabs,.quiz-dock{max-width:1100px}
 }
 @media print{
   header,.hud,.tabs,.seg,.qscope,.qscope-panel,.subtabs,.toolbar,.filter-row,.quiz-card,.quiz-dock,.play,.playall,.tip,.lang-tabs,.flow,.pnote,.lesson-sum{display:none!important}
