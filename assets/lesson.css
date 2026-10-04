@@ -124,7 +124,7 @@ button:disabled{opacity:.45}
 .lang-tabs{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:1px;background:var(--card)}
 .lang-tabs button{min-height:30px;padding:4px 10px;font-size:12.5px;border:0;border-radius:999px}
 .story-text{font-size:var(--fs);line-height:2}
-/* 日文按詞組斷行：不把「起きました」切成「起きまし／た」（Chrome／Edge 支援 auto-phrase；其他瀏覽器至少套用嚴格禁則） */
+/* 日文按詞組斷行：引擎載入 BudouX 後會在詞組間插 <wbr> 並改成 keep-all；這裡是載入前／失敗時的退路 */
 .story-text p.ja,.pq-text{line-break:strict;word-break:auto-phrase;text-wrap:pretty}
 .para{margin:0 0 1em}
 .para p{margin:0;text-indent:0}
@@ -154,9 +154,9 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 
 /* ── 文法點（點整段淡色範圍都可點開，角標只是視覺提示）── */
 .gram{background:var(--gram-soft);border-radius:4px;padding:.15em .1em;margin:-.15em -.1em;cursor:pointer}
-.gram-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;min-height:20px;
-  font-size:11px;font-weight:800;color:var(--card);background:var(--gram);border-radius:4px;padding:2px 5px;
-  margin-left:3px;line-height:1;vertical-align:2px}
+/* 一般行內（不是 inline-flex 方塊）：方塊後面瀏覽器不套日文禁則，會把句尾「。」擠到下一行行首 */
+.gram-badge{display:inline;font-size:11px;font-weight:800;color:var(--card);background:var(--gram);border-radius:4px;
+  padding:3px 5px;margin-left:3px;line-height:1;vertical-align:2px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 
 .play{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;min-height:0;padding:0;border-radius:50%;font-size:11px;vertical-align:middle;margin-right:6px;flex:none}
 .legend{font-size:13px;color:var(--muted);margin-bottom:10px}

@@ -429,6 +429,49 @@
           "</div>";
       }).join("");
     });
+    glueGramBadges(document.getElementById("storyRead"));
+    phraseBreak();
+  }
+  // 「文」角標是 inline-flex 的小方塊，瀏覽器會在它後面找換行點，把「、」「。」擠到行首。
+  // 角標後面補一個 word joiner（U+2060，看不見、不可斷），後面的標點就會跟著角標留在同一行。
+  function glueGramBadges(root) {
+    if (!root) return;
+    root.querySelectorAll(".gram-badge").forEach(function (b) {
+      var nx = b.nextSibling;
+      if (!(nx && nx.nodeType === 3 && nx.data.charAt(0) === "\u2060")) b.parentNode.insertBefore(document.createTextNode("\u2060"), nx);
+    });
+  }
+  // BudouX 會把換行點插在 <ruby>、重點字 <span> 的第一個字前面（元素裡面）；
+  // 瀏覽器不在注音元素內換行，這些點會失效、最後只好硬切詞。把它們移到元素外面。
+  function hoistWbr(root) {
+    root.querySelectorAll("wbr").forEach(function (w) {
+      var p = w.parentNode;
+      while (p && p !== root && p.firstChild === w && /^(RUBY|RB|SPAN|B)$/.test(p.nodeName)) {
+        p.parentNode.insertBefore(w, p); p = w.parentNode;
+      }
+      // 還留在注音詞或重點字中間的（間に｜合う、真｜由）：一個詞不從中間斷，直接拿掉
+      if (w.parentNode !== root && w.parentNode.closest && w.parentNode.closest("ruby, .word")) w.remove();
+    });
+  }
+
+  /* ---------- 日文按詞組斷行 ----------
+     所有瀏覽器都用 assets/vendor/budoux/ 在詞組之間插 <wbr>（Safari 不支援 CSS auto-phrase；
+     Chrome 的 auto-phrase 遇到注音與「文」角標會把「、」擠到行首，實測 BudouX 版 0 處）。
+     BudouX 載入前與載入失敗時，退回 lesson.css 的 auto-phrase／嚴格禁則，不影響閱讀。 */
+  var phraseParser = null;
+  function phraseBreak() {
+    if (!phraseParser) {
+      var vb = new URL(BASE + "assets/vendor/budoux/", location.href).href;
+      phraseParser = Promise.all([import(vb + "html_processor.js"), import(vb + "data/models/ja.js")])
+        .then(function (m) { return new m[0].HTMLProcessingParser(m[1].model, { separator: document.createElement("wbr") }); });
+      phraseParser.catch(function () { phraseParser = null; });
+    }
+    phraseParser.then(function (parser) {
+      document.querySelectorAll("#storyRead p.ja, .pq-text").forEach(function (el) {
+        if (el.dataset.bx === "1") return;
+        try { parser.applyToElement(el); hoistWbr(el); el.dataset.bx = "1"; } catch (e) {}
+      });
+    }, function () {});
   }
   function renderGrammarTable() {
     $("grammarBody").innerHTML = (DATA.grammar || []).map(function (g, i) {
@@ -837,6 +880,7 @@
     $("pqText").innerHTML = parsePara(item.text).html.replace(/（([０-９])）/g, function (m, d) {
       return '<span class="pslot" id="pslot' + FW.indexOf(d) + '">（' + d + "）</span>";
     });
+    $("pqText").dataset.bx = ""; glueGramBadges($("pqText")); phraseBreak();
     $("pqItems").innerHTML = item.items.map(function (it, k) {
       var n = k + 1, order = it.o.map(function (_, i) { return i; }).sort(function () { return Math.random() - 0.5; });
       return '<div class="pq-item"><div class="pq-no">（' + FW.charAt(n) + '）</div><div class="gq-opts" data-pn="' + n + '">' +

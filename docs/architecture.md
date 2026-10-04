@@ -27,7 +27,8 @@ japanese-learning/
 │   ├── lesson.css             引擎課共用樣式（review.html、grammar-index.html 也用）
 │   ├── lesson-engine.js       引擎課共用行為（讀 JSON → 建 DOM → 綁事件；每篇 ①→⑤ 流程、複習字、打字／聽寫、會話、文章文法）
 │   ├── mock-exam.js           單課小考（10 題，執行時從本課資料組題）；引擎按下「本課小考」才載入
-│   └── vocab-table.js         共用「單字表」元件（window.vocabTableHTML）
+│   ├── vocab-table.js         共用「單字表」元件（window.vocabTableHTML）
+│   └── vendor/budoux/         第三方：日文按詞組斷行（budoux@0.9.3，Apache-2.0；勿手改，見其 README）
 ├── audio/
 │   ├── <sha1>.mp3             預錄語音，檔名 = 合成文字的雜湊
 │   ├── manifest.json          乾淨文字 → 檔名（會話行的 key 是 "@<聲音>:<乾淨文字>"）
@@ -63,6 +64,7 @@ japanese-learning/
 
 引擎 `boot()`：讀 `#app[data-lesson]` → `fetch ../data/lessons/<id>.json` + `../data/vocab.json`（故事標記裡 key 不屬於本課的字＝複習字，另外抓那幾課的 title）→ `JLStore.migrateLegacy([id])` → 建 header/hud/四個 section/底部分頁列 → 綁事件 → `fetch ../audio/manifest.json`、`../data/grammar.json`（文法卡的「怎麼接／容易搞混／常見錯誤」）。
 小考 `assets/mock-exam.js` 不寫進薄殼，按下「本課小考」時才由引擎動態載入，所以薄殼範本不用改。
+斷行用的 `assets/vendor/budoux/` 也不寫進薄殼：引擎渲染故事後用 `import()` 動態載入（ES module），在詞組間插 `<wbr>`。
 
 ## 進度與設定（assets/store.js）
 
