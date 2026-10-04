@@ -26,3 +26,7 @@ audio/_samples/
 node_modules/
 package-lock.json
 package.json
+
+# Impeccable 設計工具的本機檔案（產品脈絡、評分紀錄、設定）不進 repo
+PRODUCT.md
+.impeccable/
