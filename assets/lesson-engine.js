@@ -1043,8 +1043,40 @@
     syncDock();
     if (name === "stories") refreshFlows();
     window.scrollTo(0, same || (opts && opts.top) ? 0 : (scrollMem[viewKey(name)] || 0));
-    syncBack();
+    syncBack(); syncPressed();
     try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+  }
+
+  /* ---------- 無障礙：抽屜的焦點管理、切換鈕的按下狀態 ---------- */
+  // 抽屜一律透過 modal 的 .show 開關（含 mock-exam.js），所以在這裡統一觀察：
+  // 打開時背景設 inert、焦點移進抽屜；關閉時焦點回到原本的按鈕
+  function watchModal() {
+    var open = false, lastFocus = null;
+    function label() {
+      var h = sheet.querySelector("h3");
+      if (h) { h.id = h.id || "sheetTitle"; sheet.setAttribute("aria-labelledby", h.id); } else sheet.removeAttribute("aria-labelledby");
+    }
+    new MutationObserver(function () {
+      var now = modal.classList.contains("show"); if (now === open) return; open = now;
+      if (now) {
+        lastFocus = document.activeElement; app.inert = true; label();
+        try { sheet.focus({ preventScroll: true }); } catch (e) {}
+      } else {
+        app.inert = false;
+        if (lastFocus && document.contains(lastFocus) && lastFocus.offsetParent) try { lastFocus.focus({ preventScroll: true }); } catch (e) {}
+        lastFocus = null;
+      }
+    }).observe(modal, { attributes: true, attributeFilter: ["class"] });
+    // 抽屜內容整個重畫（設定、小考換題）時，焦點不要掉到 body
+    new MutationObserver(function () {
+      if (!open) return; label();
+      if (!sheet.contains(document.activeElement)) try { sheet.focus({ preventScroll: true }); } catch (e) {}
+    }).observe(sheet, { childList: true });
+  }
+  var PRESS_SEL = ".subtabs button,.filter-row button,.lang-tabs button,.ctl-row .grp button,.seg button";
+  function syncPressed() {
+    document.querySelectorAll(PRESS_SEL).forEach(function (b) { b.setAttribute("aria-pressed", b.classList.contains("active") ? "true" : "false"); });
+    document.querySelectorAll(".tabs button").forEach(function (b) { if (b.classList.contains("active")) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
   }
 
   /* ============================================================
@@ -1053,9 +1085,10 @@
   function wire() {
     modal = document.createElement("div");
     modal.className = "modal"; modal.id = "modal";
-    modal.innerHTML = '<div class="sheet" id="sheet"></div>';
+    modal.innerHTML = '<div class="sheet" id="sheet" role="dialog" aria-modal="true" tabindex="-1"></div>';
     document.body.appendChild(modal);
     sheet = $("sheet");
+    watchModal();
     modal.addEventListener("click", function (e) { if (e.target === modal) modal.classList.remove("show"); });
 
     sheet.addEventListener("change", function (e) {
@@ -1099,6 +1132,8 @@
 
     $("gearBtn").onclick = openSettings;
     $("backChip").onclick = returnToStory;
+    // 各種切換鈕都用 .active 表示選中；點完之後統一同步 aria-pressed
+    document.addEventListener("click", function () { setTimeout(syncPressed, 0); });
 
     document.querySelectorAll("[data-rd]").forEach(function (b) {
       b.onclick = function () { readingMode = b.dataset.rd; setSetting("reading", readingMode); applyReading(); };
