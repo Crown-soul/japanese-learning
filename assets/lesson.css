@@ -123,7 +123,6 @@ button:disabled{opacity:.45}
 .lang-tabs{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:1px;background:var(--card)}
 .lang-tabs button{min-height:30px;padding:4px 10px;font-size:12.5px;border:0;border-radius:999px}
 .story-text{font-size:var(--fs);line-height:2}
-.story-text:not([data-lang="both"]),.pq-text{max-width:34em}
 .para{margin:0 0 1em}
 .para p{margin:0;text-indent:0}
 .para .zh{display:none;color:var(--muted);font-size:calc(var(--fs) - 3px);line-height:1.7;margin-top:2px;padding-left:30px}
