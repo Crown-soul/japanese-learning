@@ -57,7 +57,7 @@ button:disabled{opacity:.45}
 /* ── 從步驟③④⑤離開時的「← 回到篇N」：浮在底部分頁列（或評分列）上方 ── */
 .backchip{position:fixed;z-index:21;left:50%;transform:translateX(-50%);bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + 12px);
   min-height:44px;padding:8px 18px;border-radius:999px;font-weight:600;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.16),0 1px 3px rgba(0,0,0,.08)}
-body:has(#quizDock:not([hidden])) .backchip{bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + 86px)}
+body.dock-on .backchip{bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom) + 86px)}
 body.has-back .app{padding-bottom:calc(var(--tabs-h) + 84px + env(safe-area-inset-bottom))}
 
 /* ── 二級切換：一條細的，不是卡片 ── */
@@ -170,8 +170,14 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 .quiz-controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
 .quiz-controls .primary{flex:1 1 160px}
 /* 評分鈕固定在底部分頁列上方（拇指區），只在顯示答案後出現 */
-.quiz-dock{position:fixed;left:0;right:0;bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom));z-index:19;display:flex;gap:8px;padding:10px 14px;background:var(--bg);border-top:1px solid var(--line)}
+.quiz-dock{position:fixed;left:0;right:0;bottom:calc(var(--tabs-h) + env(safe-area-inset-bottom));z-index:19;display:flex;padding:10px 14px;background:var(--bg);border-top:1px solid var(--line)}
+.dock-row{display:flex;gap:8px;flex:1}
 .quiz-dock button{flex:1;min-height:52px;flex-direction:column;gap:0;font-weight:600}
+.quiz-dock #showAnswer{flex:2}
+body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 96px + env(safe-area-inset-bottom))}
+body.dock-on.has-back .app{padding-bottom:calc(var(--tabs-h) + 156px + env(safe-area-inset-bottom))}
+.quiz-answer,.gq-opts{scroll-margin-bottom:calc(var(--tabs-h) + 96px + env(safe-area-inset-bottom))}
+body.has-back .quiz-answer,body.has-back .gq-opts{scroll-margin-bottom:calc(var(--tabs-h) + 156px + env(safe-area-inset-bottom))}
 .quiz-dock button small{font-size:11px;color:var(--muted);font-weight:400}
 .quiz-dock .good{background:var(--good)}.quiz-dock .mid{background:var(--warn)}.quiz-dock .bad{background:var(--bad)}
 .grammar table{width:100%;border-collapse:collapse;font-size:14px}
@@ -233,7 +239,7 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
   .tabs,.quiz-dock{max-width:1100px}
 }
 @media print{
-  header,.hud,.tabs,.backchip,.subtabs,.toolbar,.filter-row,.quiz-card,.quiz-dock,.play,.playall,.tip,.lang-tabs,.flow,.pnote,.lesson-sum{display:none!important}
+  header,.hud,.tabs,.backchip,.seg,.qscope,.qscope-panel,.subtabs,.toolbar,.filter-row,.quiz-card,.quiz-dock,.play,.playall,.tip,.lang-tabs,.flow,.pnote,.lesson-sum{display:none!important}
   .section{display:block!important}
   .para .zh{display:block!important}
   body{background:#fff;color:#000;line-height:1.5}

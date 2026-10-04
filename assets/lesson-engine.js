@@ -320,16 +320,18 @@
           '<button id="typeCheck" class="primary">對答案</button>' +
           '<div class="typeres" id="typeRes"></div></div>' +
         '<div class="quiz-answer" id="quizAnswer"></div>' +
-        '<div class="quiz-controls" id="quizChoiceNext" hidden><button id="choiceNext" class="primary">下一題</button></div>' +
-        '<div class="quiz-controls" id="quizPre">' +
-          '<button id="showAnswer" class="primary">顯示答案</button>' +
-          '<button id="speakQuiz">▶ 播放</button>' +
-          '<button id="nextQuiz">略過</button></div>' +
       '</div>' +
+      // 作答按鈕都在底部同一個位置（拇指區）：顯示答案 → 評分／下一題，手指不用移動
       '<div class="quiz-dock" id="quizDock" hidden>' +
-        '<button class="status-btn bad" data-status="bad">不記得<small>1</small></button>' +
-        '<button class="status-btn mid" data-status="mid">有點模糊<small>2</small></button>' +
-        '<button class="status-btn good" data-status="good">記得<small>3</small></button>' +
+        '<div class="dock-row" id="quizPre">' +
+          '<button id="speakQuiz">▶ 播放</button>' +
+          '<button id="showAnswer" class="primary">顯示答案</button>' +
+          '<button id="nextQuiz">略過</button></div>' +
+        '<div class="dock-row" id="quizRate" hidden>' +
+          '<button class="status-btn bad" data-status="bad">不記得<small>1</small></button>' +
+          '<button class="status-btn mid" data-status="mid">有點模糊<small>2</small></button>' +
+          '<button class="status-btn good" data-status="good">記得<small>3</small></button></div>' +
+        '<div class="dock-row" id="quizChoiceNext" hidden><button id="choiceNext" class="primary">下一題</button></div>' +
       '</div></section>';
   }
 
@@ -623,15 +625,26 @@
     answerShown = true;
     $("quizAnswer").classList.add("show");
     $("quizPre").hidden = true;
-    $("quizDock").hidden = false;
+    $("quizRate").hidden = false;
+    syncDock(); revealAnswer();
+  }
+  // 底部作答列：有任何一排要顯示才出現；出現時內容底部讓出同樣高度，答案不會被蓋住
+  function syncDock() {
+    var dock = $("quizDock"); if (!dock) return;
+    var any = ["quizPre", "quizRate", "quizChoiceNext"].some(function (id) { return !$(id).hidden; });
+    dock.hidden = curTab !== "quiz" || !quizKeys.length || !any;
+    document.body.classList.toggle("dock-on", !dock.hidden);
+  }
+  function revealAnswer() {
+    var a = $("quizAnswer");
+    try { a.scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch (e) {}
   }
   function renderQuiz() {
     var ans = $("quizAnswer");
     answerShown = false;
     $("filterInfo").textContent = "題庫 " + quizKeys.length + " 字";
     ans.classList.remove("show");
-    $("quizPre").hidden = false;
-    $("quizDock").hidden = true;
+    $("quizPre").hidden = false; $("quizRate").hidden = true;
     $("quizChoices").hidden = true; $("quizChoiceNext").hidden = true;
     $("quizType").hidden = true; $("typeRes").innerHTML = "";
     $("typeInput").value = ""; $("typeInput").disabled = false; $("typeCheck").disabled = false;
@@ -641,12 +654,16 @@
       $("quizHint").innerHTML = esc(quizFilter === "due" ? "今天沒有到期的字。" : quizFilter === "grad" ? "還沒有畢業的字（連續記得到 box 6 就畢業）。" : quizFilter === "new" ? "所有單字都練過了。" : "這個範圍沒有可以出題的字。") +
         (quizFilter !== "all" || SF ? '<div><button class="hintbtn" id="qScopeReset">改練全部單字</button></div>' : "");
       ans.innerHTML = "";
-      $("quizPre").hidden = true;
+      $("quizPre").hidden = true; syncDock();
       return;
     }
     if (qi >= quizKeys.length) qi = 0;
     var k = quizKeys[qi], v = vocab[k], q = $("quizQuestion");
     $("quizCount").textContent = (qi + 1) + " / " + quizKeys.length;
+    renderQuizBody(k, v, q, ans);
+    syncDock();
+  }
+  function renderQuizBody(k, v, q, ans) {
     if (isChoiceDir()) {
       var field = quizDir === "yomi" ? "reading" : "dict";
       var opts = distractors(k, field).concat([v[field]]).sort(function () { return Math.random() - 0.5; });
@@ -1023,8 +1040,7 @@
     $("hud").hidden = !(name === "vocabtable" || name === "quiz");
     $("hud").classList.toggle("compact", name === "quiz");
     $("readingRow").hidden = !(name === "stories" && !$("storyRead").hidden);
-    if (name === "quiz") { $("quizDock").hidden = !answerShown || !quizKeys.length || isChoiceDir(); }
-    else $("quizDock").hidden = true;
+    syncDock();
     if (name === "stories") refreshFlows();
     window.scrollTo(0, same || (opts && opts.top) ? 0 : (scrollMem[viewKey(name)] || 0));
     syncBack();
@@ -1208,7 +1224,7 @@
         x.disabled = true;
         if (x.dataset.choice === want) x.classList.add("correct"); else if (x === b) x.classList.add("wrong");
       });
-      $("quizAnswer").classList.add("show"); $("quizChoiceNext").hidden = false;
+      $("quizAnswer").classList.add("show"); $("quizChoiceNext").hidden = false; syncDock(); revealAnswer();
       S.rateVocab(k, ok ? "good" : "bad"); updateProgress();
       play(audioOf(v));
     });
