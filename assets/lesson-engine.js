@@ -296,7 +296,7 @@
           '<div class="small" id="rqCount"></div>' +
           '<div class="gq-sentence" id="rqQuestion" lang="ja"></div>' +
           '<div class="gq-opts" id="rqOpts"></div>' +
-          '<div class="gq-explain" id="rqExplain"></div>' +
+          '<div class="gq-explain" id="rqExplain" aria-live="polite"></div>' +
           '<div class="quiz-controls"><button id="rqNext">下一題</button></div>' +
         '</div>' +
       '</div></section>';
@@ -328,9 +328,9 @@
         '<div class="quiz-hint" id="quizHint"></div>' +
         '<div class="gq-opts" id="quizChoices" hidden></div>' +
         '<div class="typebox" id="quizType" hidden>' +
-          '<input id="typeInput" lang="ja" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="用假名輸入">' +
+          '<input id="typeInput" lang="ja" aria-label="用假名輸入讀音" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="用假名輸入">' +
           '<button id="typeCheck" class="primary" hidden>對答案</button>' +
-          '<div class="typeres" id="typeRes"></div></div>' +
+          '<div class="typeres" id="typeRes" aria-live="polite"></div></div>' +
         '<div class="quiz-answer" id="quizAnswer"></div>' +
       '</div>' +
       // 作答按鈕都在底部同一個位置（拇指區）：顯示答案 → 評分／下一題，手指不用移動
@@ -368,7 +368,7 @@
           '<div class="small" id="gqCount"></div>' +
           '<div class="gq-sentence" id="gqSentence" lang="ja"></div>' +
           '<div class="gq-opts" id="gqOpts"></div>' +
-          '<div class="gq-explain" id="gqExplain"></div>' +
+          '<div class="gq-explain" id="gqExplain" aria-live="polite"></div>' +
           '<div class="quiz-controls"><button id="gqNext">下一題</button></div>' +
         '</div></div>' +
       '<div id="grammarOrderWrap" hidden>' +
@@ -489,7 +489,7 @@
       '<div class="meta"><span lang="ja">' + esc(v.reading) + "</span>｜" + esc(v.pos) + "</div>" +
       (rvFrom ? '<div class="kv review-note"><strong>複習字</strong><div>在' + esc(rvFrom) + "學過，這課再遇到一次。</div></div>" : "") +
       '<div class="kv"><strong>中文</strong><div>' + esc(v.zh) + "</div></div>" +
-      (v.form && !rvFrom ? '<div class="kv"><strong>本文形式</strong><div lang="ja">' + esc(v.form) + "</div></div>" : "") +
+      (v.form && !rvFrom && v.form.replace(/^本文：/, "") !== v.dict ? '<div class="kv"><strong>本文形式</strong><div lang="ja">' + esc(v.form) + "</div></div>" : "") +
       '<div class="kv"><strong>例句</strong>' + exHTML(v) + "</div>" +
       '<div class="actions">' +
         '<button data-act="play-dict">▶ 單字</button>' +
@@ -545,9 +545,11 @@
   function dueKeys() { return S.dueVocab(keysAll()); }
   function newKeys() { return keysAll().filter(function (k) { var r = S.getVocab(k); return !r || !r.seen; }); }
   function updateProgress() {
-    var st = S.stats("vocab", keysAll());
-    $("progressText").textContent =
-      "熟練 " + st.master + " / " + st.total + (st.due ? " · 今日複習 " + st.due : "");
+    // 選了某一篇時，進度條與統計只算那一篇；全課數字放在後面當參考
+    var st = S.stats("vocab", keysAll().filter(inSF)), all = SF ? S.stats("vocab", keysAll()) : null;
+    $("progressText").textContent = (SF ? storyLabel(SF) + " " : "") +
+      "熟練 " + st.master + " / " + st.total + (st.due ? " · 今日複習 " + st.due : "") +
+      (all ? "　（全課 " + all.master + " / " + all.total + "）" : "");
     $("progressFill").style.transform = "scaleX(" + (st.total ? st.master / st.total : 0) + ")";
     $("statMaster").textContent = st.master;
     $("statLearning").textContent = st.learning;
@@ -604,6 +606,9 @@
     }
     $("typeInput").disabled = true; $("typeCheck").disabled = true;
     showAnswer();
+    // 系統已經知道對錯：先替你選好建議的評分（對＝記得、錯＝不記得），按一下確認即可
+    var sug = document.querySelector('#quizRate [data-status="' + (a === b ? "good" : "bad") + '"]');
+    if (sug) { sug.classList.add("suggest"); try { sug.focus({ preventScroll: true }); } catch (e) {} }
     try { $("typeInput").blur(); res.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
   }
   var HAS_KANJI_RE = new RegExp("[" + KANJI + "]");
@@ -661,6 +666,7 @@
     $("filterInfo").textContent = "題庫 " + quizKeys.length + " 字";
     ans.classList.remove("show");
     $("quizPre").hidden = false; $("quizRate").hidden = true;
+    document.querySelectorAll("#quizRate .suggest").forEach(function (b) { b.classList.remove("suggest"); });
     $("quizChoices").hidden = true; $("quizChoiceNext").hidden = true;
     $("quizType").hidden = true; $("typeRes").innerHTML = "";
     $("typeInput").value = ""; $("typeInput").disabled = false; $("typeCheck").disabled = false;
@@ -702,11 +708,11 @@
         $("quizHint").textContent = "用假名打出日文讀音；想不出來直接按「對答案」看解答";
         ans.innerHTML = full;
       } else if (quizDir === "dict") {
-        q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
+        q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 播放題目</button>';
         $("quizHint").textContent = "聽單字，用假名打出來";
         ans.innerHTML = full; play(audioOf(v));
       } else {
-        q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
+        q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 播放題目</button>';
         $("quizHint").textContent = "聽整句，用假名打出來（標點不用打）";
         ans.innerHTML = exHTML(v) + head;
         play(v.ex);
@@ -722,12 +728,12 @@
       $("quizHint").textContent = "先想日文怎麼說，再顯示答案";
       ans.innerHTML = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span>' + exHTML(v);
     } else if (quizDir === "listenex") {
-      q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
+      q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 播放題目</button>';
       $("quizHint").textContent = "聽整句，想這句在說什麼、關鍵字是哪個";
       ans.innerHTML = exHTML(v) + '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + "</span><div>" + esc(v.zh) + "</div>";
       play(v.ex);
     } else {
-      q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
+      q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 播放題目</button>';
       $("quizHint").textContent = "聽日文發音，想中文意思";
       ans.innerHTML = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div>' + esc(v.zh) + '</div>' + exHTML(v);
       play(audioOf(v));   // manifest key 見 audioOf()
@@ -914,8 +920,12 @@
   function renderFlow(i) {
     var n = i + 1, el = $("flow" + i); if (!el) return;
     var steps = stepState(n), done = steps.every(function (s) { return s.done; });
-    el.innerHTML = '<ol class="steps' + (done ? " all" : "") + '">' + steps.map(function (s, k) {
-      return '<li class="' + (s.done ? "done" : "") + '"><button data-step="' + s.id + '" data-n="' + n + '">' +
+    var nextK = -1; steps.some(function (s, k) { if (!s.done) { nextK = k; return true; } return false; });
+    el.innerHTML = '<ol class="steps' + (done ? " all" : "") + '" aria-label="這篇的學習步驟">' + steps.map(function (s, k) {
+      // 第一個還沒做的步驟＝下一步（選中樣式＋aria-current），做完的綠底打勾
+      var nx = k === nextK;
+      return '<li class="' + (s.done ? "done" : nx ? "next" : "") + '"><button data-step="' + s.id + '" data-n="' + n + '"' +
+        (nx ? ' aria-current="step"' : "") + ' aria-label="' + (k + 1) + "．" + esc(s.label) + (s.info ? "，" + esc(s.info) : "") + (s.done ? "，已完成" : nx ? "，下一步" : "") + '">' +
         '<span class="no">' + (s.done ? "✓" : CIRC.charAt(k)) + "</span>" + esc(s.label) +
         (s.info ? '<span class="inf">' + esc(s.info) + "</span>" : "") + "</button></li>";
     }).join("") + "</ol>" +
@@ -941,7 +951,7 @@
       '<button class="' + (examFirst ? "primary" : "") + '" data-exam="1">本課小考（10 題）</button>' + (examFirst ? cont : "") + "</div>";
   }
   function refreshFlows() { if (!DATA) return; DATA.stories.forEach(function (_, i) { renderFlow(i); }); renderSum(); }
-  function setSFv(n) { SF = n; syncSF(); renderVocabTab(); shuffle(); gqShuffle(); soShuffle(); }
+  function setSFv(n) { SF = n; syncSF(); renderVocabTab(); shuffle(); gqShuffle(); soShuffle(); updateProgress(); }
   function setGview(v) {
     document.querySelectorAll("[data-gview]").forEach(function (x) { x.classList.toggle("active", x.dataset.gview === v); });
     $("grammarTable").hidden = v !== "table";

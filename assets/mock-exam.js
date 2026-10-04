@@ -46,8 +46,10 @@
         options: choices(k, "dict", kanji), answer: V[k].dict,
         explain: esc(V[k].dict) + "（" + esc(V[k].reading) + "）" + esc(V[k].zh), sound: V[k].audio || V[k].dict });
     });
-    // 文脈規定：例句裡原樣出現辭書形的字（多半是名詞），挖掉後選回去；干擾項優先同詞性
-    var ctxKeys = keys.filter(function (k) { var d = V[k].dict; return d.length >= 2 && (V[k].ex || "").indexOf(d) >= 0; });
+    // 文脈規定：例句裡原樣出現辭書形的字（多半是名詞），挖掉後選回去；干擾項優先同詞性。
+    // 副詞、形容詞程度詞常常好幾個都說得通（随分／かなり），自動出題會把對的判錯——這兩類不出也不當干擾項
+    var AMBIG = /副詞|形容詞/;
+    var ctxKeys = keys.filter(function (k) { var d = V[k].dict; return d.length >= 2 && (V[k].ex || "").indexOf(d) >= 0 && !AMBIG.test(V[k].pos || ""); });
     take(ctxKeys, 2).forEach(function (k) {
       var v = V[k], same = ctxKeys.filter(function (o) { return V[o].pos === v.pos && v.ex.indexOf(V[o].dict) < 0; });
       var pool = same.length >= 3 ? same : ctxKeys.filter(function (o) { return v.ex.indexOf(V[o].dict) < 0; });
@@ -93,15 +95,15 @@
     sheet.innerHTML = '<button class="sheet-close" data-act="close">關閉</button>' +
       '<div class="exam"><div class="ex-head"><span>' + (c.retry ? "重練答錯的" : "本課小考") + "</span><span>" + (c.i + 1) + " / " + c.qs.length + "　" + esc(q.type) + "</span></div>" +
       '<div class="ex-q">' + q.prompt + "</div>" + body +
-      '<div class="gq-explain" id="exExplain"></div>' +
+      '<div class="gq-explain" id="exExplain" aria-live="polite"></div>' +
       '<div class="quiz-controls" id="exNextWrap" hidden><button class="primary" data-exnext="1">' + (c.i + 1 < c.qs.length ? "下一題" : "看成績") + "</button></div></div>";
     c.answered = false;
     sheet.scrollTop = 0;
   }
-  function finish(ok) {
+  function finish(ok, picked) {
     var c = cur, q = c.qs[c.i];
     c.answered = true; c.answeredAt = Date.now();
-    if (ok) c.score++; else c.wrong.push(q);
+    if (ok) c.score++; else c.wrong.push(Object.assign({}, q, { picked: picked }));
     c.results.push({ type: q.type, ok: ok });
     var ex = c.ctx.sheet.querySelector("#exExplain");
     ex.innerHTML = (ok ? "正確。" : "正解：" + c.ctx.esc(q.answer) + "。") + '<div class="small" style="margin-top:6px">' + q.explain + "</div>";
@@ -135,7 +137,7 @@
       (rec ? '<div class="small">最高分 ' + rec.best + " / " + total + "　·　第 " + rec.times + " 次</div>" : "") +
       (c.retry ? "" : breakdown(c.results, esc)) +
       (c.wrong.length ? '<div class="kv"><strong>答錯的題目</strong><ul class="ex-wrong">' + c.wrong.map(function (q) {
-        return "<li><span class=\"small\">" + esc(q.type) + "</span>　" + q.prompt.replace(/<br>/g, " ") + '<br>→ 正解：<b lang="ja">' + esc(q.answer) + "</b></li>";
+        return "<li><span class=\"small\">" + esc(q.type) + "</span>　" + q.prompt.replace(/<br>/g, " ") + (q.picked ? '<br><span class="small">你選：</span><span lang="ja" class="ex-picked">' + esc(q.picked) + "</span>" : "") + '<br>→ 正解：<b lang="ja">' + esc(q.answer) + "</b></li>";
       }).join("") + "</ul></div>" : "") +
       '<div class="actions">' +
         (c.wrong.length ? '<button class="primary" data-exretry="1">練習答錯的（' + c.wrong.length + "）</button>" : "") +
@@ -154,7 +156,7 @@
         b.disabled = true;
         if (q.options[+b.dataset.exo] === q.answer) b.classList.add("correct"); else if (b === o) b.classList.add("wrong");
       });
-      finish(ok); return;
+      finish(ok, q.options[+o.dataset.exo]); return;
     }
     var ci = t.closest("[data-exci]");
     if (ci && !c.answered) {
@@ -163,7 +165,7 @@
       if (c.picked.length === q.order.length) {
         var good = c.picked.every(function (v, i) { return v === i; });
         c.ctx.sheet.querySelector("#exSo").classList.add(good ? "so-ok" : "so-ng");
-        finish(good);
+        finish(good, c.picked.map(function (k) { return q.order[k]; }).join(""));
       }
       return;
     }

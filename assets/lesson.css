@@ -59,7 +59,7 @@ header h1[lang="ja"]{font-family:var(--mincho);font-size:1.2rem;font-weight:600;
 .ctl-row .grp button{flex:1;padding:6px 2px;min-height:36px;font-size:12.5px;white-space:nowrap}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap}
 button,.btn{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:11px 13px;min-height:44px;font-size:15px;cursor:pointer;touch-action:manipulation;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;line-height:1.2;font-family:inherit}
-button:focus-visible,.btn:focus-visible,.word:focus-visible,.gram:focus-visible,tr[tabindex]:focus-visible{outline:3px solid var(--muted);outline-offset:2px}
+button:focus-visible,.btn:focus-visible,.word:focus-visible,.gram:focus-visible,tr[tabindex]:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 /* 選中＝淡藍底＋藍字＋藍框（所有切換鈕一致）；實心藍只給「要按的主要動作」（.primary） */
 button.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:600}
 button.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600}
@@ -77,7 +77,7 @@ button:disabled{opacity:.45}
 .tabs.nav-ic button.active{box-shadow:none;color:var(--accent);font-weight:700}
 .tabs.nav-ic button.active .ti{background:var(--accent-soft)}
 /* 「回篇N」：不是選中狀態，只在圖示右上加一個小圓點提示「點這裡回去」 */
-.tabs.nav-ic button.ret{color:var(--text)}
+.tabs.nav-ic button.ret{color:var(--text);font-weight:500}
 .tabs.nav-ic .ti{position:relative}
 .tabs.nav-ic button.ret .ti::after{content:"";position:absolute;top:1px;right:11px;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--card)}
 
@@ -177,6 +177,8 @@ body.fg-target rt.rt-t{visibility:hidden;font-size:0}
 body.fg-none .example .ex-kana{display:none}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .status-btn.good.active{background:var(--good)}
+.actions .status-btn.good{background:var(--good)}.actions .status-btn.mid{background:var(--warn)}.actions .status-btn.bad{background:var(--bad)}
+.quiz-dock .status-btn.suggest{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .status-btn.mid.active{background:var(--warn)}
 .status-btn.bad.active{background:var(--bad)}
 .sheet-close{float:right;position:sticky;top:0;z-index:2;min-height:44px;min-width:44px;padding:6px 12px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
@@ -244,7 +246,7 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 .so-pool button{font-size:1.05rem;line-height:1.5}
 .so-pool button:disabled{opacity:.25}
 .note{width:100%;font:inherit;font-size:15px;line-height:1.6;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--text);resize:vertical;margin-top:6px}
-.note:focus-visible{outline:3px solid var(--muted);outline-offset:2px}
+.note:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 
 .recbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px;padding:10px;border:1px dashed var(--line);border-radius:12px}
 .recbar button{min-height:36px;padding:6px 12px;font-size:13.5px;border-radius:999px}
@@ -303,7 +305,10 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 .flow .steps .no{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
   background:var(--soft);font-size:13px;font-weight:700}
 .flow .steps li.done button{background:var(--good);border-color:transparent}
-.flow .steps li.done .no{background:#3aa564;color:#fff}
+.flow .steps li.done .no{background:var(--ok-t);color:var(--card)}
+.flow .steps li.next button{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}
+.flow .steps li.next .no{background:var(--accent);color:var(--card)}
+@media (min-width:700px){.flow .steps{max-width:600px}}
 .flow .steps .inf{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .flow .nextstory{margin-top:8px;min-height:44px;width:100%;border-radius:12px;background:var(--good);font-weight:600}
 
@@ -316,18 +321,9 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 
 /* JLPT 參考等級 */
 .jl{display:inline-block;font-size:11px;font-weight:700;line-height:1;padding:3px 5px;border-radius:5px;margin-left:6px;
-  vertical-align:middle;background:var(--soft);color:var(--muted);letter-spacing:.02em}
-.jl-n5,.jl-n4{background:var(--good);color:#2f7a4b}
-.jl-n3{background:var(--warn);color:#85590c}
-.jl-n2,.jl-n1,.jl-x{background:var(--bad);color:#b04444}
-:root[data-theme="dark"] .jl-n5,:root[data-theme="dark"] .jl-n4{color:#8fd4a8}
-:root[data-theme="dark"] .jl-n3{color:#e8c07a}
-:root[data-theme="dark"] .jl-n2,:root[data-theme="dark"] .jl-n1,:root[data-theme="dark"] .jl-x{color:#f0a0a0}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .jl-n5,:root:not([data-theme="light"]) .jl-n4{color:#8fd4a8}
-  :root:not([data-theme="light"]) .jl-n3{color:#e8c07a}
-  :root:not([data-theme="light"]) .jl-n2,:root:not([data-theme="light"]) .jl-n1,:root:not([data-theme="light"]) .jl-x{color:#f0a0a0}
-}
+  vertical-align:middle;background:transparent;border:1px solid var(--line);color:var(--muted);letter-spacing:.02em}
+/* 超出 N4 範圍（N3 以上、未分級）：藍框標出來，不用記得程度的綠黃紅（Semantic Lock） */
+.jl-n3,.jl-n2,.jl-n1,.jl-x{border-color:var(--accent);color:var(--accent)}
 
 /* 篇篩選 */
 .sf-row .lab{font-size:13px;color:var(--muted);margin-right:2px}
@@ -340,7 +336,7 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 
 /* 打字作答／聽寫 */
 .typebox{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px;text-align:left}
-.typebox input{flex:1 1 200px;min-height:48px;font-size:17px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;
+.typebox input{flex:1 1 200px;min-height:48px;font-size:17px;padding:8px 12px;border:1px solid var(--muted);border-radius:12px;
   background:var(--bg);color:var(--text)}
 .typebox button{min-height:48px}
 .typeres{flex:1 1 100%;font-size:15px;line-height:1.8}
@@ -391,3 +387,4 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 .exam .ex-break li.full b{color:var(--ok-t)}
 .exam .ex-wrong{padding-left:18px;line-height:1.8;margin:6px 0 0}
 .exam .ex-wrong li{margin-bottom:8px}
+.exam .ex-picked{color:var(--ng-t);text-decoration:line-through;text-decoration-thickness:1px}
