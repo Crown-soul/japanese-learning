@@ -54,6 +54,7 @@
 |---|---|
 | 檔案地圖、資料流、生成物 vs 手寫 | `docs/architecture.md` |
 | 引擎課 JSON schema、故事標記、樣式/RWD 規則、驗收標準 | `docs/lesson-authoring.md` |
+| 視覺設計規則（藍色主色、明朝標題、選中樣式、導覽與作答托盤、Do/Don't） | `DESIGN.md` |
 | N4 文法點（skill 只能從這裡挑） | `docs/n4-grammar.md` |
 | TTS 金鑰、發音修正機制、已知誤讀 | `docs/tts-notes.md` |
 | 任務中途交接（範本；實際交接文件不進 repo） | `docs/handoff-template.md` |

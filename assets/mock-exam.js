@@ -96,10 +96,11 @@
       '<div class="gq-explain" id="exExplain"></div>' +
       '<div class="quiz-controls" id="exNextWrap" hidden><button class="primary" data-exnext="1">' + (c.i + 1 < c.qs.length ? "下一題" : "看成績") + "</button></div></div>";
     c.answered = false;
+    sheet.scrollTop = 0;
   }
   function finish(ok) {
     var c = cur, q = c.qs[c.i];
-    c.answered = true;
+    c.answered = true; c.answeredAt = Date.now();
     if (ok) c.score++; else c.wrong.push(q);
     c.results.push({ type: q.type, ok: ok });
     var ex = c.ctx.sheet.querySelector("#exExplain");
@@ -167,7 +168,8 @@
       return;
     }
     if (t.closest("[data-exreset]") && !c.answered) { render(); return; }
-    if (t.closest("[data-exnext]")) { c.i++; render(); return; }
+    // 作答後抽屜長高，「下一題」會跑到剛才選項的位置：短時間內的第二下當成誤觸
+    if (t.closest("[data-exnext]")) { if (!c.answered || Date.now() - c.answeredAt < 450) return; c.i++; render(); return; }
     if (t.closest("[data-exagain]")) { open(c.ctx); return; }
     if (t.closest("[data-exretry]")) { start(c.ctx, shuffle(c.wrong), true); return; }
   }

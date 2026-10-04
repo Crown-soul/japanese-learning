@@ -204,14 +204,15 @@
     app.innerHTML =
       '<header>' +
         '<div class="hrow"><a class="backlink" href="' + BASE + '">← 回目錄</a>' +
-        '<button class="gear" id="gearBtn" aria-label="設定">⚙︎</button></div>' +
-        '<h1 lang="ja">' + esc(TITLE) + '</h1>' +
+          '<h1 lang="ja">' + esc(TITLE) + '</h1>' +
+          '<button class="gear" id="gearBtn" aria-label="設定">⚙︎</button></div>' +
         '<div class="ctl-row" id="readingRow" role="group" aria-label="注音與遮字">' +
+          '<span class="lab" aria-hidden="true">注音</span>' +
           '<span class="grp">' +
-          '<button data-rd="all">全部注音</button>' +
-          '<button data-rd="target">藏重點字注音</button>' +
-          '<button data-rd="none">全部隱藏</button>' +
-          '<button data-rd="mask">遮住重點字</button></span></div>' +
+          '<button data-rd="all" title="每個漢字都標讀音">全部</button>' +
+          '<button data-rd="target" title="本課重點字不標讀音，點字才顯示">重點字不標</button>' +
+          '<button data-rd="none" title="都不標讀音，點重點字才顯示">都不標</button>' +
+          '<button data-rd="mask" class="rd-mask" title="把重點字挖空，點一下才出現（自我測驗）">挖空重點字</button></span></div>' +
       '</header>' +
       '<div class="hud" id="hud">' +
         '<div class="progressbar" aria-label="學習進度"><div id="progressFill"></div></div>' +
@@ -283,7 +284,8 @@
       '<div id="storyRead">' +
         '<details class="tip" id="tip"><summary>怎麼用這一課</summary>' +
         '<div>一天一篇：照每篇標題下面的 ①→⑤ 走，每一步做完會打勾。點粗體重點字看詳解；<span class="rv-sample">虛線</span>是之前的課學過的複習字。' +
-        '段首 ▶ 聽整段，紫色「文」是文法點，段尾「⋯」可以回報怪怪的句子。</div></details>' +
+        '段首 ▶ 聽整段，紫色「文」是文法點，段尾「⋯」可以回報怪怪的句子。' +
+        '<br>上方「注音」：<b>全部</b>＝都標讀音；<b>重點字不標</b>＝本課重點字先不標、點字才看；<b>都不標</b>＝全部不標；<b>挖空重點字</b>＝把重點字藏起來自我測驗。</div></details>' +
         '<div class="lesson-sum" id="lessonSum"></div>' +
         cards +
       '</div>' +
@@ -326,8 +328,8 @@
         '<div class="quiz-hint" id="quizHint"></div>' +
         '<div class="gq-opts" id="quizChoices" hidden></div>' +
         '<div class="typebox" id="quizType" hidden>' +
-          '<input id="typeInput" lang="ja" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="用假名輸入（平假名、片假名都可以）">' +
-          '<button id="typeCheck" class="primary">對答案</button>' +
+          '<input id="typeInput" lang="ja" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="用假名輸入">' +
+          '<button id="typeCheck" class="primary" hidden>對答案</button>' +
           '<div class="typeres" id="typeRes"></div></div>' +
         '<div class="quiz-answer" id="quizAnswer"></div>' +
       '</div>' +
@@ -493,13 +495,13 @@
         '<button data-act="play-dict">▶ 單字</button>' +
         '<button data-act="play-ex">▶ 例句</button>' +
         '<a class="btn" target="_blank" rel="noopener" href="https://jisho.org/search/' + encodeURIComponent(v.dict) + '">查 Jisho ↗</a></div>' +
-      recorderHTML(v.ex) +
-      '<div class="kv"><strong>我的筆記</strong><textarea class="note" data-note="vocab" data-key="' + esc(key) + '" rows="2" placeholder="自己的記法、聯想、常搞混的字…">' + esc(S.getNote("vocab", key)) + "</textarea></div>" +
       '<div class="kv"><strong>複習</strong><div class="small" style="margin-top:4px">' + boxTxt + "</div>" +
         '<div class="actions">' +
           '<button class="status-btn bad" data-act="rate" data-val="bad">不記得</button>' +
           '<button class="status-btn mid" data-act="rate" data-val="mid">有點模糊</button>' +
-          '<button class="status-btn good" data-act="rate" data-val="good">記得</button></div></div>';
+          '<button class="status-btn good" data-act="rate" data-val="good">記得</button></div></div>' +
+      recorderHTML(v.ex) +
+      '<div class="kv"><strong>我的筆記</strong><textarea class="note" data-note="vocab" data-key="' + esc(key) + '" rows="2" placeholder="自己的記法、聯想、常搞混的字…">' + esc(S.getNote("vocab", key)) + "</textarea></div>";
     modal.classList.add("show");
   }
   function openGrammarCard(idx) {
@@ -591,7 +593,7 @@
     var v = vocab[quizKeys[qi]], want = typeTarget(v), got = $("typeInput").value;
     var a = normKana(got), b = normKana(want);
     var res = $("typeRes");
-    if (!a) { res.innerHTML = '<span class="small">先輸入再對答案；想不出來就按「顯示答案」。</span>'; return; }
+    if (!a) { res.innerHTML = '<span class="small">沒有作答，直接看解答。</span>'; $("typeInput").disabled = true; showAnswer(); return; }
     if (a === b) res.innerHTML = '<div class="t-ok">✓ 完全正確</div>';
     else {
       var d = kanaDiff(a, b);
@@ -675,6 +677,10 @@
     var k = quizKeys[qi], v = vocab[k], q = $("quizQuestion");
     $("quizCount").textContent = (qi + 1) + " / " + quizKeys.length;
     renderQuizBody(k, v, q, ans);
+    // 托盤依題型換按鈕：打字題主鈕＝對答案；題目本身已有「▶ 再聽一次」時不再放播放鈕
+    var lis = quizDir === "listen" || quizDir === "listenex" || quizDir === "dict" || quizDir === "dictex";
+    $("quizDock").dataset.mode = isTypeDir() ? "type" : lis ? "listen" : "";
+    $("showAnswer").textContent = isTypeDir() ? "對答案" : "顯示答案";
     syncDock();
   }
   function renderQuizBody(k, v, q, ans) {
@@ -693,7 +699,7 @@
       var head = '<strong lang="ja">' + esc(v.dict) + '</strong><span lang="ja">' + esc(v.reading) + '</span><div>' + esc(v.zh) + '</div>', full = head + exHTML(v);
       if (quizDir === "zhjptype") {
         q.lang = ""; q.textContent = v.zh.split("、")[0];
-        $("quizHint").textContent = "用假名打出這個字的日文讀音";
+        $("quizHint").textContent = "用假名打出日文讀音；想不出來直接按「對答案」看解答";
         ans.innerHTML = full;
       } else if (quizDir === "dict") {
         q.lang = ""; q.innerHTML = '<button class="bigplay" id="listenPlay">▶ 再聽一次</button>';
@@ -927,7 +933,9 @@
     var examFirst = !next || done >= Math.ceil(total * 0.7);
     var cont = next ? '<button class="' + (examFirst ? "" : "primary") + '" data-cont="' + next + '">' +
       (done ? "繼續：" : "從這裡開始：") + storyLabel(next) + " ↓</button>" : "";
-    $("lessonSum").innerHTML = '<div class="sum-l"><b>' + done + " / " + total + "</b> 篇完成" +
+    var dlgN = DATA.stories.filter(function (s) { return s.kind === "dialogue"; }).length;
+    $("lessonSum").innerHTML = '<div class="sum-l"><b>' + done + " / " + total + "</b> 完成" +
+      (dlgN ? '<span class="small">（' + (total - dlgN) + " 篇故事＋會話）</span>" : "") +
       (ex ? "　·　小考最高 <b>" + ex.best + " / " + ex.total + "</b>" : "") + "</div>" +
       '<div class="sum-act">' + (examFirst ? "" : cont) +
       '<button class="' + (examFirst ? "primary" : "") + '" data-exam="1">本課小考（10 題）</button>' + (examFirst ? cont : "") + "</div>";
@@ -1089,6 +1097,7 @@
       var now = modal.classList.contains("show"); if (now === open) return; open = now;
       if (now) {
         lastFocus = document.activeElement; app.inert = true; label();
+        sheet.scrollTop = 0;   // 不沿用上一個抽屜的捲動位置
         try { sheet.focus({ preventScroll: true }); } catch (e) {}
       } else {
         app.inert = false;
@@ -1270,7 +1279,7 @@
     });
 
     // 單字測驗
-    $("showAnswer").onclick = showAnswer;
+    $("showAnswer").onclick = function () { if (isTypeDir()) checkTyped(); else showAnswer(); };
     $("quizHint").addEventListener("click", function (e) {
       var h = e.target.closest("#hintBtn"); if (!h || !quizKeys.length) return;
       h.outerHTML = '<span lang="ja">讀音：' + esc(vocab[quizKeys[qi]].reading) + "</span>";
@@ -1421,8 +1430,7 @@
         '<button data-set="rate" data-val="0.75" class="' + act("0.75", String(cfg.audioRate || 1)) + '">慢 0.75x</button>' +
         '<button data-set="rate" data-val="1" class="' + act("1", String(cfg.audioRate || 1)) + '">正常 1x</button></div>' +
       '<div class="setrow"><span class="lab">練習</span>' +
-        '<button data-act="shuffle">重新洗牌所有題目</button>' +
-        '<button data-act="reset" class="danger">清除這一課的紀錄</button></div>' +
+        '<button data-act="shuffle">重新洗牌所有題目</button></div>' +
       '<div class="setrow"><span class="lab">這一課的回報（' + S.listParaNotes(LESSON_ID + "/").length + ' 則）</span>' +
         (S.listParaNotes(LESSON_ID + "/").length
           ? '<button data-act="copy-notes">複製全部，貼給 Claude</button><textarea id="notesBox" rows="4" hidden></textarea>' +
@@ -1433,7 +1441,9 @@
         '<button data-act="import">匯入進度檔</button>' +
         '<input type="file" id="importFile" accept="application/json,.json" hidden></div>' +
       '<div class="small" id="audioState" style="margin-top:8px"></div>' +
-      '<div class="small">鍵盤：空白＝顯示答案、1/2/3＝評分、→＝略過、P＝播放、Esc＝關閉</div>';
+      '<div class="small">鍵盤：空白＝顯示答案、1/2/3＝評分、→＝略過、P＝播放、Esc＝關閉</div>' +
+      '<div class="setrow danger-zone"><span class="lab">重設</span>' +
+        '<button data-act="reset" class="danger">清除這一課的紀錄</button></div>';
     $("audioState").textContent = Object.keys(AUDIO).length
       ? "語音：使用預錄 MP3（" + Object.keys(AUDIO).length + " 段）"
       : "語音：目前用瀏覽器內建語音";

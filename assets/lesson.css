@@ -41,7 +41,8 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans
 
 /* ── 頂部：只釘標題與注音控制 ── */
 header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);padding:calc(6px + env(safe-area-inset-top)) 0 6px;margin-bottom:10px}
-.hrow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.hrow h1{flex:1;min-width:0;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .backlink{display:inline-block;font-size:12px;line-height:1.3;color:var(--muted);text-decoration:none;padding:4px 0}
 .backlink:hover{color:var(--text)}
 h1{font-size:1.05rem;margin:0 0 6px;line-height:1.3}
@@ -52,12 +53,15 @@ header h1[lang="ja"]{font-family:var(--mincho);font-size:1.2rem;font-weight:600;
 .backlink::after,.gear::after,.play::after,.pnote::after,.playall::after,.ctl-row .grp button::after,.flow .steps button::after,.filter-row button::after,.hintbtn::after,.recbar button::after,.lang-tabs button::after{
   content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%)}
 .ctl-row{display:flex;gap:6px;align-items:center}
+.ctl-row>.lab{flex:none;font-size:12.5px;color:var(--muted);margin-right:2px}
+.ctl-row .grp .rd-mask{margin-left:6px}
 .ctl-row .grp{display:flex;gap:6px;flex:1;min-width:0}
 .ctl-row .grp button{flex:1;padding:6px 2px;min-height:36px;font-size:12.5px;white-space:nowrap}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap}
 button,.btn{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:11px 13px;min-height:44px;font-size:15px;cursor:pointer;touch-action:manipulation;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;line-height:1.2;font-family:inherit}
 button:focus-visible,.btn:focus-visible,.word:focus-visible,.gram:focus-visible,tr[tabindex]:focus-visible{outline:3px solid var(--muted);outline-offset:2px}
-button.active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+/* 選中＝淡藍底＋藍字＋藍框（所有切換鈕一致）；實心藍只給「要按的主要動作」（.primary） */
+button.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:600}
 button.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600}
 button.danger{color:var(--danger)}
 button:disabled{opacity:.45}
@@ -72,8 +76,10 @@ button:disabled{opacity:.45}
 .tabs.nav-ic .ti svg{width:22px;height:22px}
 .tabs.nav-ic button.active{box-shadow:none;color:var(--accent);font-weight:700}
 .tabs.nav-ic button.active .ti{background:var(--accent-soft)}
-.tabs.nav-ic button.ret{color:var(--accent);font-weight:700}
-.tabs.nav-ic button.ret .ti{box-shadow:inset 0 0 0 1.5px var(--accent)}
+/* 「回篇N」：不是選中狀態，只在圖示右上加一個小圓點提示「點這裡回去」 */
+.tabs.nav-ic button.ret{color:var(--text)}
+.tabs.nav-ic .ti{position:relative}
+.tabs.nav-ic button.ret .ti::after{content:"";position:absolute;top:1px;right:11px;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--card)}
 
 /* ── 二級切換：一條細的，不是卡片 ── */
 .subtabs{display:flex;gap:6px;margin:0 0 12px}
@@ -86,9 +92,8 @@ button:disabled{opacity:.45}
 .seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card);margin:0 0 8px}
 .seg button{flex:1;border:0;border-radius:0;min-height:44px;font-weight:600;font-size:15px;letter-spacing:.08em}
 .seg button+button{border-left:1px solid var(--line)}
-.seg button.active{border-color:var(--accent)}
+.seg button.active{box-shadow:inset 0 0 0 1px var(--accent)}
 #quiz .subtabs.qdirs{flex-wrap:wrap;overflow:visible;margin-bottom:10px}
-.qdirs button.active{background:var(--soft);color:var(--text);border-color:var(--text);font-weight:700}
 .qscope{display:flex;align-items:center;gap:10px;margin:0 0 12px}
 .qscope .small{margin-left:auto;white-space:nowrap}
 .qscope-btn{min-height:44px;padding:6px 12px 6px 14px;border-radius:999px;font-size:14px;gap:8px}
@@ -113,7 +118,7 @@ button:disabled{opacity:.45}
 .section{display:none}.section.active{display:block}
 .story-card,.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px}
 .story-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:10px}
-.story-head h2{margin:0;font-family:var(--mincho);font-size:calc(var(--fs) * 1.3);font-weight:600;letter-spacing:.05em;line-height:1.4;flex:1 1 auto;min-width:0}
+.story-head h2{margin:0;font-family:var(--mincho);font-size:calc(var(--fs) * 1.35);font-weight:600;letter-spacing:.05em;line-height:1.4;flex:1 1 auto;min-width:0}
 .story-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .lang-tabs{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:1px;background:var(--card)}
 .lang-tabs button{min-height:30px;padding:4px 10px;font-size:12.5px;border:0;border-radius:999px}
@@ -134,10 +139,10 @@ body.fg-none .story-text{line-height:1.75}
 
 /* ── 注音 ruby ── */
 ruby{ruby-align:center}
-ruby rt{font-weight:500;color:var(--muted);font-size:.52em;letter-spacing:-.02em}
+ruby rt{font-weight:500;color:var(--muted);font-size:max(.55em,11px);letter-spacing:-.02em}
 body.fg-none rt{visibility:hidden;font-size:0}
 body.fg-target rt.rt-t{visibility:hidden;font-size:0}
-.word.revealed rt.rt-t{visibility:visible!important;font-size:.52em!important}
+.word.revealed rt.rt-t{visibility:visible!important;font-size:max(.55em,11px)!important}
 
 /* ── 目標單字 ── */
 .word{font-weight:700;border-bottom:2px dotted var(--muted);cursor:pointer;padding:0 1px;border-radius:4px}
@@ -175,7 +180,7 @@ body.fg-none .example .ex-kana{display:none}
 .status-btn.good.active{background:var(--good)}
 .status-btn.mid.active{background:var(--warn)}
 .status-btn.bad.active{background:var(--bad)}
-.sheet-close{float:right;min-height:44px;min-width:44px;padding:6px 12px}
+.sheet-close{float:right;position:sticky;top:0;z-index:2;min-height:44px;min-width:44px;padding:6px 12px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 
 /* ── 測驗卡 ── */
 .quiz-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 16px;text-align:center}
@@ -194,6 +199,8 @@ body.fg-none .example .ex-kana{display:none}
 .dock-row{display:flex;gap:8px;flex:1}
 .quiz-dock button{flex:1;min-height:52px;flex-direction:column;gap:0;font-weight:600;border-radius:12px}
 .quiz-dock #showAnswer{flex:2}
+.quiz-dock[data-mode="listen"] #speakQuiz,.quiz-dock[data-mode="type"] #speakQuiz{display:none}
+@media (hover:none){.quiz-dock button small{display:none}}
 .quiz-dock button:not(.primary):not(.status-btn){background:var(--soft);border-color:transparent}
 body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inset-bottom))}
 .quiz-answer,.gq-opts{scroll-margin-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inset-bottom))}
@@ -204,6 +211,13 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 .grammar tr.grow{cursor:pointer}
 @media (hover:hover){.grammar tr.grow:hover td{background:var(--hl)}}
 .small{font-size:13px;color:var(--muted)}
+@media (max-width:599px){
+  .grammar table thead{display:none}
+  .grammar tr{display:block;padding:10px 4px;border-bottom:1px solid var(--line)}
+  .grammar th,.grammar td{display:block;border:0;padding:2px 4px}
+  .grammar td:first-child{font-weight:700}
+  .grammar tr.grow td:first-child::after{content:" ›";color:var(--muted);font-weight:400}
+}
 
 /* ── 文法克漏字 / 讀解 ── */
 .gq-sentence{font-size:1.15rem;font-weight:600;line-height:1.9;margin:6px 0 16px}
@@ -239,10 +253,11 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 .recwrap{margin:0 0 10px}
 
 .playall{font-size:12px;font-weight:500;padding:5px 10px;min-height:30px;border-radius:999px}
-.playall.playing{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.playall.playing{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 .bigplay{font-size:1.1rem;padding:14px 22px;border-radius:14px}
 .setrow{display:flex;align-items:center;gap:8px;margin:14px 0;flex-wrap:wrap}
 .setrow .lab{flex:0 0 100%;font-weight:600;margin-bottom:2px}
+.setrow.danger-zone{margin-top:22px;padding-top:14px;border-top:1px solid var(--line)}
 
 .loaderr{background:var(--bad);border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0}
 
@@ -267,7 +282,7 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
   .para .zh{display:block!important}
   body{background:#fff;color:#000;line-height:1.5}
   .story-card,.panel{border:1px solid #999;break-inside:avoid}
-  ruby rt{color:#444!important;visibility:visible!important;font-size:.52em!important}
+  ruby rt{color:#444!important;visibility:visible!important;font-size:.55em!important}
 }
 /* ---------- 2026-09 新增：下一步流程、複習字、JLPT、打字／聽寫、回報、會話、文章文法、單課小考 ---------- */
 
@@ -283,14 +298,14 @@ body.dock-on .app{padding-bottom:calc(var(--tabs-h) + 104px + env(safe-area-inse
 
 /* 每篇「下一步」流程 */
 .flow{margin:0 0 12px}
-.flow .steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
-.flow .steps li{margin:0}
-.flow .steps button{min-height:40px;padding:6px 12px 6px 8px;border-radius:999px;font-size:13.5px;display:inline-flex;align-items:center;gap:6px}
+.flow .steps{list-style:none;margin:0;padding:0;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px}
+.flow .steps li{margin:0;min-width:0}
+.flow .steps button{width:100%;min-height:58px;padding:6px 2px;border-radius:12px;font-size:12.5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.2;white-space:nowrap}
 .flow .steps .no{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
   background:var(--soft);font-size:13px;font-weight:700}
 .flow .steps li.done button{background:var(--good);border-color:transparent}
 .flow .steps li.done .no{background:#3aa564;color:#fff}
-.flow .steps .inf{font-size:11.5px;color:var(--muted)}
+.flow .steps .inf{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .flow .nextstory{margin-top:8px;min-height:44px;width:100%;border-radius:12px;background:var(--good);font-weight:600}
 
 /* 複習字：虛線底＋小「復」 */
