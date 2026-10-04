@@ -231,7 +231,7 @@
       quizSection() +
       grammarSection() +
       '<nav class="tabs nav-ic" id="tabs" aria-label="分頁">' +
-        tabBtn("stories", "故事", NAV_IC.stories) +
+        tabBtn("stories", "文章", NAV_IC.stories) +
         tabBtn("vocabtable", "單字表", NAV_IC.vocabtable) +
         tabBtn("quiz", "單字測驗", NAV_IC.quiz) +
         tabBtn("grammar", "文法", NAV_IC.grammar) +
@@ -277,7 +277,7 @@
     }
     rqFilters += '<button data-rqfilter="ng">只練答錯的</button>';
     return '<section id="stories" class="section active">' +
-      '<div class="subtabs" role="group" aria-label="故事分頁">' +
+      '<div class="subtabs" role="group" aria-label="文章分頁">' +
         '<button class="active" data-sview="read">閱讀</button>' +
         '<button data-sview="quiz">讀解測驗</button></div>' +
       '<div id="storyRead">' +
@@ -956,10 +956,10 @@
   function syncBack() {
     var tb = document.querySelector('.tabs [data-tab="stories"]'); if (!tb) return;
     if (curTab === "stories" && !$("storyRead").hidden) stepReturn = null;
-    // 從步驟③④⑤離開時，「故事」分頁直接變成「回篇N」：點它就回到剛才讀的位置
+    // 從步驟③④⑤離開時，「文章」分頁直接變成「回篇N」：點它就回到剛才讀的位置
     tb.classList.toggle("ret", !!stepReturn);
-    tb.querySelector(".tl").textContent = stepReturn ? "回" + storyLabel(stepReturn.n) : "故事";
-    if (stepReturn) tb.setAttribute("aria-label", "故事：回到" + storyLabel(stepReturn.n) + "剛才的位置"); else tb.removeAttribute("aria-label");
+    tb.querySelector(".tl").textContent = stepReturn ? "回" + storyLabel(stepReturn.n) : "文章";
+    if (stepReturn) tb.setAttribute("aria-label", "文章：回到" + storyLabel(stepReturn.n) + "剛才的位置"); else tb.removeAttribute("aria-label");
   }
   function cardTop(n) { var c = $("card" + (n - 1)); return c ? c.getBoundingClientRect().top + window.scrollY : 0; }
   function returnToStory() {

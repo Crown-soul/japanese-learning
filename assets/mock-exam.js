@@ -113,8 +113,8 @@
     var r = total ? score / total : 0;
     if (r === 1) return "全部答對！這課可以放心往下一課走了。";
     if (r >= 0.8) return "很穩。把下面答錯的看一眼，這課就扎實了。";
-    if (r >= 0.6) return "有基礎了。先重練答錯的，再回故事聽讀一次。";
-    return "先別急，回故事把 ①→⑤ 再走一遍，再來挑戰會輕鬆很多。";
+    if (r >= 0.6) return "有基礎了。先重練答錯的，再回文章聽讀一次。";
+    return "先別急，回文章把 ①→⑤ 再走一遍，再來挑戰會輕鬆很多。";
   }
   function breakdown(results, esc) {
     var by = {}, order = [];
