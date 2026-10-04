@@ -205,7 +205,7 @@
       '<header>' +
         '<div class="hrow"><a class="backlink" href="' + BASE + '">← 回目錄</a>' +
         '<button class="gear" id="gearBtn" aria-label="設定">⚙︎</button></div>' +
-        '<h1>' + esc(TITLE) + '</h1>' +
+        '<h1 lang="ja">' + esc(TITLE) + '</h1>' +
         '<div class="ctl-row" id="readingRow" role="group" aria-label="注音與遮字">' +
           '<span class="grp">' +
           '<button data-rd="all">全部注音</button>' +
@@ -230,15 +230,25 @@
       '</section>' +
       quizSection() +
       grammarSection() +
-      '<nav class="tabs" id="tabs" aria-label="分頁">' +
-        '<button data-tab="stories">故事</button>' +
-        '<button data-tab="vocabtable">單字表</button>' +
-        '<button data-tab="quiz">單字測驗</button>' +
-        '<button data-tab="grammar">文法</button>' +
-      '</nav>' +
-      '<button class="backchip" id="backChip" hidden></button>';
+      '<nav class="tabs nav-ic" id="tabs" aria-label="分頁">' +
+        tabBtn("stories", "故事", NAV_IC.stories) +
+        tabBtn("vocabtable", "單字表", NAV_IC.vocabtable) +
+        tabBtn("quiz", "單字測驗", NAV_IC.quiz) +
+        tabBtn("grammar", "文法", NAV_IC.grammar) +
+      '</nav>';
   }
 
+  // 底部導覽圖示：同一套 24 格線、1.8 線寬
+  var NAV_IC = {
+    stories: '<path d="M3 5.5c2.6-1.1 5.6-1 9 1 3.4-2 6.4-2.1 9-1v13c-2.6-1.1-5.6-1-9 1-3.4-2-6.4-2.1-9-1z"/><path d="M12 6.5v13"/>',
+    vocabtable: '<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/>',
+    quiz: '<rect x="3" y="7.5" width="14" height="12.5" rx="2"/><path d="M7 4.5h11a2.5 2.5 0 0 1 2.5 2.5v10"/><path d="M8 13.5l2 2 3.5-4"/>',
+    grammar: '<rect x="3.5" y="5" width="7" height="5.5" rx="1.2"/><rect x="13.5" y="5" width="7" height="5.5" rx="1.2"/><path d="M3.5 15.5h17M3.5 19.5h11"/>'
+  };
+  function tabBtn(id, label, ic) {
+    return '<button data-tab="' + id + '"><span class="ti" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+      ic + '</svg></span><span class="tl">' + label + "</span></button>";
+  }
   function storiesSection() {
     var cards = DATA.stories.map(function (s, i) {
       var hasTr = Array.isArray(s.translation) && s.translation.length > 0;
@@ -536,7 +546,7 @@
     var st = S.stats("vocab", keysAll());
     $("progressText").textContent =
       "熟練 " + st.master + " / " + st.total + (st.due ? " · 今日複習 " + st.due : "");
-    $("progressFill").style.width = (st.total ? st.master / st.total * 100 : 0) + "%";
+    $("progressFill").style.transform = "scaleX(" + (st.total ? st.master / st.total : 0) + ")";
     $("statMaster").textContent = st.master;
     $("statLearning").textContent = st.learning;
     $("statDue").textContent = st.due;
@@ -944,11 +954,12 @@
   }
   /* 從某篇的步驟③④⑤離開時記下位置，底部浮一顆「← 回到篇N」 */
   function syncBack() {
-    var chip = $("backChip"); if (!chip) return;
+    var tb = document.querySelector('.tabs [data-tab="stories"]'); if (!tb) return;
     if (curTab === "stories" && !$("storyRead").hidden) stepReturn = null;
-    chip.hidden = !stepReturn;
-    document.body.classList.toggle("has-back", !!stepReturn);
-    if (stepReturn) chip.textContent = "← 回到" + storyLabel(stepReturn.n);
+    // 從步驟③④⑤離開時，「故事」分頁直接變成「回篇N」：點它就回到剛才讀的位置
+    tb.classList.toggle("ret", !!stepReturn);
+    tb.querySelector(".tl").textContent = stepReturn ? "回" + storyLabel(stepReturn.n) : "故事";
+    if (stepReturn) tb.setAttribute("aria-label", "故事：回到" + storyLabel(stepReturn.n) + "剛才的位置"); else tb.removeAttribute("aria-label");
   }
   function cardTop(n) { var c = $("card" + (n - 1)); return c ? c.getBoundingClientRect().top + window.scrollY : 0; }
   function returnToStory() {
@@ -1149,7 +1160,6 @@
     });
 
     $("gearBtn").onclick = openSettings;
-    $("backChip").onclick = returnToStory;
     // 各種切換鈕都用 .active 表示選中；點完之後統一同步 aria-pressed
     document.addEventListener("click", function () { setTimeout(syncPressed, 0); });
 
@@ -1159,7 +1169,7 @@
 
     // tabs
     document.querySelectorAll(".tabs button").forEach(function (b) {
-      b.onclick = function () { stopAudio(); setTab(b.dataset.tab); };
+      b.onclick = function () { stopAudio(); if (b.dataset.tab === "stories" && stepReturn) returnToStory(); else setTab(b.dataset.tab); };
     });
     $("tip").addEventListener("toggle", function () { setSetting("tipOpen", $("tip").open); });
 

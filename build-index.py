@@ -143,11 +143,11 @@ PAGE = """<!DOCTYPE html>
 <meta name="color-scheme" content="light dark" />
 <title>日文學習檔案目錄</title>
 <style>
-:root{{--bg:#f7f7f8;--card:#fff;--text:#1f2328;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--soft:#eef2f7;--gram:#7a4a8f}}
+:root{{--bg:#f7f7f8;--card:#fff;--text:#1f2328;--muted:#5f6672;--line:#e5e7eb;--accent:#223a5e;--soft:#eef2f7;--gram:#7a4a8f}}
 @media (prefers-color-scheme:dark){{
-  :root:not([data-theme="light"]){{--bg:#16181c;--card:#1f2329;--text:#e6e7ea;--muted:#9aa1ab;--line:#333842;--accent:#e6e7ea;--soft:#2a2f37;--gram:#cf9fe6}}
+  :root:not([data-theme="light"]){{--bg:#16181c;--card:#1f2329;--text:#e6e7ea;--muted:#9aa1ab;--line:#333842;--accent:#b9cbe8;--soft:#2a2f37;--gram:#cf9fe6}}
 }}
-:root[data-theme="dark"]{{--bg:#16181c;--card:#1f2329;--text:#e6e7ea;--muted:#9aa1ab;--line:#333842;--accent:#e6e7ea;--soft:#2a2f37;--gram:#cf9fe6}}
+:root[data-theme="dark"]{{--bg:#16181c;--card:#1f2329;--text:#e6e7ea;--muted:#9aa1ab;--line:#333842;--accent:#b9cbe8;--soft:#2a2f37;--gram:#cf9fe6}}
 *{{box-sizing:border-box}}
 body{{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Noto Sans JP",sans-serif;background:var(--bg);color:var(--text);line-height:1.7}}
 .app{{max-width:720px;margin:0 auto;padding:28px 16px 80px}}
