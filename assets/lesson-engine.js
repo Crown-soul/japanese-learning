@@ -903,12 +903,20 @@
   }
   function renderSum() {
     if (!$("lessonSum")) return;
-    var total = DATA.stories.length, done = 0;
-    for (var n = 1; n <= total; n++) if (stepState(n).every(function (s) { return s.done; })) done++;
+    var total = DATA.stories.length, done = 0, next = 0;
+    for (var n = 1; n <= total; n++) {
+      if (stepState(n).every(function (s) { return s.done; })) done++;
+      else if (!next) next = n;
+    }
     var ex = S.getExam(LESSON_ID);
+    // 大部分篇讀完前，主要動作是「繼續讀下一篇」；小考退成次要
+    var examFirst = !next || done >= Math.ceil(total * 0.7);
+    var cont = next ? '<button class="' + (examFirst ? "" : "primary") + '" data-cont="' + next + '">' +
+      (done ? "繼續：" : "從這裡開始：") + storyLabel(next) + " ↓</button>" : "";
     $("lessonSum").innerHTML = '<div class="sum-l"><b>' + done + " / " + total + "</b> 篇完成" +
       (ex ? "　·　小考最高 <b>" + ex.best + " / " + ex.total + "</b>" : "") + "</div>" +
-      '<button class="primary" data-exam="1">本課小考（10 題）</button>';
+      '<div class="sum-act">' + (examFirst ? "" : cont) +
+      '<button class="' + (examFirst ? "primary" : "") + '" data-exam="1">本課小考（10 題）</button>' + (examFirst ? cont : "") + "</div>";
   }
   function refreshFlows() { if (!DATA) return; DATA.stories.forEach(function (_, i) { renderFlow(i); }); renderSum(); }
   function setSFv(n) { SF = n; syncSF(); renderVocabTab(); shuffle(); gqShuffle(); soShuffle(); }
@@ -1047,6 +1055,12 @@
     try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
   }
 
+  // 點背景／按 Esc 關抽屜：小考考到一半先確認（按「關閉」鈕是明確意圖，不擋）
+  function softClose() {
+    if (window.LessonExam && window.LessonExam.inProgress && window.LessonExam.inProgress() &&
+      !confirm("小考還沒考完，確定要離開嗎？這次的作答不會記錄。")) return;
+    modal.classList.remove("show");
+  }
   /* ---------- 無障礙：抽屜的焦點管理、切換鈕的按下狀態 ---------- */
   // 抽屜一律透過 modal 的 .show 開關（含 mock-exam.js），所以在這裡統一觀察：
   // 打開時背景設 inert、焦點移進抽屜；關閉時焦點回到原本的按鈕
@@ -1089,7 +1103,7 @@
     document.body.appendChild(modal);
     sheet = $("sheet");
     watchModal();
-    modal.addEventListener("click", function (e) { if (e.target === modal) modal.classList.remove("show"); });
+    modal.addEventListener("click", function (e) { if (e.target === modal) softClose(); });
 
     sheet.addEventListener("change", function (e) {
       if (e.target.id === "importFile" && e.target.files && e.target.files[0]) importProgress(e.target.files[0]);
@@ -1167,6 +1181,8 @@
       if (sd) { var n = +sd.dataset.shadowdone; S.markStory(LESSON_ID, n, "shadow"); $("rec" + (n - 1)).hidden = true; refreshFlows(); return; }
       var nx = e.target.closest("[data-next]");
       if (nx) { var c = $("card" + nx.dataset.next); if (c) c.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+      var ct = e.target.closest("[data-cont]");
+      if (ct) { var cc = $("card" + (+ct.dataset.cont - 1)); if (cc) cc.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
       var exb = e.target.closest("[data-exam]"); if (exb) { openExam(); return; }
       var pn = e.target.closest(".pnote"); if (pn && pn.closest("#storyRead")) { openPnote(pn.dataset.pk); return; }
       var ro = e.target.closest(".recopen");
@@ -1198,7 +1214,7 @@
       }
     });
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") { modal.classList.remove("show"); return; }
+      if (e.key === "Escape") { if (modal.classList.contains("show")) softClose(); return; }
       var tag = (e.target.tagName || "").toLowerCase();
       if (tag === "input" || tag === "textarea" || e.metaKey || e.ctrlKey || e.altKey) return;
       if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.closest("#storyRead")) {

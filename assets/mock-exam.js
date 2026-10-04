@@ -90,7 +90,7 @@
       body = '<div class="gq-opts">' + q.options.map(function (o, k) { return '<button data-exo="' + k + '" lang="ja">' + esc(o) + "</button>"; }).join("") + "</div>";
     }
     sheet.innerHTML = '<button class="sheet-close" data-act="close">關閉</button>' +
-      '<div class="exam"><div class="ex-head"><span>本課小考</span><span>' + (c.i + 1) + " / " + c.qs.length + "　" + esc(q.type) + "</span></div>" +
+      '<div class="exam"><div class="ex-head"><span>' + (c.retry ? "重練答錯的" : "本課小考") + "</span><span>" + (c.i + 1) + " / " + c.qs.length + "　" + esc(q.type) + "</span></div>" +
       '<div class="ex-q">' + q.prompt + "</div>" + body +
       '<div class="gq-explain" id="exExplain"></div>' +
       '<div class="quiz-controls" id="exNextWrap" hidden><button class="primary" data-exnext="1">' + (c.i + 1 < c.qs.length ? "下一題" : "看成績") + "</button></div></div>";
@@ -100,22 +100,45 @@
     var c = cur, q = c.qs[c.i];
     c.answered = true;
     if (ok) c.score++; else c.wrong.push(q);
+    c.results.push({ type: q.type, ok: ok });
     var ex = c.ctx.sheet.querySelector("#exExplain");
     ex.innerHTML = (ok ? "正確。" : "正解：" + c.ctx.esc(q.answer) + "。") + '<div class="small" style="margin-top:6px">' + q.explain + "</div>";
     ex.classList.add("show");
     c.ctx.sheet.querySelector("#exNextWrap").hidden = false;
     if (q.sound) c.ctx.play(q.sound);
   }
+  // 成績的一句話：看比例給方向，不只給分數
+  function verdict(score, total) {
+    var r = total ? score / total : 0;
+    if (r === 1) return "全部答對！這課可以放心往下一課走了。";
+    if (r >= 0.8) return "很穩。把下面答錯的看一眼，這課就扎實了。";
+    if (r >= 0.6) return "有基礎了。先重練答錯的，再回故事聽讀一次。";
+    return "先別急，回故事把 ①→⑤ 再走一遍，再來挑戰會輕鬆很多。";
+  }
+  function breakdown(results, esc) {
+    var by = {}, order = [];
+    results.forEach(function (r) { if (!by[r.type]) { by[r.type] = { ok: 0, n: 0 }; order.push(r.type); } by[r.type].n++; if (r.ok) by[r.type].ok++; });
+    return '<ul class="ex-break">' + order.map(function (t) {
+      var b = by[t], full = b.ok === b.n;
+      return '<li class="' + (full ? "full" : "") + '"><span>' + esc(t) + "</span><b>" + (full ? "✓ " : "") + b.ok + " / " + b.n + "</b></li>";
+    }).join("") + "</ul>";
+  }
   function renderEnd() {
     var c = cur, esc = c.ctx.esc, total = c.qs.length;
-    var rec = c.ctx.S.setExam(c.ctx.lessonId, c.score, total);
+    // 重練答錯的只是練習，不記分、不動最高分
+    var rec = c.retry ? null : c.ctx.S.setExam(c.ctx.lessonId, c.score, total);
     c.ctx.sheet.innerHTML = '<button class="sheet-close" data-act="close">關閉</button>' +
-      '<div class="exam"><h3>本課小考：' + c.score + " / " + total + "</h3>" +
-      '<div class="small">最高分 ' + rec.best + " / " + total + "　·　第 " + rec.times + " 次</div>" +
+      '<div class="exam"><h3>' + (c.retry ? "重練：" : "本課小考：") + c.score + " / " + total + "</h3>" +
+      '<p class="ex-verdict">' + esc(c.retry ? (c.wrong.length ? "還有 " + c.wrong.length + " 題要再看看，可以再練一次。" : "這次都答對了！") : verdict(c.score, total)) + "</p>" +
+      (rec ? '<div class="small">最高分 ' + rec.best + " / " + total + "　·　第 " + rec.times + " 次</div>" : "") +
+      (c.retry ? "" : breakdown(c.results, esc)) +
       (c.wrong.length ? '<div class="kv"><strong>答錯的題目</strong><ul class="ex-wrong">' + c.wrong.map(function (q) {
         return "<li><span class=\"small\">" + esc(q.type) + "</span>　" + q.prompt.replace(/<br>/g, " ") + '<br>→ 正解：<b lang="ja">' + esc(q.answer) + "</b></li>";
-      }).join("") + "</ul></div>" : '<div class="kv"><div>全部答對！</div></div>') +
-      '<div class="actions"><button class="primary" data-exagain="1">再考一次</button><button data-act="close">關閉</button></div></div>';
+      }).join("") + "</ul></div>" : "") +
+      '<div class="actions">' +
+        (c.wrong.length ? '<button class="primary" data-exretry="1">練習答錯的（' + c.wrong.length + "）</button>" : "") +
+        '<button class="' + (c.wrong.length ? "" : "primary") + '" data-exagain="1">' + (c.retry ? "重新考一次（10 題）" : "再考一次") + "</button>" +
+        '<button data-act="close">關閉</button></div></div>';
     if (c.ctx.onDone) c.ctx.onDone();
   }
 
@@ -145,14 +168,23 @@
     if (t.closest("[data-exreset]") && !c.answered) { render(); return; }
     if (t.closest("[data-exnext]")) { c.i++; render(); return; }
     if (t.closest("[data-exagain]")) { open(c.ctx); return; }
+    if (t.closest("[data-exretry]")) { start(c.ctx, shuffle(c.wrong), true); return; }
   }
 
-  function open(ctx) {
-    cur = { ctx: ctx, qs: build(ctx), i: 0, score: 0, wrong: [], answered: false };
+  function start(ctx, qs, retry) {
+    // 重練時選項重新洗牌，避免靠位置記答案
+    qs = qs.map(function (q) { return q.options ? Object.assign({}, q, { options: shuffle(q.options) }) : q; });
+    cur = { ctx: ctx, qs: qs, i: 0, score: 0, wrong: [], results: [], answered: false, retry: !!retry };
     if (!ctx.sheet.dataset.examWired) { ctx.sheet.addEventListener("click", onClick); ctx.sheet.dataset.examWired = "1"; }
     render();
     ctx.modal.classList.add("show");
   }
+  function open(ctx) { start(ctx, build(ctx), false); }
+  // 正在作答中（已開始、還沒看到成績）且抽屜開著
+  function inProgress() {
+    return !!(cur && cur.ctx.modal.classList.contains("show") && cur.ctx.sheet.querySelector(".exam .ex-head") &&
+      cur.i < cur.qs.length && (cur.i > 0 || cur.answered));
+  }
 
-  window.LessonExam = { open: open, _build: build };
+  window.LessonExam = { open: open, inProgress: inProgress, _build: build };
 })();
