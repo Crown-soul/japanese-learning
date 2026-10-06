@@ -91,7 +91,12 @@
     "對比": "～と／～ば／～たら／～なら"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "winter-trip",
+     "title": "冬休みは日本の田舎で"
+    }
+   ]
   },
   {
    "title": "～ば（假定）",
@@ -257,6 +262,10 @@
     {
      "id": "graduation",
      "title": "いよいよ卒業式"
+    },
+    {
+     "id": "winter-trip",
+     "title": "冬休みは日本の田舎で"
     }
    ]
   },
@@ -471,7 +480,12 @@
     "對比": "可能形／受身形／見える・聞こえる（見える・聞こえる＝自然而然看得到／聽得到，非靠能力或動作）"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "winter-trip",
+     "title": "冬休みは日本の田舎で"
+    }
+   ]
   },
   {
    "title": "受身形（被動）",
@@ -855,6 +869,10 @@
     {
      "id": "graduation",
      "title": "いよいよ卒業式"
+    },
+    {
+     "id": "winter-trip",
+     "title": "冬休みは日本の田舎で"
     }
    ]
   },
@@ -1015,12 +1033,8 @@
    "extra": [],
    "lessons": [
     {
-     "id": "business-trip",
-     "title": "初めての出張"
-    },
-    {
-     "id": "graduation",
-     "title": "いよいよ卒業式"
+     "id": "winter-trip",
+     "title": "冬休みは日本の田舎で"
     }
    ]
   },
@@ -1035,7 +1049,12 @@
     "來源": "みん日II L17 / JLPT Sensei"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "winter-trip",
+     "title": "冬休みは日本の田舎で"
+    }
+   ]
   },
   {
    "title": "～てもいい／～てはいけない",
@@ -1052,6 +1071,10 @@
     {
      "id": "study-abroad",
      "title": "留学が決まるまで"
+    },
+    {
+     "id": "winter-trip",
+     "title": "冬休みは日本の田舎で"
     }
    ]
   },
@@ -1164,6 +1187,51 @@
     {
      "id": "typhoon-weekend",
      "title": "台風の週末"
+    },
+    {
+     "id": "winter-trip",
+     "title": "冬休みは日本の田舎で"
+    }
+   ]
+  },
+  {
+   "title": "～と思う（意見・推測）",
+   "section": "I",
+   "retired": false,
+   "retiredNote": "",
+   "fields": {
+    "意思": "我覺得…、我想…（說話者自己的意見、判斷；問別人用「どう思いますか」）",
+    "接續": "普通形＋と思う（な形／名詞現在式要加「だ」：便利だと思う）",
+    "例": "日本のテレビ番組はおもしろいと思います。",
+    "來源": "みん日I L21 / JLPT Sensei",
+    "誤區": "第三人稱的想法用「と思っている」；「（よ）うと思う」是自己的打算，不是意見",
+    "對比": "～と思う／～（よ）うと思う"
+   },
+   "extra": [],
+   "lessons": [
+    {
+     "id": "winter-trip",
+     "title": "冬休みは日本の田舎で"
+    }
+   ]
+  },
+  {
+   "title": "～方（做法）",
+   "section": "I",
+   "retired": false,
+   "retiredNote": "",
+   "fields": {
+    "意思": "…的方法、怎麼做（名詞化）",
+    "接續": "Vます形（去ます）＋方（作り方・書き方）；サ變動詞「N＋の＋し方」（料理のし方）",
+    "例": "料理の作り方を教えてください。",
+    "來源": "JLPT Sensei / Bunpro",
+    "誤區": "受詞的「を」要改成「の」（×料理を作り方 → ○料理の作り方）"
+   },
+   "extra": [],
+   "lessons": [
+    {
+     "id": "winter-trip",
+     "title": "冬休みは日本の田舎で"
     }
    ]
   },
@@ -1182,6 +1250,10 @@
     {
      "id": "study-abroad",
      "title": "留学が決まるまで"
+    },
+    {
+     "id": "winter-trip",
+     "title": "冬休みは日本の田舎で"
     }
    ]
   },
@@ -1510,6 +1582,10 @@
     {
      "id": "graduation",
      "title": "いよいよ卒業式"
+    },
+    {
+     "id": "winter-trip",
+     "title": "冬休みは日本の田舎で"
     }
    ]
   },
@@ -1548,7 +1624,12 @@
     "來源": "みん日II L39 / JLPT Sensei"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "winter-trip",
+     "title": "冬休みは日本の田舎で"
+    }
+   ]
   },
   {
    "title": "～ため（に）（理由）",

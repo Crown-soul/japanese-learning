@@ -103,6 +103,11 @@ def point_stems(point):
     這種只能人工看，呼叫端要跳過而不是報錯。
     每個元素是一組「全部都要出現」的字樣（多格式文法如 ～ば～ほど）。
     """
+    # 標題本體（去掉括號說明）就是佔位類（可能形（～れる／～られる／できる））→ 整條無法比對；
+    # 不先擋的話，括號裡的「／」會被拆開，切出「できる）」這種殘缺字樣而誤報
+    head = re.sub(r"（.*?）|\(.*?\)", "", point or "")
+    if any(ph in head for ph in PLACEHOLDER):
+        return ()
     stems = []
     for variant in re.split(r"[／/]", point or ""):
         v = re.sub(r"（.*?）|\(.*?\)", "", variant).strip().lstrip("～~")
