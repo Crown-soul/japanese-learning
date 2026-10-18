@@ -132,7 +132,12 @@
     "誤區": "只用於過去的後悔；對未來的假設用「〜ば」「〜たら」"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "town-diner",
+     "title": "町の小さな食堂"
+    }
+   ]
   },
   {
    "title": "～たら（假定・確定條件）",
@@ -283,7 +288,12 @@
     "對比": "ようだ／みたいだ／らしい／そうだ（傳聞）"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "town-diner",
+     "title": "町の小さな食堂"
+    }
+   ]
   },
   {
    "title": "～らしい（推測・傳聞）",
@@ -382,7 +392,12 @@
     "對比": "～てあげる／～てくれる／～てもらう"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "town-diner",
+     "title": "町の小さな食堂"
+    }
+   ]
   },
   {
    "title": "～てくれる／～てくださる",
@@ -575,7 +590,12 @@
     "來源": "みん日II L36 / JLPT Sensei"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "town-diner",
+     "title": "町の小さな食堂"
+    }
+   ]
   },
   {
    "title": "～てくる／～ていく①（移動：去做再回來／做了再前往）",
@@ -646,7 +666,12 @@
     "對比": "～たところ／～たばかり"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "town-diner",
+     "title": "町の小さな食堂"
+    }
+   ]
   },
   {
    "title": "～ことにする",
@@ -890,16 +915,8 @@
    "extra": [],
    "lessons": [
     {
-     "id": "boarding-house",
-     "title": "下宿生活の一年"
-    },
-    {
-     "id": "business-trip",
-     "title": "初めての出張"
-    },
-    {
-     "id": "graduation",
-     "title": "いよいよ卒業式"
+     "id": "town-diner",
+     "title": "町の小さな食堂"
     }
    ]
   },
@@ -1017,7 +1034,12 @@
     "來源": "みん日II L32 / JLPT Sensei / Bunpro"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "town-diner",
+     "title": "町の小さな食堂"
+    }
+   ]
   },
   {
    "title": "～なければならない／～なきゃ／～ないといけない",
@@ -1317,7 +1339,12 @@
     "來源": "みん日II L28 / JLPT Sensei / Bunpro"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "town-diner",
+     "title": "町の小さな食堂"
+    }
+   ]
   },
   {
    "title": "～前に／～てから／～後で",
@@ -1476,7 +1503,12 @@
     "來源": "JLPT Sensei / TRY!N4"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "town-diner",
+     "title": "町の小さな食堂"
+    }
+   ]
   },
   {
    "title": "～ば～ほど",
@@ -1510,7 +1542,12 @@
     "對比": "～だけ／～しか～ない"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "town-diner",
+     "title": "町の小さな食堂"
+    }
+   ]
   },
   {
    "title": "～ばかり",
@@ -1773,7 +1810,12 @@
     "誤區": "不用於自己有意識的決定（表「開始學」用「勉強し始める」，非「勉強し出す」）；次要點，優先用「〜始める」"
    },
    "extra": [],
-   "lessons": []
+   "lessons": [
+    {
+     "id": "town-diner",
+     "title": "町の小さな食堂"
+    }
+   ]
   }
  ],
  "conjunctions": [
