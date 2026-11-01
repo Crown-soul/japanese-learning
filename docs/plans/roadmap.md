@@ -1,7 +1,7 @@
 # 優化規劃書（v1，2026-09-14）
 
 > 這份是「接下來要改什麼、動哪些檔、怎麼驗收」的規劃，經過一輪自我審核。
-> 現況與 schema 以 `CLAUDE.md`、`docs/architecture.md`、`docs/lesson-authoring.md` 為準；本文件不取代它們，各階段做完要把對應規範同步回去（見第 7 節）。
+> 現況與 schema 以 `CLAUDE.md`、`docs/guide/architecture.md`、`docs/guide/lesson-authoring.md` 為準；本文件不取代它們，各階段做完要把對應規範同步回去（見第 7 節）。
 > **實作狀態（2026-09-14）**：第 1–5 階段已全部完成並各自一個 commit（分支 `claude/japanese-learning-features-review-e83m10`）。
 > 第 8 節三個決定：並べ替え已回頭補舊課（`boarding-house` 14 點）、舊課 70 單字學習器只單向搬一次不同步、分頁列已換到底部。
 > 未做：第 5 階段「句子級音檔」（另開規劃，需重產全部語音）；第 3 階段 `vocab.json` 拆檔（依決策 10 延後）。
@@ -44,7 +44,7 @@
 | 10 課就要拆 `vocab.json` | **太早**。GitHub Pages 有 gzip，1MB JSON 傳輸約 150–200KB | 延到 30 課以後或總表明顯變慢時再拆 |
 | 「日→中」印讀音是白送答案 | **講太重**。它送的是另一題型的答案 | 改成「跟漢字読み題型一起做」，優先度下調 |
 | 舊課 `日文70單字學習器.html` 也接上 store.js | **違反** CLAUDE.md「不遷移、要動就逐項比對」 | 只做單向搬：啟動時把 `jp70-srs` 讀進新結構，舊課本身不動；接受兩邊慢慢不一致 |
-| 文法用名稱當 id 就穩定 | **有洞**。`docs/n4-grammar.md` 的標題會改（V2、V3 已改過） | 加「標題凍結」規則：被任一課引用過的標題不能改名，只能新增與標「停用」；驗證器擋 |
+| 文法用名稱當 id 就穩定 | **有洞**。`docs/guide/n4-grammar.md` 的標題會改（V2、V3 已改過） | 加「標題凍結」規則：被任一課引用過的標題不能改名，只能新增與標「停用」；驗證器擋 |
 | 統計圖表 | **做不出來**。現在只存最終狀態，沒有事件紀錄 | schema 加事件流（決策 1） |
 | 翻譯搬到上方共用 | **不採用**。理由不變：header 已滿、翻譯低頻、你一次只讀一篇 | 逐段對照，控制鈕放篇名列 |
 
@@ -76,7 +76,7 @@
     "近所": { "box": 2, "due": "2026-09-20", "seen": "2026-09-13", "note": "近＝近、所＝地方" }
   },
 
-  // 文法：key = grammar[].point 的名稱（＝ docs/n4-grammar.md 的標題），跨課共用
+  // 文法：key = grammar[].point 的名稱（＝ docs/guide/n4-grammar.md 的標題），跨課共用
   "grammar": {
     "～てしまう": { "box": 1, "due": "2026-09-16", "seen": "2026-09-13", "note": "" }
   },
@@ -135,7 +135,7 @@ window.JLStore = {
 ### 決策 3：題目要有穩定 id，文法標題要凍結
 
 - `data/lessons/<id>.json`：`grammarQuiz[]` 每題加 `"id": "gq-01"`，`reading[]` 每題加 `"id": "rq-01"`。id 在同一課內唯一，**刪題後編號不重用**。
-- `docs/n4-grammar.md`：加一段「標題凍結規則」；要改名就新增一條、舊條標 `（停用）`。
+- `docs/guide/n4-grammar.md`：加一段「標題凍結規則」；要改名就新增一條、舊條標 `（停用）`。
 - `validate-lessons.py`：加三條檢查——題目 id 存在且唯一、`vocab.json` 每字都有 `lessons` 欄位、`grammar[].point` 不可指向標「停用」的條目。
 
 ### 決策 4：測驗流程照 Anki
@@ -217,8 +217,8 @@ window.JLStore = {
 | 總表設定改用 store | `lessons/日文單字總表.html` | `vocabtable-*` 三個 key 改讀 `JLStore.getSettings()` |
 | 薄殼加載 store | `lessons/<id>.html`、`.claude/skills/new-lesson/SKILL.md` 步驟 6 的薄殼範本 | `<script src="../assets/store.js">` 放在 `vocab-table.js` 前 |
 | 舊資料搬家 | `store.js`（`migrateLegacy`） | 見決策 2；搬完不刪 |
-| 題目 id | `data/lessons/boarding-house.json`、`SKILL.md` 步驟 5、`validate-lessons.py`、`docs/lesson-authoring.md` | 46 題補 id；skill 產題時給 id；驗證唯一 |
-| 文法標題凍結 | `docs/n4-grammar.md`、`validate-lessons.py`（`n4_headings`） | 加規則段落；驗證器擋「停用」條目 |
+| 題目 id | `data/lessons/boarding-house.json`、`SKILL.md` 步驟 5、`validate-lessons.py`、`docs/guide/lesson-authoring.md` | 46 題補 id；skill 產題時給 id；驗證唯一 |
+| 文法標題凍結 | `docs/guide/n4-grammar.md`、`validate-lessons.py`（`n4_headings`） | 加規則段落；驗證器擋「停用」條目 |
 | `lessons` 欄位必填 | `validate-lessons.py`（`check_vocab`） | 缺欄位報錯 |
 | 匯出／匯入 | `store.js`、`lesson-engine.js`（`openSettings`） | 匯出：下載 `jl-progress-YYYYMMDD.json`；匯入：`<input type="file">` 讀進來、先顯示筆數再確認覆蓋 |
 | SRS 間隔加兩級 | `store.js` | `[0,1,3,7,16,30,60]`，box 6 畢業 |
@@ -249,8 +249,8 @@ window.JLStore = {
 | 漢字読み | `lesson-engine.js`（單字測驗加模式） | 題：`dict`；選項：正解 `reading`＋同課其他字的 `reading` 三個（長度相近優先） |
 | 表記 | 同上 | 題：`reading`；選項：正解 `dict`＋同課其他字的 `dict` 三個 |
 | 文法接 SRS | `lesson-engine.js`（克漏字答題）、`store.js` | 答對＝`rateGrammar(point,"good")`，答錯＝`"bad"`；「只練答錯的」改成「今日到期」 |
-| 文法查詢頁 | 新增 `build-grammar.py`（`docs/n4-grammar.md` → `data/grammar.json`）、新增 `lessons/grammar-index.html`、`validate.yml`（無 diff 檢查） | 可搜尋、可展開；每條列「哪些課教過」（掃 `data/lessons/*.json`） |
-| 並べ替え（文の組み立て） | `docs/lesson-authoring.md` schema、`SKILL.md` 步驟 5、`validate-lessons.py`、`lesson-engine.js` | `grammar[]` 加選填 `chunks: ["窓を","開けた","まま","寝てしまった"]`；有才出題（打亂 4 段、拖或點順序）；舊課補不補由你決定 |
+| 文法查詢頁 | 新增 `build-grammar.py`（`docs/guide/n4-grammar.md` → `data/grammar.json`）、新增 `lessons/grammar-index.html`、`validate.yml`（無 diff 檢查） | 可搜尋、可展開；每條列「哪些課教過」（掃 `data/lessons/*.json`） |
+| 並べ替え（文の組み立て） | `docs/guide/lesson-authoring.md` schema、`SKILL.md` 步驟 5、`validate-lessons.py`、`lesson-engine.js` | `grammar[]` 加選填 `chunks: ["窓を","開けた","まま","寝てしまった"]`；有才出題（打亂 4 段、拖或點順序）；舊課補不補由你決定 |
 | 備註 | `lesson-engine.js`（`openCard`、`openGrammarCard`）、`store.js` | 卡片加一個 `<textarea>`，blur 存 `setNote` |
 
 **驗收補充**：漢字読み的干擾項不可與正解相同讀音；並べ替え的 `chunks` 連起來必須等於 `example`（驗證器比對）。
@@ -282,7 +282,7 @@ window.JLStore = {
 | 読解 | 短文理解 | 讀解題（有） | 答錯可跳回文章段落 | 3 |
 | 聴解 | 聽句子選答案 | 只有單字聽力 | 例句聽解、語速 | 5 |
 
-「暫不做」的三種詞彙題型與文章文法都需要人工出題，等模考產生器（`docs/lesson-authoring.md` 已列構想）再一起規劃。
+「暫不做」的三種詞彙題型與文章文法都需要人工出題，等模考產生器（`docs/guide/lesson-authoring.md` 已列構想）再一起規劃。
 
 ---
 
@@ -308,15 +308,15 @@ window.JLStore = {
 
 | 階段 | 要改的文件 | 改什麼 |
 |---|---|---|
-| 1 | `docs/lesson-authoring.md`「引擎已內建」段 | 四分頁描述、注音四態、底部分頁列、逐段對照 |
-| 2 | `docs/architecture.md` | 檔案地圖加 `assets/store.js`；資料流表加 `jl.settings.v1`／`jl.progress.v1`；薄殼四行變五行 |
-| 2 | `docs/lesson-authoring.md` schema | `grammarQuiz[].id`、`reading[].id` 必填 |
-| 2 | `docs/n4-grammar.md` | 「標題凍結規則」段 |
+| 1 | `docs/guide/lesson-authoring.md`「引擎已內建」段 | 四分頁描述、注音四態、底部分頁列、逐段對照 |
+| 2 | `docs/guide/architecture.md` | 檔案地圖加 `assets/store.js`；資料流表加 `jl.settings.v1`／`jl.progress.v1`；薄殼四行變五行 |
+| 2 | `docs/guide/lesson-authoring.md` schema | `grammarQuiz[].id`、`reading[].id` 必填 |
+| 2 | `docs/guide/n4-grammar.md` | 「標題凍結規則」段 |
 | 2 | `.claude/skills/new-lesson/SKILL.md` 步驟 5、6、11 | 產 id；薄殼加 store.js；自檢加 id 唯一 |
 | 2 | `CLAUDE.md` 硬性規定 | 加「localStorage 只能透過 `assets/store.js`」、「`n4-grammar.md` 標題不改名」 |
-| 3 | `CLAUDE.md` SOP、`docs/architecture.md` 生成物清單 | audio-check 改「聽新增的那批」；加 `audio/last-run.json`、`review.html` |
-| 4 | `docs/lesson-authoring.md` schema、`SKILL.md` 步驟 5 | `grammar[].chunks` 選填與規則 |
-| 4 | `docs/architecture.md`、`.github/workflows/validate.yml` | `build-grammar.py`、`data/grammar.json` 無 diff 檢查 |
+| 3 | `CLAUDE.md` SOP、`docs/guide/architecture.md` 生成物清單 | audio-check 改「聽新增的那批」；加 `audio/last-run.json`、`review.html` |
+| 4 | `docs/guide/lesson-authoring.md` schema、`SKILL.md` 步驟 5 | `grammar[].chunks` 選填與規則 |
+| 4 | `docs/guide/architecture.md`、`.github/workflows/validate.yml` | `build-grammar.py`、`data/grammar.json` 無 diff 檢查 |
 | 各階段 | `docs/changelog.md` | 做完記一筆 |
 
 ---

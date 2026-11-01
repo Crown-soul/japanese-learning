@@ -7,7 +7,7 @@
      <script src="../assets/vocab-table.js"></script>
      <script src="../assets/lesson-engine.js"></script>
 
-   資料：../data/lessons/<id>.json（見 docs/lesson-authoring.md）
+   資料：../data/lessons/<id>.json（見 docs/guide/lesson-authoring.md）
          ../data/vocab.json（共用單字庫，取 lessons 含 <id> 的字）
          ../audio/manifest.json（乾淨文字 -> mp3 檔名）
 
@@ -31,7 +31,7 @@
   var REVIEW = {};                 // 複習字：key -> 舊課的 vocab 資料
   var STORY_OF = {}, GSTORY = {};  // 本課字／文法點 -> 第一次出現的篇（1 起）
   var SF = 0;                      // 篇篩選：0 = 全部
-  var GREF = {};                   // docs/n4-grammar.md 的條目（data/grammar.json）
+  var GREF = {};                   // docs/guide/n4-grammar.md 的條目（data/grammar.json）
 
   if (!S) { console.error("缺少 assets/store.js（要放在 lesson-engine.js 之前）"); }
 

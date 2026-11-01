@@ -2,13 +2,13 @@
 
 > **實作狀態（2026-09-26）**：使用者試用後決定全部採用。第 1、2 階段（引擎、store、驗證器、音檔流程、首頁分區）、第 3 階段（`graduation` 改寫，含篇六「来年から」→「四月から」）、
 > 第 4 階段（`new-lesson` skill、`lesson-authoring.md`、`architecture.md`、`CLAUDE.md`）都已完成；試用版 `preview/` 已刪（功能都併回正式版）。
-> `docs/n4-grammar.md` 補了 10 條「接續」（三課用到的都有了；全站 54／92，其餘等新課用到時再補）。
+> `docs/guide/n4-grammar.md` 補了 10 條「接續」（三課用到的都有了；全站 54／92，其餘等新課用到時再補）。
 > **第 5 階段（2026-09-26）**：`boarding-house`、`business-trip` 也補齊了——各 6 個複習字（每篇 1 個）、會話 8 句（business-trip 的後輩改成女生、篇四中文改「後進的同事」）、會話讀解 2 題、文章文法 2 組、70 字的 JLPT／例句假名。
 > 自然度審查順便挑出原課的幾處不自然（「駅から通って」、篇二打瞌睡與想睡的順序、「これからも」、幾句例句），一併修了。
 
 
 > 目的：讓課程對「N5 學完、正往 N4 走」的學習者更好上手、每天能完成一小段、練習不只有選擇題。
-> 範圍來自 2026-09-26 審視後使用者勾選的項目。現況與 schema 以 `CLAUDE.md`、`docs/architecture.md`、`docs/lesson-authoring.md` 為準；本計劃做完後要把規則同步回那些文件（見第 7 節）。
+> 範圍來自 2026-09-26 審視後使用者勾選的項目。現況與 schema 以 `CLAUDE.md`、`docs/guide/architecture.md`、`docs/guide/lesson-authoring.md` 為準；本計劃做完後要把規則同步回那些文件（見第 7 節）。
 > **2026-09-26 調整：先做試點看效果，再決定要不要採用。** 已經做好一個獨立的試用版 `preview/graduation-v2/`（網址 `…/preview/graduation-v2/`，不放進目錄），裡面有改寫後的內容和第 1、2 階段的全部功能（寫在試用版自己的引擎副本裡，正式的 `assets/`、`data/` 都沒動，進度也分開存）。你用過再決定：採用 → 做第 1、2 階段（把試用版併回正式引擎）→ 第 4 階段更新 skill；不採用 → 刪掉 `preview/` 就好。
 > **試點課：`graduation`（いよいよ卒業式，目錄最新的一課）**。引擎功能對所有引擎課同時生效；需要改寫內容的項目先只在 `graduation` 做，確認效果後再決定要不要補到 `boarding-house`、`business-trip`。
 
@@ -123,7 +123,7 @@
 
 ### 決策 8：單課小考在執行時組題，不另存題目
 
-照 `docs/mock-exam-plan.md` 的分離原則，新檔 `assets/mock-exam.js`，**不塞進 `lesson-engine.js`**。
+照 `docs/plans/mock-exam-plan.md` 的分離原則，新檔 `assets/mock-exam.js`，**不塞進 `lesson-engine.js`**。
 - 10 題，從本課現成資料抽：漢字読み 2、表記 2、文脈規定 2（`ex` 挖掉該字，干擾項＝同詞性的本課字）、文法克漏字 2、排序 1、讀解 1。
 - 做完顯示分數、錯題與解說；只記最高分（`setExam`），首頁卡片顯示。
 - 入口：「下一步」流程最後一篇完成後出現「本課小考」，故事分頁最上方也有按鈕。不新增第 5 個底部分頁。
@@ -173,7 +173,7 @@
 | 複習字（決策 3） | `validate-lessons.py`、`lesson-engine.js`（`parsePara` 的樣式分支、`openCard`） |
 | `exKana`（決策 4）＋例句聽寫 | `validate-lessons.py`、`lesson-engine.js` |
 | `jlpt`（決策 9） | `validate-lessons.py`、`lesson-engine.js`（卡片標籤）、`vocab-table.js`（標籤＋篩選） |
-| 會話短劇 `kind:"dialogue"`（決策 6） | `validate-lessons.py`（`speakers` 長度、每個說話人有聲音且不重複、不能有新字／新文法、音檔覆蓋率認得帶聲音的 key）、`lesson-engine.js`（對話版面、`play` 帶聲音）、`lesson.css`、`generate-audio.py`、`build-audio-check.py`、`docs/lesson-authoring.md` 的「四處一致」清單 |
+| 會話短劇 `kind:"dialogue"`（決策 6） | `validate-lessons.py`（`speakers` 長度、每個說話人有聲音且不重複、不能有新字／新文法、音檔覆蓋率認得帶聲音的 key）、`lesson-engine.js`（對話版面、`play` 帶聲音）、`lesson.css`、`generate-audio.py`、`build-audio-check.py`、`docs/guide/lesson-authoring.md` 的「四處一致」清單 |
 | 文章文法 `passageQuiz`（決策 7） | `validate-lessons.py`（填回等於原段落）、`lesson-engine.js`（文法分頁加「文章文法」子分頁）、`mock-exam.js` 不用 |
 
 **驗收**：用一個測試課（fixture，不進 repo）把每種新欄位都放一次，驗證器能抓到故意放錯的情況；3 課原樣通過；現有音檔不受影響（`generate-audio.py` 對 3 課跑完「新產生 0 個」）；fixture 的對話行用 `--dry-run` 或本機假金鑰確認產生的 key 與檔名帶聲音、不同人的同一句會得到不同檔名。
@@ -186,7 +186,7 @@
 | 步驟 4：每篇帶 1–3 個複習字（全課 5–10 個），優先挑你答錯過或快到期的字——但 skill 讀不到瀏覽器進度，所以改成「優先挑舊課的高頻字」，你可以在步驟 2 指定想複習的字 | 同上 |
 | 新步驟：寫會話短劇、出文章文法題、補 `exKana` | 同上 |
 | 新步驟：自然度審查（另派助手） | 同上 |
-| schema、驗收標準、架構圖同步 | `docs/lesson-authoring.md`、`docs/architecture.md`、`CLAUDE.md`（連動更新表）、`docs/mock-exam-plan.md`（註明單課小考已先做） |
+| schema、驗收標準、架構圖同步 | `docs/guide/lesson-authoring.md`、`docs/guide/architecture.md`、`CLAUDE.md`（連動更新表）、`docs/plans/mock-exam-plan.md`（註明單課小考已先做） |
 
 ### 第 3 階段（原第 4 階段，已先做成試用版）：試點——用新規則改寫 `graduation`
 
@@ -208,7 +208,7 @@
 - 會話 8 句（私／田中／山田先生三個聲音）＋讀解 2 題（rq-49、rq-50）
 - 文章文法 2 組 7 格；JLPT 參考等級與例句假名 70 字（`vocab-extra.json`）
 - 自然度審查（另派助手）採用 5 項：會話 2 句用詞、篇六「来年から」→「四月から」（原課也有這個時間錯誤）、「趣味の時間も」→「を」、文章文法 1 個模稜兩可的干擾項
-- 文法卡「怎麼接」：`docs/n4-grammar.md` 92 條只有 44 條有「接續」，這課缺的 7 條先寫在試用版的 `grammar-extra.json`；採用的話要補進 `n4-grammar.md`（其他課的條目也要補）
+- 文法卡「怎麼接」：`docs/guide/n4-grammar.md` 92 條只有 44 條有「接續」，這課缺的 7 條先寫在試用版的 `grammar-extra.json`；採用的話要補進 `n4-grammar.md`（其他課的條目也要補）
 - 試用版音檔 10 段（`make-audio.py` 產，只放在 `preview/graduation-v2/audio/`）
 - 驗證：資料用驗證器跑過，除了「複習字不屬於本課」（第 2 階段要改的規則）之外沒有錯誤；文章文法填回正解＝原段落；手機 375px 實測各功能、console 無 error
 
@@ -253,8 +253,8 @@
 
 | 階段 | 文件 | 改什麼 |
 |---|---|---|
-| 1 | `docs/lesson-authoring.md`「引擎已內建」 | 篇篩選、下一步流程、打字／聽寫、回報、單課小考 |
-| 1 | `docs/architecture.md` | 加 `assets/mock-exam.js`；`store.js` 的 `stories`／`exams` 欄位 |
-| 2 | `docs/lesson-authoring.md` schema | `kind`／`speakers`、`passageQuiz`、`exKana`、`jlpt`、複習字規則 |
+| 1 | `docs/guide/lesson-authoring.md`「引擎已內建」 | 篇篩選、下一步流程、打字／聽寫、回報、單課小考 |
+| 1 | `docs/guide/architecture.md` | 加 `assets/mock-exam.js`；`store.js` 的 `stories`／`exams` 欄位 |
+| 2 | `docs/guide/lesson-authoring.md` schema | `kind`／`speakers`、`passageQuiz`、`exKana`、`jlpt`、複習字規則 |
 | 3 | `.claude/skills/new-lesson/SKILL.md`、`CLAUDE.md` 連動更新表 | 新步驟與新欄位 |
 | 各階段 | `docs/changelog.md` | 做完記一筆 |

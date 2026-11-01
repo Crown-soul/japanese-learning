@@ -79,7 +79,7 @@
 
 ## 同漢字不同讀音（開く＝ひらく／あく、止める＝やめる／とめる）
 
-- **單字卡**：新的那筆在 `data/vocab.json` 加 `"audio": "<讀音>"`，音檔 key 就不會跟舊字共用（規則見 `docs/lesson-authoring.md` 的 `data/vocab.json` 新字）。`validate-lessons.py` 會擋撞音。
+- **單字卡**：新的那筆在 `data/vocab.json` 加 `"audio": "<讀音>"`，音檔 key 就不會跟舊字共用（規則見 `docs/guide/lesson-authoring.md` 的 `data/vocab.json` 新字）。`validate-lessons.py` 會擋撞音。
 - **故事／例句**：修正表是**整站共用、依順序取代**。舊課已經有「開く→ひらく」這類通用規則，新課要相反讀音時，
   寫「帶上下文的長寫法」（`窓が開きました`）並**排在整張表最前面**，先換成假名，通用規則就碰不到了。
   加完一定要比對：其他課音檔的檔名（雜湊）不能變（變了代表誤傷、而且會重產已聽過的音檔）。

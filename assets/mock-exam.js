@@ -3,7 +3,7 @@
    學完一課後的 10 題綜合題，打開時才從本課現有資料組題，不另存題目：
      漢字読み 2、表記 2、文脈規定 2（例句挖掉該字）、文法克漏字 2、排序 1、讀解 1
    只記最高分（JLStore.setExam），不動單字／文法的複習排程。
-   照 docs/mock-exam-plan.md 的分離原則，邏輯不放進課程引擎；之後做跨課模考可以重用。
+   照 docs/plans/mock-exam-plan.md 的分離原則，邏輯不放進課程引擎；之後做跨課模考可以重用。
 
    用法：window.LessonExam.open({ sheet, modal, esc, play, vocab, DATA, S, lessonId, qid, parsePara, onDone })
          window.LessonExam.inProgress() → 作答中（引擎在點背景／Esc 關抽屜前用來確認）

@@ -8,7 +8,7 @@
   3. 薄殼 lessons/<id>.html 存在、<title> 與 JSON 的 title 一致
   4. 故事標記 {{key|label|reading}} 的 key 在 data/vocab.json 且該字 lessons 含此課
   5. 每個目標單字（vocab 裡 lessons 含此課的）至少在故事出現 1 次
-  6. grammar[].point 都能在 docs/n4-grammar.md 找到
+  6. grammar[].point 都能在 docs/guide/n4-grammar.md 找到
   7. grammarQuiz[].g 是 grammar[] 的合法索引；s 含「（　）」；a 在 o 範圍內
   8. reading[].st 對到存在的故事；ref 的每個片段都是該故事純文字的子字串；a 在 o 範圍內
   9. vocab 新字：reading 全假名、必要欄位齊、lessons 非空
@@ -45,7 +45,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent   # scripts/ 的上一層 = 專案根目錄
 LDIR = ROOT / "data" / "lessons"
 VOCAB = ROOT / "data" / "vocab.json"
-N4 = ROOT / "docs" / "n4-grammar.md"
+N4 = ROOT / "docs" / "guide" / "n4-grammar.md"
 LESSONS_HTML = ROOT / "lessons"
 
 FURI_RE = re.compile(r"（[ぁ-んァ-ヶ・ーゝゞ〜]+）")
@@ -154,7 +154,7 @@ def story_paras(s):
 
 @lru_cache(maxsize=1)
 def n4_headings():
-    """docs/n4-grammar.md 的 ### 標題（可當 point 用的），排除註明「不列為」的條目。"""
+    """docs/guide/n4-grammar.md 的 ### 標題（可當 point 用的），排除註明「不列為」的條目。"""
     if not N4.exists():
         return ()
     txt = N4.read_text(encoding="utf-8")
@@ -175,7 +175,7 @@ def n4_retired():
 def stem_families():
     """字樣一模一樣、只能靠語意分辨的文法點家族：{字樣: {標題, ...}}。
 
-    只跟 docs/n4-grammar.md 有關，跟課程無關，所以整支腳本算一次就好。
+    只跟 docs/guide/n4-grammar.md 有關，跟課程無關，所以整支腳本算一次就好。
     """
     idx = {}
     for h in n4_headings():
@@ -332,7 +332,7 @@ def check_lesson(path, vocab, n4):
     if missing:
         err(lid, f"這些目標單字沒在故事出現：{'、'.join(sorted(missing))}")
 
-    # 難度（只提醒不擋；標準見 docs/lesson-authoring.md「難度控制」）：篇數 ≈ 單字數 ÷ 12、每篇新單字 10–13、每篇 ≤400 字
+    # 難度（只提醒不擋；標準見 docs/guide/lesson-authoring.md「難度控制」）：篇數 ≈ 單字數 ÷ 12、每篇新單字 10–13、每篇 ≤400 字
     seen_keys = set()
     for si, s in enumerate(stories, 1):
         if is_dialogue(s):
@@ -345,13 +345,13 @@ def check_lesson(path, vocab, n4):
             warn(lid, f"篇{si} 一次出現 {len(new_here)} 個新單字（建議 10–13，難度偏高，考慮拆篇）")
         if n_chars > 400:
             warn(lid, f"篇{si} 有 {n_chars} 字（建議 250–350、上限 400）")
-    # 清單外句型（只提醒不擋）：不在 docs/n4-grammar.md 與 N5 白名單裡、最常溜進故事的幾個
+    # 清單外句型（只提醒不擋）：不在 docs/guide/n4-grammar.md 與 N5 白名單裡、最常溜進故事的幾個
     for si, sp in enumerate(story_plain, 1):
         # 「〜のおかげです」是名詞述語，不算清單外的「〜おかげで」
         hits = [w for w in ("んです", "のです", "なんて", "おかげで", "ずつ")
                 if re.search(w + ("(?!す)" if w == "おかげで" else ""), sp)]
         if hits:
-            warn(lid, f"篇{si} 用了清單外句型「{'、'.join(hits)}」（只用 docs/n4-grammar.md 與 N5 白名單內的文法）")
+            warn(lid, f"篇{si} 用了清單外句型「{'、'.join(hits)}」（只用 docs/guide/n4-grammar.md 與 N5 白名單內的文法）")
     # 文體與一句一新（只提醒不擋；規則見 new-lesson SKILL.md 步驟 4 第 3、6 條）
     seen_k, seen_g = set(), set()
     for si, s in enumerate(stories, 1):
@@ -415,9 +415,9 @@ def check_lesson(path, vocab, n4):
         pt = (g.get("point") or "").strip()
         if pt and pt in n4_retired():
             # 舊課可以留著（進度用標題當 key，改了會對不到）；新課不要選
-            warn(lid, f"grammar[{gi}] 的 point「{pt}」在 docs/n4-grammar.md 已標「停用」——舊課可以不改，新課請用它指向的新條目")
+            warn(lid, f"grammar[{gi}] 的 point「{pt}」在 docs/guide/n4-grammar.md 已標「停用」——舊課可以不改，新課請用它指向的新條目")
         elif n4 is not None and pt and pt not in n4 and re.sub(r"（.*?）", "", pt).strip() not in n4:
-            err(lid, f"grammar[{gi}] 的 point「{pt}」在 docs/n4-grammar.md 找不到")
+            err(lid, f"grammar[{gi}] 的 point「{pt}」在 docs/guide/n4-grammar.md 找不到")
         # 並べ替え用的分段（選填）：接起來要剛好等於 example，至少 3 段
         ch = g.get("chunks")
         if ch is not None:
@@ -740,7 +740,7 @@ def main():
     vocab = json.loads(VOCAB.read_text(encoding="utf-8"))
     n4 = n4_points()
     if n4 is None:
-        warn("-", "docs/n4-grammar.md 不存在，略過文法點檢查")
+        warn("-", "docs/guide/n4-grammar.md 不存在，略過文法點檢查")
 
     files = sorted(LDIR.glob("*.json")) if LDIR.exists() else []
     if only:

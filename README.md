@@ -28,7 +28,7 @@ japanese-learning/
 │   ├── build-audio-check.py 產發音快篩頁
 │   ├── build-grammar.py    產 data/grammar.json
 │   └── validate-lessons.py 驗證課程資料
-├── docs/               架構與規範說明
+├── docs/               說明文件：guide/（現行規範）、plans/（規劃書）、changelog.md（紀錄）
 ├── 過時/               已用不到的舊檔，只留著查歷史
 ├── CLAUDE.md           AI 協作設定
 └── publish.sh          一鍵：重建目錄 + commit + push（留在根目錄）
@@ -40,7 +40,7 @@ japanese-learning/
 skill（`.claude/skills/new-lesson/`）會帶著跑完整流程：確認字表 → 寫 N4 文法故事 →
 出測驗 → 產語音 → 加進總單字表與目錄 → 發佈。
 
-手動流程（一般不需要）見 `docs/architecture.md` 與 `docs/lesson-authoring.md`。
+手動流程（一般不需要）見 `docs/guide/architecture.md` 與 `docs/guide/lesson-authoring.md`。
 
 ## 檔名
 

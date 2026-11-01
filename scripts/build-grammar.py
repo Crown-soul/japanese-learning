@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-把 docs/n4-grammar.md 轉成 data/grammar.json，給 lessons/grammar-index.html（文法查詢頁）用。
-docs/n4-grammar.md 是人／AI 讀的來源，網頁讀不了 .md，所以建置時轉一份 JSON。
+把 docs/guide/n4-grammar.md 轉成 data/grammar.json，給 lessons/grammar-index.html（文法查詢頁）用。
+docs/guide/n4-grammar.md 是人／AI 讀的來源，網頁讀不了 .md，所以建置時轉一份 JSON。
 
 輸出格式：
 {
@@ -15,7 +15,7 @@ docs/n4-grammar.md 是人／AI 讀的來源，網頁讀不了 .md，所以建置
 
 用法：
     python3 scripts/build-grammar.py
-CI 會檢查 data/grammar.json 與 docs/n4-grammar.md 一致（無 diff）。
+CI 會檢查 data/grammar.json 與 docs/guide/n4-grammar.md 一致（無 diff）。
 """
 
 import json
@@ -23,7 +23,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent   # scripts/ 的上一層 = 專案根目錄
-SRC = ROOT / "docs" / "n4-grammar.md"
+SRC = ROOT / "docs" / "guide" / "n4-grammar.md"
 LESSON_DATA_DIR = ROOT / "data" / "lessons"
 OUT = ROOT / "data" / "grammar.json"
 

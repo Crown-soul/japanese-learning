@@ -1,6 +1,6 @@
 # 變更歷程
 
-> 這份是「當時做了什麼」的紀錄，供人回顧。AI 協作時**不需要載入**——現況看 `CLAUDE.md` + `docs/architecture.md` + `docs/lesson-authoring.md`。
+> 這份是「當時做了什麼」的紀錄，供人回顧。AI 協作時**不需要載入**——現況看 `CLAUDE.md` + `docs/guide/architecture.md` + `docs/guide/lesson-authoring.md`。
 
 ## 2026-09-06
 
@@ -38,13 +38,13 @@
   - `data/lessons/<id>.json`：引擎課內容（stories 用 `{{key|label|reading}}` + `漢字（かな）` 標記、grammar、grammarQuiz、reading）。
   - `lessons/<id>.html`：~15 行薄殼。
   - `generate-audio.py`：引擎課單字卡改用 `reading` 假名合成（`manifest[dict]` → 假名音檔）；故事同時吃舊課 HTML 與 `data/lessons/*.json`。
-  - `docs/n4-grammar.md`：N4 文法參考清單。`docs/` 其他：architecture / lesson-authoring / tts-notes / handoff-template / changelog。`CLAUDE.md`。
+  - `docs/guide/n4-grammar.md`：N4 文法參考清單。`docs/` 其他：architecture / lesson-authoring / tts-notes / handoff-template / changelog。`CLAUDE.md`。
   - `.claude/skills/new-lesson/SKILL.md`：拍單字照片／貼單字 → 生成整課。
   - 舊課 `日文70單字學習器.html` 不遷移。
   - 引擎修正：`play(v.dict)`（不是 reading，manifest key 是漢字）、注音 regex 對齊 `generate-audio.py`、`boot()` try/catch。
   - `.claude/hooks/require-tts-key.sh`：沒金鑰時擋 `generate-audio.py`。
 - **JSON 自動驗證**：
-  - `validate-lessons.py`：驗合法性、`grammar.point` 在 `docs/n4-grammar.md`、`grammarQuiz.g` 索引、`reading.ref` 是內文子字串、目標單字都在故事出現、薄殼 `<title>` 一致、vocab `reading` 全假名。
+  - `validate-lessons.py`：驗合法性、`grammar.point` 在 `docs/guide/n4-grammar.md`、`grammarQuiz.g` 索引、`reading.ref` 是內文子字串、目標單字都在故事出現、薄殼 `<title>` 一致、vocab `reading` 全假名。
   - `.claude/hooks/validate-on-publish.sh`：`publish.sh` 前跑一次，有錯擋下。
   - `.github/workflows/validate.yml`：push/PR 跑 JSON 檢查 + validate-lessons + build-index 無 diff。
 
@@ -55,7 +55,7 @@
   - 3 篇故事（399／400／400 字）：搬進下宿 → 台所與近所づきあい → 揺れた夜と別れの春；70 字全部在故事出現。
   - 14 個 N4 文法點、28 題克漏字、18 題讀解；`避ける` 依使用者決定收 `さける`。
   - `data/vocab.json` 70 → 140 字；新增 152 個音檔。
-  - `generate-audio.py` 修正表 +13 條（大家／五分／一日おき／行った／写した／楽に／粗い／餌／墓参り…），`docs/tts-notes.md` 同步。
+  - `generate-audio.py` 修正表 +13 條（大家／五分／一日おき／行った／写した／楽に／粗い／餌／墓参り…），`docs/guide/tts-notes.md` 同步。
 - **產出後全面校對**（使用者要求）：
   - 故事 7 處：`通って五分`→`五分のところに`、`お宅` 改用在「大家さんのお宅」（原本對房客說「お宅のご飯」語感怪）、`切っていたら…切って`重複、連用中止跨主語（`聞き、隣の人が`→`聞いていたので`）、`ご馳走する` 助詞 へ→に、`二年間`→`この一年`（與「一年」時間軸矛盾）、第二次以後出現的漢字補注音。
   - 克漏字 6 題：干擾項與正解同樣講得通（`てあげる`／`聞かされた`／`たあとで`），改成語意唯一。
@@ -64,7 +64,7 @@
 
 ## 2026-09-14
 
-- **優化規劃書**（`docs/roadmap.md`）：先做功能與 UX 分析（實測手機版面數字、評分鈕吃掉答案、進度綁課、三套 localStorage 命名），再自我審核修正七項，定出十項設計決策與五個階段。
+- **優化規劃書**（`docs/plans/roadmap.md`）：先做功能與 UX 分析（實測手機版面數字、評分鈕吃掉答案、進度綁課、三套 localStorage 命名），再自我審核修正七項，定出十項設計決策與五個階段。
 - **第 1 階段 引擎修正**：單字測驗改 Anki 流程（顯示答案 → 評分鈕才出現、固定底部 → 自動下一題）；日→中讀音改按了才看；逐段中文對照（手機疊放／電腦雙欄），語言三態放篇名列；分頁列固定底部；header 只留標題與注音四態（合併遮字）；統計只在單字表／單字測驗；二級切換改細條；提示可收合；記住分頁與注音；「重設」移進設定；N4 依據移進文法卡；單字卡加 Jisho；鍵盤操作。實測 390×844：header 164→109px、第一段日文 Y 738→419、克漏字選項全在第一屏。
 - **第 2 階段 資料層**：`assets/store.js`（`window.JLStore`）：`jl.settings.v1`／`jl.progress.v1`，單字用辭書形、文法用標題、題目用 `<課程id>/<題目id>`，事件流＋每日彙總、筆記欄、版本號；SRS 加 30／60 天與畢業；引擎與總表改走 store；舊資料（`jp70-srs`、`<id>:*`、`vocabtable-*`）單向搬、不刪；`boarding-house` 每題補 `id`；驗證器加 id／lessons／停用檢查；`n4-grammar.md` 加標題凍結規則；匯出／匯入。
 - **第 3 階段 複習中心**：`review.html`（今天到期的單字與文法，混合所有課，顯示出自哪課）；首頁「今天要複習 N」、課程卡顯示字數／文法點數／篇數與學習狀態、課程與工具分開列；`generate-audio.py` 寫 `audio/last-run.json`，`build-audio-check.py` 預設只列本次新增；單字篩選加「已畢業」；CI console 檢查加 `review.html`。
@@ -78,11 +78,11 @@
 
 ## 2026-09-13
 
-- **翻譯與文法標記改成逐篇強制**（29597fe）：`boarding-house` 昨天只有第一篇標了文法，三層檢查都沒擋下來——`validate-lessons.py` 的 `translation` 寫成「有填才驗長度」、整篇沒填不報錯；`[[g#]]` 只驗成對與索引合法，不管有幾篇沒標。`docs/lesson-authoring.md` 又把 `translation` 標成「選填」、驗收標準完全沒列這兩項，跟 `SKILL.md` 互相矛盾。改成三條硬性檢查：每篇必須有 `translation`（長度等於 `paragraphs`、每段非空）、每篇至少一個 `[[g#]]`、每個 `grammar[]` 文法點至少被標記一次。`SKILL.md` 步驟 4 加「每一篇都要做的兩件事」與當場自檢指令。同時補齊 `boarding-house` 篇二篇三的標記，14 個文法點全部涵蓋（`[[g#]]` 會被 `plain()` 剝除，音檔 key 未變，不需重產語音）。
+- **翻譯與文法標記改成逐篇強制**（29597fe）：`boarding-house` 昨天只有第一篇標了文法，三層檢查都沒擋下來——`validate-lessons.py` 的 `translation` 寫成「有填才驗長度」、整篇沒填不報錯；`[[g#]]` 只驗成對與索引合法，不管有幾篇沒標。`docs/guide/lesson-authoring.md` 又把 `translation` 標成「選填」、驗收標準完全沒列這兩項，跟 `SKILL.md` 互相矛盾。改成三條硬性檢查：每篇必須有 `translation`（長度等於 `paragraphs`、每段非空）、每篇至少一個 `[[g#]]`、每個 `grammar[]` 文法點至少被標記一次。`SKILL.md` 步驟 4 加「每一篇都要做的兩件事」與當場自檢指令。同時補齊 `boarding-house` 篇二篇三的標記，14 個文法點全部涵蓋（`[[g#]]` 會被 `plain()` 剝除，音檔 key 未變，不需重產語音）。
 - **標記位置的字面比對**（60db9bd）：原本擋得住「沒標」，擋不住「標錯位置」。把 `grammar[].point` 拆成課文裡應該看得到的字樣，跟 `[[g#]]…[[/g]]` 包起來的純文字比對。字樣推導會砍動詞／な形／い形語尾以容許活用（`ておく`→`てお`、`そうだ`→`そう`、`ようになる`→`ようにな`），多變體任一命中即可，多格式（`～ば～ほど`）則每格都要出現。活用形與佔位符號類（受身形、使役形、可能形、疑問詞＋か、敬語）沒有固定字樣，不報錯改列 ⚠。93 個文法點中 83 個可自動比對、10 個列提醒。
-- **撞名處理與 example 比對**（818dcf1）：字面比對擋不住「同字樣、不同條目」（`～のに` 逆接 vs 目的）。盤點後字樣會互撞的只有 7 組，其中只有 `～そうだ` 的接續真的不重疊（樣態接ます形、傳聞接普通形），其餘不是接續互相包含（`のに`、`たら`）就是文件沒有接續欄（`ように`、`ても`、`てくる`）；93 個點也只有 43 個有接續欄，通用接續推論不可行。改成「能判的就判，判不了的指名要人工看」：同一課出現同字樣的兩個點直接報錯（`そうだ` 除外）；`そうだ` 樣態／傳聞比對 `そう` 前一字是不是普通形語尾，標錯報錯；判不出來的 ⚠ 指名「篇幾「哪段文字」」。另加 `grammar[].example` 也要看得到該文法字樣、`docs/n4-grammar.md` 註明「不列為 point」的條目不再能被選用。
+- **撞名處理與 example 比對**（818dcf1）：字面比對擋不住「同字樣、不同條目」（`～のに` 逆接 vs 目的）。盤點後字樣會互撞的只有 7 組，其中只有 `～そうだ` 的接續真的不重疊（樣態接ます形、傳聞接普通形），其餘不是接續互相包含（`のに`、`たら`）就是文件沒有接續欄（`ように`、`ても`、`てくる`）；93 個點也只有 43 個有接續欄，通用接續推論不可行。改成「能判的就判，判不了的指名要人工看」：同一課出現同字樣的兩個點直接報錯（`そうだ` 除外）；`そうだ` 樣態／傳聞比對 `そう` 前一字是不是普通形語尾，標錯報錯；判不出來的 ⚠ 指名「篇幾「哪段文字」」。另加 `grammar[].example` 也要看得到該文法字樣、`docs/guide/n4-grammar.md` 註明「不列為 point」的條目不再能被選用。
 - **全專案巡視與修復**（171d44f）：
-  - **語音檢查表漏掉所有引擎課故事**：`build-audio-check.py` 的 `clean()`／`annotated()` 沒剝 `[[g#]]`，但 `generate-audio.py`、`validate-lessons.py`、`lesson-engine.js` 三邊都有剝。段落對不到 manifest key，重跑一次項目會從 307 掉到 297，正好少掉這課的 10 段故事——SOP 要求的「跑 audio-check 人工聽一輪」對引擎課故事等於失效。根因是 `docs/lesson-authoring.md` 寫「三邊都一致處理」卻漏列這支，已改成明確的四點清單。（先前 commit 的 `audio-check.html` 內容其實是對的，因為它產生於標記加入之前；這是「下次重產才會炸」的地雷。）
+  - **語音檢查表漏掉所有引擎課故事**：`build-audio-check.py` 的 `clean()`／`annotated()` 沒剝 `[[g#]]`，但 `generate-audio.py`、`validate-lessons.py`、`lesson-engine.js` 三邊都有剝。段落對不到 manifest key，重跑一次項目會從 307 掉到 297，正好少掉這課的 10 段故事——SOP 要求的「跑 audio-check 人工聽一輪」對引擎課故事等於失效。根因是 `docs/guide/lesson-authoring.md` 寫「三邊都一致處理」卻漏列這支，已改成明確的四點清單。（先前 commit 的 `audio-check.html` 內容其實是對的，因為它產生於標記加入之前；這是「下次重產才會炸」的地雷。）
   - **壞 JSON 噴 traceback**：`check_audio_coverage()` 的 `json.loads` 沒 try 包住，`check_lesson()` 明明已把解析錯誤記成友善訊息，接著又被這裡炸一次，整份錯誤清單印不出來。改成略過壞檔。
   - **刪舊音檔沒有安全閥**：跑完會刪掉所有不在 manifest 的 mp3，資料被改壞時會清空整個 `audio/`。加 `prune_blocked()`：要刪超過 5 個且比例超過 30% 就停手，確定要刪設 `AUDIO_PRUNE_FORCE=1`。
   - **`require-tts-key.sh` 誤攔**：原本對整包 hook 輸入比對，指令裡只要出現那串字（寫進字串、註解、heredoc）就被當成在執行。改成先從 `tool_input.command` 取出真正的指令，再要求出現在指令開頭或 `&& ; | (` 之後。
@@ -105,7 +105,7 @@
   - 資料格式：`stories[].kind/speakers/voices`、`passageQuiz`、vocab `jlpt`／`exKana`；驗證器同步（複習字、會話不帶新東西、文章文法填回＝原段落…）。
   - 語音：會話 key `@<聲音>:<文字>`，`generate-audio.py`／`build-audio-check.py` 支援；既有 614 段檔名不變。
   - `graduation` 改成新版（複習字 9 個、會話 8 句、文章文法 2 組、70 字的 JLPT／例句假名）；篇六「来年から」→「四月から」（3 月畢業、4 月入學）。
-  - `docs/n4-grammar.md` 補 10 條「接續」（三課用到的都有了；全站 54／92）。
+  - `docs/guide/n4-grammar.md` 補 10 條「接續」（三課用到的都有了；全站 54／92）。
   - 首頁分四區；動詞工具 `<title>` 改「動詞變化練習」。
   - `new-lesson` skill、`lesson-authoring.md` 更新成產出上述內容。
 - **第 5 階段**：`boarding-house`、`business-trip` 補複習字（各 6）、會話（各 8 句，每人不同聲音）、文章文法、JLPT／例句假名；依自然度審查修原課幾處（「駅から細い道を通って」、篇二語序、「また、この町に」、`business-trip` 篇一「教室の前で」、5 句例句）。引擎：複習字來自舊課（中文 id）時不去抓不存在的 JSON。

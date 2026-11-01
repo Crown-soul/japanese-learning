@@ -43,5 +43,5 @@
 
 ## Phase 4（遠期，非承諾）
 
-- 文法選擇題（跨課、吃 `docs/n4-grammar.md`）：現有 `grammarQuiz` 是綁在單一課 JSON 裡的，模考要跨課，得另外設計資料存放方式（例如獨立的 `data/grammar-bank.json`），不能直接複用 `grammarQuiz` 的結構
+- 文法選擇題（跨課、吃 `docs/guide/n4-grammar.md`）：現有 `grammarQuiz` 是綁在單一課 JSON 裡的，模考要跨課，得另外設計資料存放方式（例如獨立的 `data/grammar-bank.json`），不能直接複用 `grammarQuiz` 的結構
 - 目前只是先記著這個方向，還沒有設計

@@ -30,7 +30,7 @@ cat >&2 <<'MSG'
 請先在專案根目錄放金鑰：
     printf '%s' '你的金鑰' > tts-key.txt
 
-（金鑰怎麼拿、需要啟用帳單 → docs/tts-notes.md；
+（金鑰怎麼拿、需要啟用帳單 → docs/guide/tts-notes.md；
  產完音檔後可到 Google Cloud 停用，網站運作不需要它。）
 MSG
 exit 2

@@ -7,7 +7,7 @@
      jl.settings.v1  全站設定（主題、字級、注音模式、語速…），跟課程無關
      jl.progress.v1  學習進度，key 一律不綁課程：
        vocab   { "<vocab key>":  {box, due, seen, note?} }   單字用辭書形
-       grammar { "<文法點名稱>": {box, due, seen, note?} }   名稱＝ docs/n4-grammar.md 的標題
+       grammar { "<文法點名稱>": {box, due, seen, note?} }   名稱＝ docs/guide/n4-grammar.md 的標題
        quiz    { "<課程id>/<題目id>": {r:"ok"|"ng", at} }    題目要有穩定 id
        events  [[日期, 類型 v|g|q, key, 結果], ...]            最近 EVENT_CAP 筆
        daily   { "YYYY-MM-DD": {n, ok} }                       折舊後的每日彙總

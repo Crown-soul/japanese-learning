@@ -20,7 +20,7 @@ japanese-learning/
 ├── data/
 │   ├── vocab.json             共用單字庫（陣列，每筆標 lessons:[...]；選填 jlpt、exKana）
 │   ├── basics.json            基礎詞彙練習器題庫（單元→小節→項目／例句／題目，id 穩定；音檔 key "basics:<id>"）
-│   ├── grammar.json           生成物：docs/n4-grammar.md 轉成的 JSON（build-grammar.py）
+│   ├── grammar.json           生成物：docs/guide/n4-grammar.md 轉成的 JSON（build-grammar.py）
 │   └── lessons/<id>.json      引擎課的內容：stories（可含一篇 kind:"dialogue" 會話）/ grammar(+chunks) / grammarQuiz(+id) / reading(+id) / passageQuiz(+id)
 ├── assets/
 │   ├── store.js               全站進度／設定存取層（window.JLStore）——唯一碰 localStorage 的地方
@@ -44,7 +44,11 @@ japanese-learning/
 ├── .claude/                   settings.json（hook 註冊）、hooks/、skills/new-lesson/、launch.json（本機預覽）
 ├── publish.sh                 build-index → git add -A → commit → push（留在根目錄，維持 ./publish.sh）
 ├── 過時/                      已用不到的舊檔（try-voices.py、learner-plan.md），留著只為查歷史，見其 README
-├── CLAUDE.md / docs/          AI 協作設定與知識
+├── docs/
+│   ├── guide/                 現行規範（architecture、lesson-authoring、tts-notes、n4-grammar）：AI 與人都常讀
+│   ├── plans/                 規劃書（roadmap、mock-exam-plan）
+│   └── changelog.md、handoff-template.md   過去做了什麼／任務交接範本
+├── CLAUDE.md                  AI 協作設定（Claude Code 規定要放根目錄）
 └── tts-key.txt                Google API 金鑰（.gitignore，絕不 commit）
 ```
 
@@ -60,7 +64,7 @@ japanese-learning/
    <script src="../assets/vocab-table.js"></script>
    <script src="../assets/lesson-engine.js"></script>
    ```
-2. `data/lessons/<id>.json`（見 `docs/lesson-authoring.md` 的 schema）
+2. `data/lessons/<id>.json`（見 `docs/guide/lesson-authoring.md` 的 schema）
 3. `data/vocab.json` 裡 `lessons` 含 `<id>` 的字
 
 引擎 `boot()`：讀 `#app[data-lesson]` → `fetch ../data/lessons/<id>.json` + `../data/vocab.json`（故事標記裡 key 不屬於本課的字＝複習字，另外抓那幾課的 title）→ `JLStore.migrateLegacy([id])` → 建 header/hud/四個 section/底部分頁列 → 綁事件 → `fetch ../audio/manifest.json`、`../data/grammar.json`（文法卡的「怎麼接／容易搞混／常見錯誤」）。
@@ -76,7 +80,7 @@ japanese-learning/
 | `jl.settings.v1` | `{v, theme, fs, reading, lastTab, audioRate, tipOpen}`，跟課程無關 |
 | `jl.progress.v1` | `vocab{辭書形: {box,due,seen,note?}}`、`grammar{文法點標題: {...}}`、`quiz{"<課程id>/<題目id>": {r,at}}`（文章文法是 `<課程id>/pq-NN#格`）、`events[[日期,類型,key,結果]]`（最近 10,000 筆）、`daily{日期:{n,ok}}`、`migrated[]`、`stories{"<課程id>/<篇號>": {read?,shadow?}}`（流程 ①② 打勾）、`exams{<課程id>: {best,last,total,times,at}}`（單課小考）、`paraNotes{"<課程id>/s<篇>p<段>": {text,at}}`（段落回報） |（另有 `basics{項目id:{rec,rc,miss}}`、`basicsSec{小節id}`：基礎詞彙練習器）
 
-SRS：箱 0–6，間隔 `[0,1,3,7,16,30,60]` 天，box 6 畢業（答錯退回 3）。單字 key 是辭書形、文法 key 是 `docs/n4-grammar.md` 的標題，所以跨課共用。
+SRS：箱 0–6，間隔 `[0,1,3,7,16,30,60]` 天，box 6 畢業（答錯退回 3）。單字 key 是辭書形、文法 key 是 `docs/guide/n4-grammar.md` 的標題，所以跨課共用。
 舊格式（`jp70-srs`、`<id>:srs/gquiz/rquiz`、三套設定 key）第一次啟動時由 `migrateLegacy()` 單向搬進來，只複製不刪。
 匯出／匯入在課程頁的設定裡（`exportAll()`／`importAll()`）。將來上資料庫：只改 `store.js` 內部。
 
@@ -87,7 +91,7 @@ SRS：箱 0–6，間隔 `[0,1,3,7,16,30,60]` 天，box 6 畢業（答錯退回 
 | 開課程頁 | `data/lessons/<id>.json`、`data/vocab.json`、`audio/manifest.json` | localStorage（只透過 store.js：`jl.settings.v1`／`jl.progress.v1`） |
 | 開 `review.html`／`index.html` | `data/vocab.json`、所有 `data/lessons/*.json`（標題、克漏字） | 同上 |
 | 開 `lessons/grammar-index.html` | `data/grammar.json` | 同上（只讀設定與複習狀態） |
-| `build-grammar.py` | `docs/n4-grammar.md`、`data/lessons/*.json`（教過的課） | `data/grammar.json` |
+| `build-grammar.py` | `docs/guide/n4-grammar.md`、`data/lessons/*.json`（教過的課） | `data/grammar.json` |
 | `generate-audio.py` | `data/vocab.json`、`lessons/*.html`（舊課故事）、`data/lessons/*.json`（引擎課故事；會話依 `voices` 換聲音）、`tts-key.txt` | `audio/*.mp3`、`audio/manifest.json`、`audio/last-run.json` |
 | `build-index.py` | `lessons/*.html` 的 `<title>` + commit 日、`data/lessons/*.json`（字數／文法點數／篇數）、`data/vocab.json` | `index.html` |
 | `build-audio-check.py` | `data/vocab.json`、`lessons/*.html`、`data/lessons/*.json`、`audio/manifest.json`、`audio/last-run.json` | `audio-check.html` |
@@ -105,4 +109,4 @@ SRS：箱 0–6，間隔 `[0,1,3,7,16,30,60]` 天，box 6 畢業（答錯退回 
 - `manifest[key]` 的 `key` 是 `play()` 會查的字串；實際送 TTS 的可能不同（引擎課單字卡：key = 漢字 `dict`，合成用 `reading` 假名）。
 - 會話（`stories[].kind == "dialogue"`）每個說話人用自己的聲音，key 是 `@<聲音>:<乾淨文字>`，同一句話由不同人說就是不同音檔。這條規則 `generate-audio.py`、`build-audio-check.py`、`validate-lessons.py`（`audio_key`）、`lesson-engine.js`（`renderStories`）要一致。
 - 跑完會刪掉 manifest 沒引用到的 mp3（prune）。
-- 詳見 `docs/tts-notes.md`。
+- 詳見 `docs/guide/tts-notes.md`。
