@@ -16,7 +16,7 @@
   2. 專案根目錄的 tts-key.txt（已被 .gitignore 排除）
 
 用法：
-    python3 generate-audio.py
+    python3 scripts/generate-audio.py
 """
 
 import base64
@@ -30,7 +30,7 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).resolve().parent.parent   # scripts/ 的上一層 = 專案根目錄
 LESSONS_DIR = ROOT / "lessons"
 AUDIO_DIR = ROOT / "audio"
 MANIFEST = AUDIO_DIR / "manifest.json"

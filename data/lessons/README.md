@@ -1,6 +1,6 @@
 # data/lessons/
 
-每個引擎課一個 `<id>.json`，內容：`{ id, title, stories[], grammar[], grammarQuiz[], reading[] }`。
+每個引擎課一個 `<id>.json`，內容：`{ id, title, stories[], grammar[], grammarQuiz[], reading[], passageQuiz[] }`。
 
 schema 與故事標記規則見 `../../docs/lesson-authoring.md`。
 由 `.claude/skills/new-lesson/` skill 產生，不要手刻。

@@ -23,9 +23,9 @@ pat='(^|[;&|(]|&&|\|\|)[[:space:]]*((\./|(ba)?sh[[:space:]]+)publish\.sh|git[[:s
 echo "$cmd" | grep -Eq "$pat" || exit 0
 
 root="${CLAUDE_PROJECT_DIR:-.}"
-[ -f "$root/validate-lessons.py" ] || exit 0
+[ -f "$root/scripts/validate-lessons.py" ] || exit 0
 
-out=$(cd "$root" && python3 validate-lessons.py 2>&1)
+out=$(cd "$root" && python3 scripts/validate-lessons.py 2>&1)
 code=$?
 if [ "$code" -ne 0 ]; then
   echo "課程驗證沒過，先修正再推上去：" >&2

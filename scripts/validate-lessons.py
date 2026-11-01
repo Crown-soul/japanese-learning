@@ -31,8 +31,8 @@
  21. vocab 選填欄位：jlpt 只能是 N5–N1 或「外」；exKana 全假名＋標點、句數跟 ex 一樣
 
 用法：
-    python3 validate-lessons.py            # 驗全部
-    python3 validate-lessons.py hospital   # 只驗某課
+    python3 scripts/validate-lessons.py            # 驗全部
+    python3 scripts/validate-lessons.py hospital   # 只驗某課
 退出碼：0 = 全過；1 = 有錯。
 """
 
@@ -42,7 +42,7 @@ import sys
 from functools import lru_cache
 from pathlib import Path
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).resolve().parent.parent   # scripts/ 的上一層 = 專案根目錄
 LDIR = ROOT / "data" / "lessons"
 VOCAB = ROOT / "data" / "vocab.json"
 N4 = ROOT / "docs" / "n4-grammar.md"

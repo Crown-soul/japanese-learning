@@ -11,7 +11,7 @@
          ../data/vocab.json（共用單字庫，取 lessons 含 <id> 的字）
          ../audio/manifest.json（乾淨文字 -> mp3 檔名）
 
-   行為移植自 lessons/日文70單字學習器.html（v4）；2026-09 加上 docs/learner-plan.md 的功能：
+   行為移植自 lessons/日文70單字學習器.html（v4）；2026-09 加上 過時/learner-plan.md 的功能：
      每篇「下一步」流程（①聽讀 ②跟讀 ③本篇單字 ④本篇文法 ⑤讀解）與完成狀態、篇篩選、
      複習字（{{key}} 的 key 不屬於本課＝別課學過的字）、文法卡「怎麼接／容易搞混」（data/grammar.json）、
      中→日打字、單字／例句聽寫（vocab.exKana）、JLPT 參考等級（vocab.jlpt）、段落回報、

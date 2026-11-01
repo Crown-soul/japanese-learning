@@ -180,7 +180,7 @@ window.JLStore = {
 
 ## 4. 分階段實施
 
-每階段結束的共同驗收（來自 CLAUDE.md）：本機 `python3 -m http.server 4173` 開每一個引擎課＋`日文單字總表.html`，console 無 error；375px 版面 OK、觸控目標 ≥44px；`python3 validate-lessons.py` 通過；`build-index.py` 無 diff；CI 綠。
+每階段結束的共同驗收（來自 CLAUDE.md）：本機 `python3 -m http.server 4173` 開每一個引擎課＋`日文單字總表.html`，console 無 error；375px 版面 OK、觸控目標 ≥44px；`python3 scripts/validate-lessons.py` 通過；`build-index.py` 無 diff；CI 綠。
 
 ### 第 1 階段：引擎修正（不動資料結構）
 

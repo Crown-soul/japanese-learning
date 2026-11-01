@@ -13,20 +13,25 @@ japanese-learning/
 ├── lessons/            每一份學習檔案
 │   ├── <id>.html        引擎課（薄殼，內容在 data/lessons/<id>.json）
 │   ├── grammar-index.html N4 文法查詢
+│   ├── basics.html      基礎詞彙練習器（量詞、時間、家人…）
 │   └── …
 ├── data/
 │   ├── vocab.json       共用單字庫
+│   ├── basics.json      基礎詞彙練習器題庫
 │   ├── grammar.json     文法查詢資料（自動產生，勿手改）
 │   └── lessons/<id>.json 每一課的故事／文法／測驗內容
-├── assets/             共用樣式與程式（store.js / lesson.css / lesson-engine.js / vocab-table.js）
+├── assets/             共用樣式與程式（store.js 進度存取 / lesson.css / lesson-engine.js / mock-exam.js / vocab-table.js / basics.js、basics.css）
 ├── audio/              預錄語音 MP3 + manifest.json
+├── scripts/            所有 Python 腳本（從專案根目錄執行，例：python3 scripts/build-index.py）
+│   ├── build-index.py      重建 index.html
+│   ├── generate-audio.py   用 Google TTS 產語音（需根目錄的 tts-key.txt）
+│   ├── build-audio-check.py 產發音快篩頁
+│   ├── build-grammar.py    產 data/grammar.json
+│   └── validate-lessons.py 驗證課程資料
 ├── docs/               架構與規範說明
+├── 過時/               已用不到的舊檔，只留著查歷史
 ├── CLAUDE.md           AI 協作設定
-├── build-index.py      重建 index.html
-├── generate-audio.py   用 Google TTS 產語音（需 tts-key.txt）
-├── build-audio-check.py 產發音快篩頁
-├── build-grammar.py    產 data/grammar.json
-└── publish.sh          一鍵：重建目錄 + commit + push
+└── publish.sh          一鍵：重建目錄 + commit + push（留在根目錄）
 ```
 
 ## 新增一份課程

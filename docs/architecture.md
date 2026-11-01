@@ -34,15 +34,16 @@ japanese-learning/
 │   ├── manifest.json          乾淨文字 → 檔名（會話行的 key 是 "@<聲音>:<乾淨文字>"）
 │   └── last-run.json          generate-audio.py 本次新產的段落清單（audio-check 只列這批）
 ├── audio-check.html           生成物：發音人工快篩頁（預設只列本次新增）
-├── generate-audio.py          Google TTS 產語音 + prune 舊檔（需 tts-key.txt）
-├── build-audio-check.py       產 audio-check.html
-├── build-grammar.py           產 data/grammar.json
-├── build-index.py             產 index.html
-├── validate-lessons.py        驗 data/lessons/*.json 與 vocab.json 一致性
+├── scripts/                   所有 Python 腳本（一律從專案根目錄執行：python3 scripts/<名稱>.py）
+│   ├── generate-audio.py      Google TTS 產語音 + prune 舊檔（需根目錄的 tts-key.txt）
+│   ├── build-audio-check.py   產 audio-check.html
+│   ├── build-grammar.py       產 data/grammar.json
+│   ├── build-index.py         產 index.html
+│   └── validate-lessons.py    驗 data/lessons/*.json 與 vocab.json 一致性
 ├── .github/workflows/validate.yml  push/PR 時跑驗證（含 check-console.mjs headless 檢查）
 ├── .claude/                   settings.json（hook 註冊）、hooks/、skills/new-lesson/、launch.json（本機預覽）
-├── try-voices.py              試聽多個語音（開發用）
-├── publish.sh                 build-index → git add -A → commit → push
+├── publish.sh                 build-index → git add -A → commit → push（留在根目錄，維持 ./publish.sh）
+├── 過時/                      已用不到的舊檔（try-voices.py、learner-plan.md），留著只為查歷史，見其 README
 ├── CLAUDE.md / docs/          AI 協作設定與知識
 └── tts-key.txt                Google API 金鑰（.gitignore，絕不 commit）
 ```

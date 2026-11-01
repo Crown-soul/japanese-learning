@@ -18,7 +18,7 @@
 版面分四區：開始學（引擎課）→ 每日複習 → 工具（沒有單字資料的頁面）→ 舊版（有單字、但不是引擎課）。
 
 用法：
-    python3 build-index.py
+    python3 scripts/build-index.py
 """
 
 import re
@@ -29,7 +29,7 @@ import subprocess
 import urllib.parse
 from pathlib import Path
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).resolve().parent.parent   # scripts/ 的上一層 = 專案根目錄
 LESSONS_DIR = ROOT / "lessons"
 LESSON_DATA_DIR = ROOT / "data" / "lessons"
 VOCAB_JSON = ROOT / "data" / "vocab.json"

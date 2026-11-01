@@ -49,7 +49,7 @@ description: >-
   偏難的條目（受身、使役、敬語…）每課最多 2 個，放在後面的篇。
 
   ```bash
-  python3 build-grammar.py     # 先更新「教過的課」
+  python3 scripts/build-grammar.py     # 先更新「教過的課」
   python3 - <<'EOF'
   import json
   d = json.load(open('data/grammar.json'))
@@ -269,8 +269,8 @@ printf '%s' '你的金鑰' > tts-key.txt
 （`.claude/hooks/require-tts-key.sh` 也會在沒金鑰時擋下 `generate-audio.py` 並提醒。）
 
 ```bash
-python3 generate-audio.py      # 只會產這課的新段落，並把清單寫到 audio/last-run.json
-python3 build-audio-check.py   # 預設只列「本次新增」那批
+python3 scripts/generate-audio.py      # 只會產這課的新段落，並把清單寫到 audio/last-run.json
+python3 scripts/build-audio-check.py   # 預設只列「本次新增」那批
 ```
 - 若回 `BILLING_DISABLED` → 停下來，請使用者到 Google Cloud 啟用帳單（見 `docs/tts-notes.md`）。
 - 產完**請使用者開 audio-check.html 聽「本次新增」那批**（舊的之前已經聽過，不用重聽），把 ✗ 的字回報 → 補修正表 → 重跑。
@@ -279,8 +279,8 @@ python3 build-audio-check.py   # 預設只列「本次新增」那批
 ## 步驟 10 — 重建目錄
 
 ```bash
-python3 build-index.py
-python3 build-grammar.py     # 文法查詢頁的「教過的課」會多出這一課
+python3 scripts/build-index.py
+python3 scripts/build-grammar.py     # 文法查詢頁的「教過的課」會多出這一課
 ```
 確認新課以 `title` 出現在 `index.html`「開始學」區（卡片會顯示 字數／文法點數／篇數／＋會話）。
 
@@ -288,7 +288,7 @@ python3 build-grammar.py     # 文法查詢頁的「教過的課」會多出這�
 
 **先跑自動驗證**（會擋掉大部分結構錯誤）：
 ```bash
-python3 validate-lessons.py <id>
+python3 scripts/validate-lessons.py <id>
 ```
 沒過就照訊息修，過了再往下人工檢查。
 

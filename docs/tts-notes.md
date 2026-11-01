@@ -18,7 +18,7 @@
 2. **例句／故事 → 漢字文字 + 修正表**
    `READING_FIXES`（子字串取代，2 字以上）與 `EXACT_FIXES`（整段剛好等於才換，單一漢字用）在 `generate-audio.py` 開頭。送 TTS 前套用，只影響語音、不影響畫面。
 3. **audio-check.html → 人工快篩**
-   `python3 build-audio-check.py` 產出一頁，列出所有音檔 + ▶ + ✓/✗。使用者聽一遍，✗ 的會集中成可貼回的清單，據以補修正表。**每次產完新音檔都要跑一輪。**
+   `python3 scripts/build-audio-check.py` 產出一頁，列出所有音檔 + ▶ + ✓/✗。使用者聽一遍，✗ 的會集中成可貼回的清單，據以補修正表。**每次產完新音檔都要跑一輪。**
 
 ## 已知誤讀清單（`READING_FIXES` / `EXACT_FIXES` 目前收錄）
 

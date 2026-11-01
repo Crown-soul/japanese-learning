@@ -8,7 +8,8 @@
 
 - **`tts-key.txt` 絕不 commit**（已 `.gitignore`）。金鑰只在產語音時用，產完網站不需要它。
 - **`index.html`、`audio-check.html`、`audio/*`、`data/grammar.json`、引擎課薄殼 `lessons/<id>.html`** 是生成物——用腳本／skill 產，不要手改。
-- **檔名一律英數與連字號**，全小寫（`hospital.html`），不要中文——網址複製出去才不會又長又亂碼。目錄顯示名靠 `<title>`（可中／日文）。既有三個中文檔名（`日文70單字學習器.html`、`日文單字總表.html`、`日語動詞變化練習工具.html`）是舊檔例外，**不要改名**——會斷掉已分享的連結。
+- **檔名一律英數與連字號**，全小寫（`hospital.html`），不要中文——網址複製出去才不會又長又亂碼。目錄顯示名靠 `<title>`（可中／日文）。既有三個中文檔名（`日文70單字學習器.html`、`日文單字總表.html`、`日語動詞變化練習工具.html`）是舊檔例外，**不要改名**——會斷掉已分享的連結。資料夾 `過時/`（放用不到的舊檔）是使用者指定的另一個例外，網站不連到它。
+- **Python 腳本都在 `scripts/`，一律從專案根目錄執行**（`python3 scripts/build-index.py`）。`tts-key.txt` 留在根目錄，腳本靠 `ROOT = scripts/ 的上一層` 找它。新腳本也放 `scripts/`。
 - **`lessons/` 每個頁面都要有 `← 回目錄`**：`<a href="../">`（token 頁放 `<a class="backlink">` 當 `<header>` 第一個子元素；React 動詞頁用 inline style 的 `<a>` 放在 `#root` 前）。
 - **發佈只走 `./publish.sh "說明"`**（會 build-index → add -A → commit → push）。在 `main` 直接操作是這個專案的既定流程。
 - **`lessons/日文70單字學習器.html` 不遷移到引擎**——它自成一格（CSS/JS/資料全內嵌）。要動它要逐項比對驗證。
@@ -23,8 +24,8 @@
 | 要做的事 | 怎麼做 |
 |---|---|
 | 新增一課（有單字照片／文字） | 用 `/new-lesson` skill（`.claude/skills/new-lesson/`）。不要手刻。 |
-| 改了單字／故事／例句 | `python3 generate-audio.py`（需 `tts-key.txt`；沒放金鑰時 hook 會擋下並提醒）→ `python3 build-audio-check.py` → 請使用者用 audio-check 頁**聽「本次新增」那批**（預設只列這批；舊的不用重聽） |
-| 改了 `docs/n4-grammar.md` | `python3 build-grammar.py`（文法查詢頁的資料；CI 會檢查無 diff） |
+| 改了單字／故事／例句 | `python3 scripts/generate-audio.py`（需 `tts-key.txt`；沒放金鑰時 hook 會擋下並提醒）→ `python3 scripts/build-audio-check.py` → 請使用者用 audio-check 頁**聽「本次新增」那批**（預設只列這批；舊的不用重聽） |
+| 改了 `docs/n4-grammar.md` | `python3 scripts/build-grammar.py`（文法查詢頁的資料；CI 會檢查無 diff） |
 | 改了引擎樣式／行為（`assets/`） | 回歸測試**每一個引擎課** + `日文單字總表.html`（vocab-table.js 兩處都用）+ `review.html` + `lessons/grammar-index.html`（都用 lesson.css / store.js） |
 | 發佈 | `./publish.sh "說明"`，然後等 Pages 1–2 分鐘 |
 | TTS 回 `BILLING_DISABLED` | 請使用者到 Google Cloud 啟用該專案帳單（免費額度內 $0），見 `docs/tts-notes.md` |
@@ -60,14 +61,14 @@
 | 任務中途交接（範本；實際交接文件不進 repo） | `docs/handoff-template.md` |
 | 優化規劃書（分階段、資料結構決策、不做清單、實作狀態） | `docs/roadmap.md` |
 | 模考產生器規劃（尚未動工；刻意跟 new-lesson 分開） | `docs/mock-exam-plan.md` |
-| 新手友善改版計劃（已完成，歷史參考） | `docs/learner-plan.md` |
+| 新手友善改版計劃（已完成，已移入 `過時/`，歷史參考） | `過時/learner-plan.md` |
 | 過去做了什麼（人看的，AI 不用載入） | `docs/changelog.md` |
 | 生成新課的完整步驟 | `.claude/skills/new-lesson/SKILL.md` |
 
 ## 驗證與 Hook
 
-- **`python3 validate-lessons.py [<id>]`**：驗引擎課 JSON 與所有 `lessons/*.html`（檢查項目看腳本本身）。**新課 publish 前一定要過。**
-- `.claude/hooks/require-tts-key.sh`（PreToolUse/Bash）：偵測到**執行** `python3 generate-audio.py` 但沒金鑰 → 擋下 + 提醒（cat/grep/sed 它不會觸發）。
+- **`python3 scripts/validate-lessons.py [<id>]`**：驗引擎課 JSON 與所有 `lessons/*.html`（檢查項目看腳本本身）。**新課 publish 前一定要過。**
+- `.claude/hooks/require-tts-key.sh`（PreToolUse/Bash）：偵測到**執行** `python3 scripts/generate-audio.py` 但沒金鑰 → 擋下 + 提醒（cat/grep/sed 它不會觸發）。
 - `.claude/hooks/validate-on-publish.sh`（PreToolUse/Bash）：偵測到**執行** `./publish.sh` **或直接 `git push`** → 先跑 `validate-lessons.py`，有錯就擋下並列出。
 - `.claude/hooks/check-backlinks.sh`（Stop）：Claude 回完話後掃 `lessons/*.html` 有沒有漏 `← 回目錄`（只提醒；引擎課薄殼由引擎注入，視為已有）。
 - `.github/workflows/validate.yml`：push/PR 自動跑同一套驗證 + 生成物無 diff + headless console 檢查（細節看 yml）。

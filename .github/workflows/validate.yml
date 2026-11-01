@@ -21,7 +21,7 @@ jobs:
       - name: JS 語法（assets/*.js）
         run: for f in assets/*.js; do node --check "$f" && echo "ok  $f"; done
       - name: Python 語法（*.py）
-        run: for f in *.py; do python3 -m py_compile "$f" && echo "ok  $f"; done
+        run: for f in scripts/*.py; do python3 -m py_compile "$f" && echo "ok  $f"; done
       - name: JSON 合法性
         run: |
           for f in data/vocab.json data/lessons/*.json audio/manifest.json; do
@@ -29,18 +29,18 @@ jobs:
             python3 -m json.tool "$f" > /dev/null && echo "ok  $f"
           done
       - name: 引擎課內容驗證
-        run: python3 validate-lessons.py
+        run: python3 scripts/validate-lessons.py
       - name: 目錄與現況一致（build-index 無 diff）
         run: |
-          python3 build-index.py
+          python3 scripts/build-index.py
           git diff --exit-code index.html || (echo "index.html 過期，請本機跑 build-index.py 後 commit" && exit 1)
       - name: 文法查詢資料與現況一致（build-grammar 無 diff）
         run: |
-          python3 build-grammar.py
+          python3 scripts/build-grammar.py
           git diff --exit-code data/grammar.json || (echo "data/grammar.json 過期，請本機跑 build-grammar.py 後 commit" && exit 1)
       - name: 語音檢查表與現況一致（build-audio-check 無 diff）
         run: |
-          python3 build-audio-check.py
+          python3 scripts/build-audio-check.py
           git diff --exit-code audio-check.html || (echo "audio-check.html 過期，請本機跑 build-audio-check.py 後 commit" && exit 1)
       - name: headless console error 檢查
         run: |

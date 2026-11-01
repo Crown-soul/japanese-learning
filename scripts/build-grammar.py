@@ -14,7 +14,7 @@ docs/n4-grammar.md 是人／AI 讀的來源，網頁讀不了 .md，所以建置
 }
 
 用法：
-    python3 build-grammar.py
+    python3 scripts/build-grammar.py
 CI 會檢查 data/grammar.json 與 docs/n4-grammar.md 一致（無 diff）。
 """
 
@@ -22,7 +22,7 @@ import json
 import re
 from pathlib import Path
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).resolve().parent.parent   # scripts/ 的上一層 = 專案根目錄
 SRC = ROOT / "docs" / "n4-grammar.md"
 LESSON_DATA_DIR = ROOT / "data" / "lessons"
 OUT = ROOT / "data" / "grammar.json"

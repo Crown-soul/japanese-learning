@@ -7,7 +7,7 @@
 進度存在瀏覽器裡，可以分幾次聽完。
 
 用法：
-    python3 build-audio-check.py
+    python3 scripts/build-audio-check.py
     # 然後開本機伺服器看 audio-check.html（要伺服器，file:// 讀不到 mp3）
 """
 
@@ -15,7 +15,7 @@ import json
 import re
 from pathlib import Path
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).resolve().parent.parent   # scripts/ 的上一層 = 專案根目錄
 LESSONS_DIR = ROOT / "lessons"
 LESSON_DATA_DIR = ROOT / "data" / "lessons"
 VOCAB_JSON = ROOT / "data" / "vocab.json"

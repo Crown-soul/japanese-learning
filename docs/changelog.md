@@ -99,7 +99,7 @@
 
 - **prompt 稽核**：`new-lesson` SKILL 精簡（去掉壓力語氣、重複強調、歷史敘述）；「句尾連續幾句」「一句一新」改由 `validate-lessons.py` 提醒，清單外句型多抓 〜なんて／〜おかげで／〜ずつ。
 - `boarding-house`、`business-trip` 修句尾單調與清單外句型、補漏譯；`boarding-house`：`暗号`→`暗証番号`、`通って` 讀音修正、修正表 `楽に`／`行った` 收窄。
-- **新手友善改版**（`docs/learner-plan.md`，先做 `preview/graduation-v2/` 試用版、確認後併回正式並刪掉試用版）：
+- **新手友善改版**（`過時/learner-plan.md`，先做 `preview/graduation-v2/` 試用版、確認後併回正式並刪掉試用版）：
   - 引擎：每篇 ①聽讀 ②跟讀 ③本篇單字 ④本篇文法 ⑤讀解 流程與完成狀態、篇篩選、複習字、文法卡「怎麼接／容易搞混／常見錯誤」、中→日打字、單字／例句聽寫、JLPT 參考等級、段落回報、會話（每人不同聲音）、文章文法、單課小考（`assets/mock-exam.js`）。
   - `store.js` 加 `stories`／`exams`／`paraNotes`（只新增欄位，v 仍是 1）。
   - 資料格式：`stories[].kind/speakers/voices`、`passageQuiz`、vocab `jlpt`／`exKana`；驗證器同步（複習字、會話不帶新東西、文章文法填回＝原段落…）。
